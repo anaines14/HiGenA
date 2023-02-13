@@ -9,8 +9,8 @@ import edu.mit.csail.sdg.parser.CompUtil;
 import java.util.*;
 
 public class A4FParser {
-    public static TreeMap<Integer, A4FAst> parse(String code) {
-        TreeMap<Integer, A4FAst> asts = new TreeMap<>();
+    public static TreeMap<String, A4FAst> parse(String code) {
+        TreeMap<String, A4FAst> asts = new TreeMap<>();
 
         A4Reporter rep = new A4Reporter();
 
@@ -22,8 +22,8 @@ public class A4FParser {
         String funcName = "";
         for (Func function : functions) {
             if (!function.label.contains("Default")) { // Skip default function
-                funcName = function.label.replace("this/prop", ""); // remove prefix
-                asts.put(Integer.parseInt(funcName), parseFunc(function)); // Add to map
+                funcName = function.label.replace("this/", ""); // remove prefix
+                asts.put(funcName, parseFunc(function)); // Add to map
             }
         }
 
