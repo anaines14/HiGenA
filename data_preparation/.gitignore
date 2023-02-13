@@ -1,2 +1,2 @@
-data/*
-clean_data/*
+*.json
+*.db
