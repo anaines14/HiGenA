@@ -1,6 +1,6 @@
 package org.higena;
 
-import java.util.Map;
+import java.util.TreeMap;
 
 public class Main {
     public static void main(String[] args) {
@@ -12,7 +12,7 @@ public class Main {
 
         // Parse the code
         String code = args[0];
-        Map<String, A4FAst> asts = A4FParser.parse(code);
+        TreeMap<Integer, A4FAst> asts = A4FParser.parse(code);
 
         // Print the ASTs
         for (A4FAst ast : asts.values()) {

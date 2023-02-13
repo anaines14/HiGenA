@@ -6,14 +6,11 @@ import edu.mit.csail.sdg.ast.*;
 import edu.mit.csail.sdg.parser.CompModule;
 import edu.mit.csail.sdg.parser.CompUtil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class A4FParser {
-    public static Map<String, A4FAst> parse(String code) {
-        Map<String, A4FAst> asts = new HashMap<>();
+    public static TreeMap<Integer, A4FAst> parse(String code) {
+        TreeMap<Integer, A4FAst> asts = new TreeMap<>();
 
         A4Reporter rep = new A4Reporter();
 
@@ -22,8 +19,12 @@ public class A4FParser {
 
         // Parse each function
         SafeList<Func> functions = module.getAllFunc();
+        String funcName = "";
         for (Func function : functions) {
-            asts.put(function.label, parseFunc(function));
+            if (!function.label.contains("Default")) { // Skip default function
+                funcName = function.label.replace("this/prop", ""); // remove prefix
+                asts.put(Integer.parseInt(funcName), parseFunc(function)); // Add to map
+            }
         }
 
         return asts;
