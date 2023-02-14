@@ -21,6 +21,8 @@ public class A4FParser {
         SafeList<Func> functions = module.getAllFunc();
         String funcName = "";
         for (Func function : functions) {
+            if (function.label.equals("this/isLink"))
+
             if (!function.label.contains("Default")) { // Skip default function
                 funcName = function.label.replace("this/", ""); // remove prefix
                 asts.put(funcName, parseFunc(function)); // Add to map
@@ -40,6 +42,7 @@ public class A4FParser {
     }
 
     public static A4FNode parse(Expr expr) {
+        System.out.println("Parsing: " + expr.getClass());
 
         // Parse the expression based on its type
         switch (expr.getClass().getSimpleName()) {
@@ -65,11 +68,23 @@ public class A4FParser {
                 return parse((ExprCall) expr);
             case "Field":
                 return parse((Sig.Field) expr);
+            case "ExprLet":
+                return parse((ExprLet) expr);
             default:
                 System.out.println("TODO: " + expr.getClass());
         }
 
         return null;
+    }
+
+    public static A4FNode parse(ExprLet expr) {
+        String name = "let";
+        List<A4FNode> children = new ArrayList<>();
+
+        children.add(parse(expr.var));
+        children.add(parse(expr.sub));
+
+        return new A4FNode(name, children);
     }
 
     public static A4FNode parse(Sig.Field expr) {
