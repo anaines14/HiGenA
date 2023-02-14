@@ -57,11 +57,59 @@ public class A4FParser {
                 return parse((Sig.PrimSig) expr);
             case "SubsetSig":
                 return parse((Sig.SubsetSig) expr);
+            case "ExprList":
+                return parse((ExprList) expr);
+            case "ExprITE":
+                return parse((ExprITE) expr);
+            case "ExprCall":
+                return parse((ExprCall) expr);
+            case "Field":
+                return parse((Sig.Field) expr);
             default:
                 System.out.println("TODO: " + expr.getClass());
         }
 
         return null;
+    }
+
+    public static A4FNode parse(Sig.Field expr) {
+        String name = "field";
+        List<A4FNode> children = new ArrayList<>();
+
+        children.add(parse(expr.decl().expr));
+
+        return new A4FNode(name, children);
+    }
+
+    public static A4FNode parse(ExprCall expr) {
+        String name = "field";
+        List<A4FNode> children = new ArrayList<>();
+
+        // Parse the function
+        children.add(parse(expr.fun.getBody()));
+        // Parse the arguments
+        expr.args.forEach(child -> children.add(parse(child)));
+
+        return new A4FNode(name, children);
+    }
+
+    public static A4FNode parse(ExprITE expr) {
+        String name = "ite";
+        List<A4FNode> children = new ArrayList<>();
+
+        children.add(parse(expr.right));
+        children.add(parse(expr.left));
+
+        return new A4FNode(name, children);
+    }
+
+    public static A4FNode parse(ExprList expr) {
+        String name = expr.op.toString();
+        List<A4FNode> children = new ArrayList<>();
+
+        expr.args.forEach(child -> children.add(parse(child)));
+
+        return new A4FNode(name, children);
     }
 
     public static A4FNode parse(Sig.SubsetSig expr) {

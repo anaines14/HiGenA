@@ -13,11 +13,6 @@ public class Main {
         // Parse the code
         String code = args[0];
         TreeMap<String, A4FAst> asts = A4FParser.parse(code);
-
-        // Print the ASTs
-        for (A4FAst ast : asts.values()) {
-            System.out.println(ast);
-        }
     }
 }
 
