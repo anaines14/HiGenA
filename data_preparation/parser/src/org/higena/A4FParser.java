@@ -9,7 +9,8 @@ import edu.mit.csail.sdg.parser.CompUtil;
 import java.util.*;
 
 public class A4FParser {
-    public static TreeMap<String, A4FAst> parse(String code) {
+
+    public static TreeMap<String, A4FAst> parse(String code, int functionIndex) {
         TreeMap<String, A4FAst> asts = new TreeMap<>();
 
         A4Reporter rep = new A4Reporter();
@@ -20,12 +21,15 @@ public class A4FParser {
         // Parse each function
         SafeList<Func> functions = module.getAllFunc();
         String funcName = "";
+        int counter = 0;
         for (Func function : functions) {
-            if (function.label.equals("this/isLink"))
-
             if (!function.label.contains("Default")) { // Skip default function
-                funcName = function.label.replace("this/", ""); // remove prefix
-                asts.put(funcName, parseFunc(function)); // Add to map
+                if (counter == functionIndex){
+                    funcName = function.label.replace("this/", ""); // remove prefix
+                    asts.put(funcName, parseFunc(function)); // Add to map
+                    break;
+                }
+                counter++;
             }
         }
 
