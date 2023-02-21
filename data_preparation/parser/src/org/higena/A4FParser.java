@@ -1,7 +1,5 @@
 package org.higena;
 
-import edu.mit.csail.sdg.alloy4.A4Reporter;
-import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.ast.*;
 import edu.mit.csail.sdg.parser.CompModule;
 import edu.mit.csail.sdg.parser.CompUtil;
@@ -10,39 +8,9 @@ import java.util.*;
 
 public class A4FParser {
 
-    public static TreeMap<String, A4FAst> parse(String code, int functionIndex) {
-        TreeMap<String, A4FAst> asts = new TreeMap<>();
-
-        A4Reporter rep = new A4Reporter();
-
-        // Parse the full module
-        CompModule module = CompUtil.parseEverything_fromString(rep, code);
-
-        // Parse each function
-        SafeList<Func> functions = module.getAllFunc();
-        String funcName = "";
-        int counter = 0;
-        for (Func function : functions) {
-            if (!function.label.contains("Default")) { // Skip default function
-                if (counter == functionIndex){
-                    funcName = function.label.replace("this/", ""); // remove prefix
-                    asts.put(funcName, parseFunc(function)); // Add to map
-                    break;
-                }
-                counter++;
-            }
-        }
-
-        return asts;
-    }
-
-    public static A4FAst parseFunc(Func func) {
-        String name = func.label;
-        Expr body = func.getBody();
-
-        A4FNode root = parse(body);
-
-        return new A4FAst(name, root);
+    public static A4FNode parse(String exprStr, CompModule module) {
+        Expr expr = CompUtil.parseOneExpression_fromString(module, exprStr);
+        return parse(expr);
     }
 
     public static A4FNode parse(Expr expr) {
