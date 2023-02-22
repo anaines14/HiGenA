@@ -1,5 +1,5 @@
 *.json
 *.db
 *.csv
-astError.txt 
+*.txt 
 .ipynb_checkpoints
