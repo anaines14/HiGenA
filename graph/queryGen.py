@@ -2,52 +2,96 @@ import pandas as pd
 import os
 
 
-def getLoadQuery(file, columns):
+def getLoadQuery(challenge, pred, dict):
+    df = dict[challenge][pred]
+    columns = df.dtypes
+    filename = challenge + "/" + pred + ".csv"
 
-    commonColumns = ["cmd_i", "sat", "_id", "code", "derivationOf"]
-    columns = [col for col in columns if col not in commonColumns]
+    load = "//Load " + challenge + "/" + pred
+    load += "\nLOAD CSV WITH HEADERS FROM 'file:///" + filename + "' AS row\n" + "WITH"
 
-    load = "\n//Load gAeD3MTGCCv8YNTaK\nLOAD CSV WITH HEADERS FROM 'file:///" + file + \
-        ".csv' AS row\n" + \
-        "WITH toInteger(row.cmd_i) AS cmd_i, \n\ttoInteger(row.sat) AS sat," + \
-        "row._id AS id, \n\trow.code AS code, \n\trow.derivationOf AS derivationOf"
+    for col, type, in columns.items():
+        if "int" in str(type):
+            load += "\n\ttoInteger(row." + col + ") AS " + col + ","
+        else:
+            load += "\n\trow." + col + " AS " + col + ","
 
-    for col in columns:
-        load += ",\n\trow." + col + " AS " + col
+    load = load.removesuffix(",") + "\nMERGE (s:Submission {"
 
-    load += "\nMERGE (s:Submission {" + \
-        "\n\tid: id," + \
-        "\n\tcmd_i: cmd_i," + \
-        "\n\tcode: code," + \
-        "\n\tsat: sat," + \
-        "\n\tderivationOf: derivationOf"
+    for col in columns.index:
+        load += "\n\t" + col + ": " + col + ","
 
-    for col in columns:
-        load += ",\n\t" + col + ": " + col
-
-    load += "\n})"
-
+    load = load.removesuffix(",") + "\n})"
     return load
 
 
-def importDataFromDir(dir):
-    # Import all the data from a directory
-    # dir: directory with the data
-    # return: a dictionary of dataframes
-    dict = {}
+def getConstraintQuery():
+    return "// Unique Submission constraint\n" + \
+        "CREATE CONSTRAINT UniqueSubmission IF NOT EXISTS\n" + \
+        "FOR (s:Submission)\n" + \
+        "REQUIRE s._id IS UNIQUE\n"
 
-    for file in os.listdir(dir):
-        if file.endswith('.csv'):
-            df = pd.read_csv(f'{dir}/' + file)
-            dict[file.removesuffix(".csv")] = df
-            print(f"Imported {file}.")
+def getRelationsQuery():
+    return "// Derives relation\n" + \
+    "MATCH (s:Submission)\n" + \
+    "MATCH (d:Submission)\n" + \
+    "WHERE s._id = d.derivationOf AND s._id <> d._id\n" + \
+    "MERGE (d)-[r:Derives]->(s)\n" + \
+    "RETURN count(r)"
+
+
+def getSetLabelQuery(sat: int, label: str):
+    return "// Set " + label + " solutions\n" + \
+    "MATCH (s:Submission {sat: " + str(sat) + "})\n" + \
+    "SET s:" + label + \
+    "\nRETURN count(s)" 
+
+
+def getCorrectQuery():
+    return getSetLabelQuery(1, "Correct")
+
+
+def getIncorrectQuery():
+    return getSetLabelQuery(0, "Incorrect")
+
+
+def importData():
+    # Import all the data from a directory
+    # return: a dictionary of dataframes
+    dir = "data"
+    dict = {}
+    dataTypes = {"_id": str, "cmd_n": str, "code": str,
+                 "derivationOf": str, "sat": int, "expr": str, "ast": str}
+
+    for subdir in os.listdir(dir):
+        dict[subdir] = {}
+        subdirPath = os.path.join(dir, subdir)
+        for file in os.listdir(subdirPath):
+            if file.endswith(".csv"):
+                name = file.removesuffix(".csv")
+                path = os.path.join(dir, subdir, file)
+                dict[subdir][name] = pd.read_csv(path, dtype=dataTypes)
 
     return dict
 
 
-# Import files from the data directory
-dict = importDataFromDir('../data_preparation/data/prepared')
+def main():
+    # Import files from the data directory
+    dict = importData()
 
-file = "9jPK8KBWzjFmBx4Hb"
-query = getLoadQuery(file, dict[file].columns)
-print(query)
+    challenge = "9jPK8KBWzjFmBx4Hb"
+    pred = "prop1"
+
+    file = open("queries.txt", "w")
+    file.write(getConstraintQuery() + "\n\n")
+    file.write(getLoadQuery(challenge, pred, dict) + "\n\n")
+    file.write(getRelationsQuery() + "\n\n")
+    file.write(getCorrectQuery() + "\n\n")
+    file.write(getIncorrectQuery() + "\n\n")
+    file.close()
+
+    print("Cretaed queries.txt file.")
+
+
+if __name__ == "__main__":
+    main()
