@@ -36,7 +36,7 @@ def getRelationsQuery():
     "MATCH (s:Submission)\n" + \
     "MATCH (d:Submission)\n" + \
     "WHERE s._id = d.derivationOf AND s._id <> d._id\n" + \
-    "MERGE (d)-[r:Derives]->(s)\n" + \
+    "MERGE (s)-[r:Derives]->(d)\n" + \
     "RETURN count(r)"
 
 
@@ -81,8 +81,10 @@ def main():
 
     challenge = "9jPK8KBWzjFmBx4Hb"
     pred = "prop1"
+    db = "".join(x for x in challenge if x.isalpha())
 
     file = open("queries.txt", "w")
+    file.write("DB: " + db + "\n\n")
     file.write(getConstraintQuery() + "\n\n")
     file.write(getLoadQuery(challenge, pred, dict) + "\n\n")
     file.write(getRelationsQuery() + "\n\n")
