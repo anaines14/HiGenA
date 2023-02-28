@@ -2,6 +2,9 @@ package org.example;
 
 import org.neo4j.driver.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Db implements AutoCloseable {
   private final Driver driver;
   private final Session session;
@@ -83,7 +86,7 @@ public class Db implements AutoCloseable {
             MATCH (s:Submission)
             MATCH (d:Submission)
             WHERE s._id = d.derivationOf AND s._id <> d._id
-            MERGE (s)-[r:Derives]->(d)
+            MERGE (s)-[r:Derives]-(d)
             RETURN count(r)""");
     System.out.println("Created " + res.consume().counters().relationshipsCreated() +
             " Derives edges.");
@@ -142,12 +145,26 @@ public class Db implements AutoCloseable {
     runQuery("DROP DATABASE " + name + " IF EXISTS");
   }
 
+  public void deleteLoops(String relationship) {
+    Result res = runQuery("MATCH (s:Submission)-[r:" + relationship + "]->" +
+            "(s:Submission)\n" +
+            "DELETE r\n" +
+            "RETURN count(r)");
+    System.out.println("Deleted " + res.consume().counters().relationshipsDeleted() + " loops.");
+  }
+
+  public void deleteEquivNodes(int componentId) {
+    List<String> queries = getDelEquivNodesQueries(componentId);
+    for (String query : queries) {
+      runQuery(query);
+    }
+  }
+
   // GET methods
 
   public Result getNodesWithPropertyValue(String property, int value) {
     return runQuery("MATCH (s:Submission)\n" +
-            "WHERE s." + property + " = '" + value + "'\n" +
-            "RETURN s");
+            "WHERE s." + property + " = " + value + " RETURN s");
   }
 
   public Result getDistinctPropertyValues(String property) {
@@ -157,5 +174,38 @@ public class Db implements AutoCloseable {
 
   public String getName() {
     return name;
+  }
+
+  public List<String> getDelEquivNodesQueries(int componentId) {
+    List<String> queries = new ArrayList<>();
+    // Get all nodes in component and the first node of the component
+    String mainQuery = """
+            MATCH (n:Submission {componentId: %d})
+            WITH collect(DISTINCT n) AS compNodes
+            WITH compNodes, compNodes[0] AS firstN
+            UNWIND compNodes as cN
+            """.formatted(componentId);
+    // Swap derivations of component nodes to first node
+    // example: (s)-[:Derives]->(cN) -> (s)-[:Derives]->(firstN)
+    queries.add(mainQuery + """
+            CALL {
+                WITH cN, firstN
+                MATCH (s:Submission)-[r:Derives]-(cN)
+                WHERE cN <> firstN
+                MERGE (s)-[:Derives]-(firstN)
+                DELETE r
+            }
+            """
+            );
+    // Delete all component nodes except first node
+    queries.add(mainQuery + """
+                CALL {
+                    WITH cN, firstN
+                    MATCH (cN)
+                    WHERE cN <> firstN
+                    DETACH DELETE cN
+                }
+                """);
+    return queries;
   }
 }

@@ -22,6 +22,11 @@ public class Graph {
     }
   }
 
+  public void mergeEquivNodes(String property){
+    aggregateEquivNodes(property);
+    removeEquivNodes();
+  }
+
   /**
    * Removes nodes with repeated expression from the graph.
    * Finally, for each component, it keeps the
@@ -30,30 +35,36 @@ public class Graph {
   public void removeEquivNodes() {
     try (Db db = new Db(uri, user, password, database)) {
       Result res = db.getDistinctPropertyValues("componentId");
+      // Iterate over components
       while (res.hasNext()) {
         int component = res.next().get("componentId").asInt();
-        Result nodes = db.getNodesWithPropertyValue("componentId", component);
-        System.out.println(nodes.list());
+        // Remove equivalent nodes from component
+        db.deleteEquivNodes(component);
+        System.out.println("Removed equivalent nodes from component " + component);
       }
+      // Remove resulting loops
+      db.deleteLoops("Derives");
+      // Delete componentId property
+      db.deleteProperty("componentId");
     }
   }
 
   /**
-   * Creates edges between nodes with the same expression. Then, runs the
+   * Creates edges between nodes with the same property. Then, runs the
    * Weakly Connected Components algorithm to find the connected components
    * of the graph. Each node gets a componentId property with the id of the
    * component it belongs to.
    */
-  public void aggregateEqualNodes() {
+  public void aggregateEquivNodes(String property) {
     String projectionName = "equalGraph";
     String relName = "EQUAL";
     try (Db db = new Db(uri, user, password, database)) {
-      // Create edges between nodes with the same expression
+      // Create edges between nodes with the same property
       db.runQuery("""
               MATCH (n:Submission)
               MATCH (s:Submission)
-              WHERE n._id <> s._id AND n.expr = s.expr
-              MERGE (n)-[:%s]-(s)""".formatted(relName));
+              WHERE n._id <> s._id AND n.%s = s.%s
+              MERGE (n)-[:%s]-(s)""".formatted(property, property, relName));
       // Check if graph already exists
       if (!db.hasProjection(projectionName)) {
         // Create graph projection
@@ -64,7 +75,7 @@ public class Graph {
       // Drop graph projection
       db.deleteProjection(projectionName);
       // Drop edges
-      //db.deleteEdges(relName);
+      db.deleteEdges(relName);
     }
   }
 
