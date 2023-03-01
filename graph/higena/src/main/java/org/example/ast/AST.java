@@ -1,4 +1,4 @@
-package org.example;
+package org.example.ast;
 
 import at.unisalzburg.dbresearch.apted.node.Node;
 import at.unisalzburg.dbresearch.apted.node.StringNodeData;

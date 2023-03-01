@@ -1,4 +1,4 @@
-package org.example;
+package org.example.ast;
 
 import at.unisalzburg.dbresearch.apted.costmodel.StringUnitCostModel;
 import at.unisalzburg.dbresearch.apted.distance.APTED;
@@ -15,13 +15,11 @@ import java.util.List;
 public class TED {
   private final BracketStringInputParser parser;
   private final APTED<StringUnitCostModel, StringNodeData> apted;
-  private final StringUnitCostModel costModel;
   private Node<StringNodeData> t1,t2;
 
   public TED() {
     parser = new BracketStringInputParser();
-    costModel = new StringUnitCostModel();
-    apted = new APTED<>(costModel);
+    apted = new APTED<>(new StringUnitCostModel());
   }
 
   public float computeEditDistance(String ast1, String ast2) {

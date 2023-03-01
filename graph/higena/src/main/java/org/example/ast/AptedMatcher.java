@@ -1,9 +1,11 @@
-package org.example;
+package org.example.ast;
 
 import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.tree.Tree;
 import com.github.gumtreediff.tree.TreeUtils;
+import org.example.ast.AST;
+import org.example.ast.TED;
 
 import java.util.List;
 

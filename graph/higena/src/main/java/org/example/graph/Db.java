@@ -1,4 +1,4 @@
-package org.example;
+package org.example.graph;
 
 import org.neo4j.driver.*;
 

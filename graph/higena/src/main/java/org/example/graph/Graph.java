@@ -1,4 +1,4 @@
-package org.example;
+package org.example.graph;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import org.neo4j.driver.Result;
