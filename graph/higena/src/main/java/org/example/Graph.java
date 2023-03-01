@@ -22,7 +22,7 @@ public class Graph {
     }
   }
 
-  public void mergeEquivNodes(String property){
+  public void mergeEquivNodes(String property) {
     aggregateEquivNodes(property);
     removeEquivNodes();
   }
