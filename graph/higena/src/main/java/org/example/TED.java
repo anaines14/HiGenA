@@ -3,12 +3,14 @@ package org.example;
 import at.unisalzburg.dbresearch.apted.costmodel.StringUnitCostModel;
 import at.unisalzburg.dbresearch.apted.distance.APTED;
 import at.unisalzburg.dbresearch.apted.node.Node;
-import at.unisalzburg.dbresearch.apted.node.NodeIndexer;
 import at.unisalzburg.dbresearch.apted.node.StringNodeData;
 import at.unisalzburg.dbresearch.apted.parser.BracketStringInputParser;
+import com.github.gumtreediff.actions.EditScript;
+import com.github.gumtreediff.actions.SimplifiedChawatheScriptGenerator;
+import com.github.gumtreediff.actions.model.Action;
+import com.github.gumtreediff.matchers.MappingStore;
 
 import java.util.List;
-import java.util.Map;
 
 public class TED {
   private final BracketStringInputParser parser;
@@ -28,36 +30,28 @@ public class TED {
     return apted.computeEditDistance(t1, t2);
   }
 
-  public void computeEdits () {
-    List<int[]> mapping = apted.computeEditMapping();
-    Map<Integer, String> tt1 = new TraversedAST(t1).getIndexNodes();
-    Map<Integer, String> tt2 = new TraversedAST(t2).getIndexNodes();
-
-    StringBuilder mappingString = new StringBuilder();
-    for (int[] indexes : mapping) {
-      if (indexes[0] != 0) {
-        mappingString.append(tt1.get(indexes[0])).append(" -- ");
-      } else {
-        mappingString.append("");
-      }
-
-        if (indexes[1] != 0) {
-            mappingString.append(tt2.get(indexes[1])).append("\n");
-        } else {
-            mappingString.append("\n");
-        }
-    }
-    System.out.println(mappingString);
+  public List<int[]> computeEdits () {
+    return apted.computeEditMapping();
   }
 
-  public static void getEdits(String ast1, String ast2) {
+  public static void getEdits(String tree1, String tree2) {
     TED ted = new TED();
-    float edit = ted.computeEditDistance(ast1, ast2);
+    AptedMatcher matcher = new AptedMatcher();
+    MappingStore ms = matcher.match(ted, tree1, tree2);
 
-    System.out.println("AST1: " + ast1);
-    System.out.println("AST2: " + ast2);
-    System.out.println("TED: " + edit);
+    EditScript actions = new SimplifiedChawatheScriptGenerator().computeActions(ms);
+    System.out.println(actions.size() + " actions");
+    System.out.println("TED: " + ted.computeEditDistance(tree1, tree2));
 
-    ted.computeEdits();
+    Action a = actions.get(0);
+    System.out.println(a.getName());
+  }
+
+  public Node<StringNodeData> getTree1() {
+    return t1;
+  }
+
+  public Node<StringNodeData> getTree2() {
+    return t2;
   }
 }

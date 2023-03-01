@@ -5,9 +5,7 @@ public class Main {
     //Graph graph = new Graph();
     //graph.setup();
     //graph.mergeEquivNodes("ast");
-    TED.getEdits("{AND{no{this/Protected}}{no{this" +
-            "/Trash}}}", "{AND{no{this/Trash}}{no{this/Protected}}}");
-
+    TED.getEdits("{a}","{a{c}}");
   }
 
 }
