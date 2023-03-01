@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Scanner;
 import java.util.Stack;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.lang.System.exit;
@@ -32,10 +33,12 @@ public class A4FExprParser {
 
     public String parse(String predicateName) {
         String line = scanner.nextLine();
-        String expr = "";
+        StringBuilder expr = new StringBuilder();
         boolean inExpr = false;
         // Find the predicate
-        int exprIndex = findWordIndex(predicateName, line) + predicateName.length();
+        int exprIndex =
+                findWordIndex(predicateName, line) + predicateName.length();
+
         if (exprIndex == -1) {
             System.err.println("ERROR: Predicate not found.");
             exit(1);
@@ -47,38 +50,29 @@ public class A4FExprParser {
             if (c == '}') {
                 stack.pop();
                 if (stack.isEmpty()) {
-                    return expr;
+                    return expr.toString();
                 }
             }
             if (inExpr) {
-                expr += c;
+                expr.append(c);
             }
             if (c == '{') {
                 inExpr = true;
                 stack.push(c);
             }
         }
-        return expr;
+        return expr.toString();
     }
 
     private int findWordIndex(String word, String line) {
-        boolean start = false;
+        String regex = word + "\\s*\\{";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(line);
 
-        for (int i = 0; i < line.length(); i++) {
-            char c = line.charAt(i);
-            if (c == word.charAt(0)) {
-                start = true; // Possible start of wor
-                for (int j = 1; j < word.length(); j++) {
-                    if (line.charAt(i + j) != word.charAt(j)) {
-                        start = false; // Not the word
-                        break;
-                    }
-                }
-                if (start) { // Found the word
-                    return i; // Index of the first character of the word
-                }
-            }
+        if (matcher.find()) {
+            return matcher.start();
         }
+
         return -1;
     }
 
