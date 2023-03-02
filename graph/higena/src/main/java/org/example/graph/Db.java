@@ -24,6 +24,7 @@ public class Db implements AutoCloseable {
      *
      */
     public void setup() {
+        deleteEdges("derives");
         deleteAllNodes();
         addUniqueConstraints();
         addNodes("9jPK8KBWzjFmBx4Hb", "prop1");
@@ -136,10 +137,7 @@ public class Db implements AutoCloseable {
             float distance = ted.computeEditDistance(src.get("ast").asString(),
                     dst.get("ast").asString());
 
-            runQuery("""
-                    MATCH ()-[e:Derives {id: '%s'}]-()
-                    SET e.ted = %f
-                    """.formatted(edge.get("id").asString(), distance));
+            runQuery("MATCH ()-[e:Derives]-() WHERE e.id = '" + edge.get("id").asString() + "' SET e.ted = " + distance);
         }
 
     }
@@ -409,8 +407,9 @@ public class Db implements AutoCloseable {
                     WITH cN, firstN
                     MATCH (s:Submission)-[r:Derives]-(cN)
                     WHERE cN <> firstN
-                    MERGE (s)-[:Derives]-(firstN)
+                    MERGE (s)-[p:Derives]-(firstN)
                     DELETE r
+                    SET p.id = randomUUID()
                 }
                 """
         );
