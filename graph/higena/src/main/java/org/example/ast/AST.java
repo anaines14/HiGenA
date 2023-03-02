@@ -15,7 +15,8 @@ public class AST implements Tree {
   List<Tree> children = new ArrayList<>();
   private Tree parent;
   private String label;
-  public AST (Node<StringNodeData> root) {
+
+  public AST(Node<StringNodeData> root) {
     this.setLabel(root.getNodeData().getLabel());
 
     for (Node<StringNodeData> child : root.getChildren()) {

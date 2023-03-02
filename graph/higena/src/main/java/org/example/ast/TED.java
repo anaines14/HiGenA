@@ -15,7 +15,7 @@ import java.util.List;
 public class TED {
   private final BracketStringInputParser parser;
   private final APTED<StringUnitCostModel, StringNodeData> apted;
-  private Node<StringNodeData> t1,t2;
+  private Node<StringNodeData> t1, t2;
 
   public TED() {
     parser = new BracketStringInputParser();
@@ -28,7 +28,7 @@ public class TED {
     return apted.computeEditDistance(t1, t2);
   }
 
-  public List<int[]> computeEdits () {
+  public List<int[]> computeEdits() {
     return apted.computeEditMapping();
   }
 

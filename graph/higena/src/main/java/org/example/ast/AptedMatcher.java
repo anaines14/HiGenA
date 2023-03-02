@@ -10,7 +10,7 @@ import org.example.ast.TED;
 import java.util.List;
 
 public class AptedMatcher implements Matcher {
-    private TED ted;
+  private TED ted;
 
   public MappingStore match(TED ted, String tree1, String tree2) {
     this.ted = ted;
@@ -33,7 +33,7 @@ public class AptedMatcher implements Matcher {
         Tree dstg = dsts.get(m[1] - 1);
 
         if (mappingStore.isMappingAllowed(srcg, dstg))
-            mappingStore.addMapping(srcg, dstg);
+          mappingStore.addMapping(srcg, dstg);
       }
     }
     return mappingStore;
