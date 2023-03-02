@@ -22,10 +22,10 @@ public class TED {
     apted = new APTED<>(new StringUnitCostModel());
   }
 
-  public float computeEditDistance(String ast1, String ast2) {
+  public int computeEditDistance(String ast1, String ast2) {
     t1 = parser.fromString(ast1);
     t2 = parser.fromString(ast2);
-    return apted.computeEditDistance(t1, t2);
+    return (int) apted.computeEditDistance(t1, t2);
   }
 
   public List<int[]> computeEdits() {

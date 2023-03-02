@@ -134,10 +134,13 @@ public class Db implements AutoCloseable {
       Node dst = edgeNodes.get("dst").asNode();
       Relationship edge = edgeNodes.get("edge").asRelationship();
 
-      float distance = ted.computeEditDistance(src.get("ast").asString(),
+      int distance = ted.computeEditDistance(src.get("ast").asString(),
               dst.get("ast").asString());
 
-      runQuery("MATCH ()-[e:Derives]-() WHERE e.id = '" + edge.get("id").asString() + "' SET e.ted = " + distance);
+      runQuery("""
+        MATCH ()-[e:Derives]-()
+        WHERE e.id = '%s'
+        SET e.ted = %d""".formatted(edge.get("id").asString(), distance));
     }
 
   }
