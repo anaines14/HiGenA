@@ -153,4 +153,10 @@ public class AST implements Tree {
   public Iterator<Map.Entry<String, Object>> getMetadata() {
     return null;
   }
+
+  @Override
+  public String toString() {
+    return label;
+  }
 }
+

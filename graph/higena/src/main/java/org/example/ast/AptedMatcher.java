@@ -10,10 +10,13 @@ import org.example.ast.TED;
 import java.util.List;
 
 public class AptedMatcher implements Matcher {
-  private TED ted;
+  private final TED ted;
 
-  public MappingStore match(TED ted, String tree1, String tree2) {
+  public AptedMatcher(TED ted) {
     this.ted = ted;
+  }
+
+  public MappingStore match(String tree1, String tree2) {
     ted.computeEditDistance(tree1, tree2); // must run before
     AST src = new AST(ted.getTree1());
     AST dst = new AST(ted.getTree2());

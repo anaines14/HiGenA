@@ -7,7 +7,7 @@ import at.unisalzburg.dbresearch.apted.node.StringNodeData;
 import at.unisalzburg.dbresearch.apted.parser.BracketStringInputParser;
 import com.github.gumtreediff.actions.EditScript;
 import com.github.gumtreediff.actions.SimplifiedChawatheScriptGenerator;
-import com.github.gumtreediff.actions.model.Action;
+import com.github.gumtreediff.actions.model.*;
 import com.github.gumtreediff.matchers.MappingStore;
 
 import java.util.List;
@@ -32,17 +32,19 @@ public class TED {
     return apted.computeEditMapping();
   }
 
-  public static void getEdits(String tree1, String tree2) {
-    TED ted = new TED();
-    AptedMatcher matcher = new AptedMatcher();
-    MappingStore ms = matcher.match(ted, tree1, tree2);
+  public EditScript getEdits(String tree1, String tree2) {
+    AptedMatcher matcher = new AptedMatcher(this);
+    MappingStore ms = matcher.match(tree1, tree2);
 
     EditScript actions = new SimplifiedChawatheScriptGenerator().computeActions(ms);
-    System.out.println(actions.size() + " actions");
-    System.out.println("TED: " + ted.computeEditDistance(tree1, tree2));
+    for (Action a : actions) {
+      System.out.println(a.getClass().getSimpleName());
+      System.out.println(a);
+      System.out.println("\n");
+    }
 
-    Action a = actions.get(0);
-    System.out.println(a.getName());
+
+    return actions;
   }
 
   public Node<StringNodeData> getTree1() {
