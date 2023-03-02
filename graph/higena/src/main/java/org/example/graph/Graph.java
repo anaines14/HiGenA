@@ -33,4 +33,10 @@ public class Graph {
       System.out.println("END SETUP\n");
     }
   }
+
+  public void addOpToEdges() {
+    try (Db db = new Db(uri, user, password, database)) {
+      db.addTEDToEdges();
+    }
+  }
 }

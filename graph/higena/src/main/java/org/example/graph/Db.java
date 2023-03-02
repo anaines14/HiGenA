@@ -1,6 +1,9 @@
 package org.example.graph;
 
+import org.neo4j.driver.Record;
 import org.neo4j.driver.*;
+import org.neo4j.driver.types.Node;
+import org.neo4j.driver.types.Relationship;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +35,7 @@ public class Db implements AutoCloseable {
 
   /**
    * Runs a query and returns the result.
+   *
    * @param query Query to run
    * @return Result of the query
    */
@@ -41,6 +45,7 @@ public class Db implements AutoCloseable {
 
   /**
    * Close the driver and session.
+   *
    * @throws RuntimeException
    */
   public void close() throws RuntimeException {
@@ -56,6 +61,7 @@ public class Db implements AutoCloseable {
 
   /**
    * Checks if projection exists.
+   *
    * @param name Name of the projection
    * @return True if projection exists, false otherwise
    */
@@ -112,6 +118,22 @@ public class Db implements AutoCloseable {
   }
 
   // CREATE methods
+
+  /**
+   * Adds TED property to add derives edges.
+   */
+  public void addTEDToEdges() {
+    Result res = getEdgesNodePair("Derives");
+
+    for (Result it = res; it.hasNext(); ) {
+      Record edgeNodes = it.next();
+      Node src = edgeNodes.get("src").asNode();
+      Node dst = edgeNodes.get("dst").asNode();
+      Relationship rel = edgeNodes.get("edge").asRelationship();
+
+    }
+
+  }
 
   /**
    * Creates a new database with the given name.
@@ -221,6 +243,7 @@ public class Db implements AutoCloseable {
 
   /**
    * Deletes property from all nodes.
+   *
    * @param property Name of the property to delete
    */
   public void deleteProperty(String property) {
@@ -233,6 +256,7 @@ public class Db implements AutoCloseable {
 
   /**
    * Deletes the graph projection with the given name.
+   *
    * @param name Name of the graph projection
    */
   public void deleteProjection(String name) {
@@ -241,6 +265,7 @@ public class Db implements AutoCloseable {
 
   /**
    * Deºetes all edges of the given relationship type.
+   *
    * @param relationship Relationship type of the edges to delete
    */
   public void deleteEdges(String relationship) {
@@ -250,19 +275,21 @@ public class Db implements AutoCloseable {
     System.out.println("Deleted " + res.consume().counters().relationshipsDeleted() + " edges.");
   }
 
-    /**
-     * Deletes the database with the given name.
-     * @param name Name of the database to delete
-     */
+  /**
+   * Deletes the database with the given name.
+   *
+   * @param name Name of the database to delete
+   */
   public void deleteDb(String name) {
     runQuery("DROP DATABASE " + name + " IF EXISTS");
   }
 
-    /**
-     * Deletes all loops of the given relationship type. Loops are edges
-     * where the source and target node are the same.
-     * @param relationship Relationship type of the loops to delete
-     */
+  /**
+   * Deletes all loops of the given relationship type. Loops are edges
+   * where the source and target node are the same.
+   *
+   * @param relationship Relationship type of the loops to delete
+   */
   public void deleteLoops(String relationship) {
     Result res = runQuery("MATCH (s:Submission)-[r:" + relationship + "]->" +
             "(s:Submission)\n" +
@@ -271,13 +298,13 @@ public class Db implements AutoCloseable {
     System.out.println("Deleted " + res.consume().counters().relationshipsDeleted() + " loops.");
   }
 
-    /**
-     * Deletes equivalent nodes. Equivalent nodes are nodes that belong to the
-     * same component after running the connected components algorithm.
-     * For each component the first node is kept and all other nodes are deleted.
-     * Derivations of deleted nodes are updated to point to the first node of the
-     * component.
-     */
+  /**
+   * Deletes equivalent nodes. Equivalent nodes are nodes that belong to the
+   * same component after running the connected components algorithm.
+   * For each component the first node is kept and all other nodes are deleted.
+   * Derivations of deleted nodes are updated to point to the first node of the
+   * component.
+   */
   public void deleteEquivNodes() {
     Result rest = getDistinctPropertyValues("componentId");
     // Iterate over all components
@@ -298,9 +325,24 @@ public class Db implements AutoCloseable {
   // GET methods
 
   /**
+   * Gets edges with the given relationship type and returns them in a list
+   * with the source node, the edge, and the target node. Example: [src,edge,dst]
+   *
+   * @param relation Relationship type of the edges
+   * @return Result object containing lists of the source node, the edge, and the target node
+   */
+  public Result getEdgesNodePair(String relation) {
+    return runQuery("""
+            MATCH (src:Submission)-[edge:%s]-(dst:Submission)
+            RETURN [src,edge,dst]
+            """.formatted(relation));
+  }
+
+  /**
    * Returns all nodes with the given property value.
+   *
    * @param property Name of the property
-   * @param value Value of the property
+   * @param value    Value of the property
    * @return Result object containing all nodes with the given property value
    */
   public Result getNodesWithPropertyValue(String property, int value) {
@@ -308,11 +350,12 @@ public class Db implements AutoCloseable {
             "WHERE s." + property + " = " + value + " RETURN s");
   }
 
-    /**
-     * Returns all distinct values of the given property.
-     * @param property Name of the property
-     * @return Result object containing all distinct values of the given property
-     */
+  /**
+   * Returns all distinct values of the given property.
+   *
+   * @param property Name of the property
+   * @return Result object containing all distinct values of the given property
+   */
   public Result getDistinctPropertyValues(String property) {
     return runQuery("MATCH (s:Submission)\n" +
             "RETURN DISTINCT s." + property + " AS " + property);
@@ -320,6 +363,7 @@ public class Db implements AutoCloseable {
 
   /**
    * Returns the name of the database.
+   *
    * @return Name of the database
    */
   public String getName() {
@@ -328,6 +372,7 @@ public class Db implements AutoCloseable {
 
   /**
    * Auxiliary method to create queries for deleting equivalent nodes.
+   *
    * @param componentId Id of the component
    * @return List of queries
    */
@@ -363,4 +408,5 @@ public class Db implements AutoCloseable {
             """);
     return queries;
   }
+
 }
