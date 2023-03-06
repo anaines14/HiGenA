@@ -217,7 +217,7 @@ public class Db implements AutoCloseable {
    */
   public void addCorrectLabel() {
     Result res = runQuery("""
-            MATCH (s:Submission {sat: 1})
+            MATCH (s:Submission {sat: 0})
             SET s:Correct
             RETURN count(s)""");
     System.out.println("Set " + res.consume().counters().labelsAdded() + " " +
@@ -229,7 +229,7 @@ public class Db implements AutoCloseable {
    */
   public void addIncorrectLabel() {
     Result res = runQuery("""
-            MATCH (s:Submission {sat: 0})
+            MATCH (s:Submission {sat: 1})
             SET s:Incorrect
             RETURN count(s)""");
     System.out.println("Set " + res.consume().counters().labelsAdded() + " " +
