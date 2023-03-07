@@ -7,6 +7,7 @@ import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Relationship;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class Db implements AutoCloseable {
@@ -102,8 +103,12 @@ public class Db implements AutoCloseable {
     deleteProjection(projectionName);
     // Drop edges
     deleteEdges(relName);
+    // Get components
+    List<Record> components = getDistinctPropertyValues("componentId").list();
+    // Add popularity property
+    addPopularity(components);
     // Aggregate nodes: delete equivalent nodes except for one
-    deleteEquivNodes();
+    deleteEquivNodes(components);
   }
 
   /**
@@ -236,6 +241,23 @@ public class Db implements AutoCloseable {
             "Incorrect labels.");
   }
 
+  public void addPopularity(List<Record> components) {
+    // Iterate over components
+    for (Record component : components) {
+      int componentId = component.get("componentId").asInt();
+      // Get popularity of component
+      runQuery("""
+               MATCH (n:Submission {componentId: %d})
+               WITH count(n) AS popularity
+               CALL {
+                 WITH popularity
+                 MATCH (n:Submission {componentId: %d})
+                 SET n.popularity = popularity
+               }
+              """.formatted(componentId, componentId));
+    }
+  }
+
   /**
    * Creates a graph projection with the given name, label, and relationship.
    * Graph projections are used to run neo4j graph data science algorithms.
@@ -323,11 +345,10 @@ public class Db implements AutoCloseable {
    * Derivations of deleted nodes are updated to point to the first node of the
    * component.
    */
-  public void deleteEquivNodes() {
-    Result rest = getDistinctPropertyValues("componentId");
+  public void deleteEquivNodes(List<Record> components) {
     // Iterate over all components
-    while (rest.hasNext()) {
-      int componentId = rest.next().get("componentId").asInt();
+    for (Record component: components) {
+      int componentId = component.get("componentId").asInt();
       // Remove equivalent nodes from component
       List<String> queries = getDelEquivNodesQueries(componentId);
       for (String query : queries) {
