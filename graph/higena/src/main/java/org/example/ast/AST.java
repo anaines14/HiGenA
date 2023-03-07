@@ -6,10 +6,7 @@ import com.github.gumtreediff.tree.Tree;
 import com.github.gumtreediff.tree.TreeMetrics;
 import com.github.gumtreediff.tree.Type;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class AST implements Tree {
   List<Tree> children = new ArrayList<>();

@@ -7,7 +7,6 @@ import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Relationship;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class Db implements AutoCloseable {

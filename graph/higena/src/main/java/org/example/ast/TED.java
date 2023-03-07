@@ -36,15 +36,7 @@ public class TED {
     AptedMatcher matcher = new AptedMatcher(this);
     MappingStore ms = matcher.match(tree1, tree2);
 
-    EditScript actions = new SimplifiedChawatheScriptGenerator().computeActions(ms);
-    for (Action a : actions) {
-      System.out.println(a.getClass().getSimpleName());
-      System.out.println(a);
-      System.out.println("\n");
-    }
-
-
-    return actions;
+    return new SimplifiedChawatheScriptGenerator().computeActions(ms);
   }
 
   public Node<StringNodeData> getTree1() {
