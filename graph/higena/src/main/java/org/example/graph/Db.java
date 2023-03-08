@@ -210,7 +210,7 @@ public class Db implements AutoCloseable {
             MATCH (s:Submission)
             MATCH (d:Submission)
             WHERE s.id = d.derivationOf AND s.id <> d.id
-            MERGE (s)-[r:Derives {id: randomUUID()}]-(d)
+            MERGE (s)-[r:Derives {id: randomUUID()}]->(d)
             RETURN count(r)""");
     System.out.println("Created " + res.consume().counters().relationshipsCreated() +
             " Derives edges.");
@@ -276,8 +276,9 @@ public class Db implements AutoCloseable {
    * Deletes all nodes and edges from the database.
    */
   public void deleteAllNodes() {
-    runQuery("MATCH (n) DETACH DELETE n");
-    System.out.println("Delete all nodes.");
+    Result res = runQuery("MATCH (n) DETACH DELETE n RETURN count(n)");
+    System.out.println("Delete all nodes (" + res.consume().counters()
+            .nodesDeleted() + " nodes).");
   }
 
   /**
@@ -428,11 +429,22 @@ public class Db implements AutoCloseable {
     queries.add(mainQuery + """
             CALL {
                 WITH cN, firstN
-                MATCH (s:Submission)-[r:Derives]-(cN)
+                MATCH (s:Submission)-[r:Derives]->(cN)
                 WHERE cN <> firstN
-                MERGE (s)-[p:Derives]-(firstN)
+                MERGE (s)-[p:Derives]->(firstN)
                 DELETE r
                 SET p.id = randomUUID()
+            }
+            """
+    );
+    queries.add(mainQuery + """
+            CALL {
+                WITH cN, firstN
+                MATCH (cN)-[v:Derives]->(o:Submission)
+                WHERE cN <> firstN
+                MERGE (firstN)-[b:Derives]->(o)
+                DELETE v
+                SET b.id = randomUUID()
             }
             """
     );
