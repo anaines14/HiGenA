@@ -12,7 +12,8 @@ public class A4FParser {
 
     public static A4FNode parse(String exprStr, CompModule module) {
         Expr expr = CompUtil.parseOneExpression_fromString(module, exprStr);
-        return parse(expr);
+        A4FNode tree = parse(expr);
+        return tree == null ? null : Canonicalizer.canonicalize(tree);
     }
 
     public static A4FNode parse(String code, String func) {
@@ -26,7 +27,8 @@ public class A4FParser {
             if (!function.label.contains("Default")) { // Skip default function
                 funcName = function.label.replace("this/", ""); // remove prefix
                 if (funcName.equals(func)) {
-                    return parse(function.getBody());
+                    A4FNode tree = parse(function.getBody());
+                    return tree == null ? null : Canonicalizer.canonicalize(tree);
                 }
             }
         }
