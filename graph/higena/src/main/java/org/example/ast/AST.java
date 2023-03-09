@@ -9,7 +9,7 @@ import com.github.gumtreediff.tree.Type;
 import java.util.*;
 
 public class AST implements Tree {
-  List<Tree> children = new ArrayList<>();
+  private List<Tree> children = new ArrayList<>();
   private Tree parent;
   private String label;
 

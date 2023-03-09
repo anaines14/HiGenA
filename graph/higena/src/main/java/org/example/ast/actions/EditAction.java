@@ -8,49 +8,44 @@ import com.github.gumtreediff.tree.Tree;
 
 public class EditAction {
   private final String type;
-  private final Tree node;
-  private Tree parent;
+  private final ActionNode node;
+  private ActionNode parent;
   private int position;
   private String value;
 
   public EditAction(Action action) {
     this.type = action.getClass().getSimpleName();
-    this.node = action.getNode();
+    this.node = new ActionNode(action.getNode());
 
-    if (action instanceof Addition) {
-      setProperties((Addition) action);
+    if (action instanceof TreeAddition treeAddition) {
+      this.parent = new ActionNode(treeAddition.getParent());
+      this.position = treeAddition.getPosition();
     }
-    else if (action instanceof TreeAddition) {
-      setProperties((TreeAddition) action);
+    else if (action instanceof Addition addition) {
+      this.parent = new ActionNode(addition.getParent());
+      this.position = addition.getPosition();
     }
     else if (action instanceof Update) {
-      setProperties((Update) action);
+      this.value = ((Update) action).getValue();
     }
   }
 
-  private void setProperties(Update action) {
-    this.value = action.getValue();
-  }
-
-  public void setProperties(TreeAddition action) {
-    this.parent = action.getParent();
-    this.position = action.getPosition();
-  }
-
-  public void setProperties(Addition action) {
-    this.parent = action.getParent();
-    this.position = action.getPosition();
+  public EditAction() {
+    this.type = "";
+    this.node = null;
+    this.position = -1;
+    this.value = "";
   }
 
   public String getType() {
     return this.type;
   }
 
-  public Tree getNode() {
+  public ActionNode getNode() {
     return node;
   }
 
-  public Tree getParent() {
+  public ActionNode getParent() {
     return parent;
   }
 
