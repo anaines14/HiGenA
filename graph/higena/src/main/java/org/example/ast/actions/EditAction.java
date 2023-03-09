@@ -1,28 +1,31 @@
 package org.example.ast.actions;
 
+import at.unisalzburg.dbresearch.apted.node.Node;
+import at.unisalzburg.dbresearch.apted.node.StringNodeData;
 import com.github.gumtreediff.actions.model.Action;
 import com.github.gumtreediff.actions.model.Addition;
 import com.github.gumtreediff.actions.model.TreeAddition;
 import com.github.gumtreediff.actions.model.Update;
 import com.github.gumtreediff.tree.Tree;
+import org.example.ast.AST;
 
 public class EditAction {
   private final String type;
-  private final ActionNode node;
-  private ActionNode parent;
+  private final AST node;
+  private AST parent;
   private int position;
   private String value;
 
   public EditAction(Action action) {
     this.type = action.getClass().getSimpleName();
-    this.node = new ActionNode(action.getNode());
+    this.node = new AST(action.getNode());
 
     if (action instanceof TreeAddition treeAddition) {
-      this.parent = new ActionNode(treeAddition.getParent());
+      this.parent = (treeAddition.getParent() == null) ? null : new AST(treeAddition.getParent());
       this.position = treeAddition.getPosition();
     }
     else if (action instanceof Addition addition) {
-      this.parent = new ActionNode(addition.getParent());
+      this.parent = (addition.getParent() == null) ? null : new AST(addition.getParent());
       this.position = addition.getPosition();
     }
     else if (action instanceof Update) {
@@ -30,30 +33,26 @@ public class EditAction {
     }
   }
 
-  public EditAction() {
-    this.type = "";
-    this.node = null;
-    this.position = -1;
-    this.value = "";
-  }
+  @Override
+  public String toString() {
+    String ret = "{" + "type='" + type + '\'' +  ", node=";
 
-  public String getType() {
-    return this.type;
-  }
+    switch (type) {
+      case "TreeAddition" -> {
+        ret += node.toTreeString() + ", parent=";
+        ret += (parent != null) ? parent.toString() : "root";
+        ret += ", position=" + position + '}';
+      }
+      case "Addition" -> {
+        ret += node.toString() + ", parent=";
+        ret += (parent != null) ? parent.toString() : "root";
+        ret += ", position=" + position + '}';
+      }
+      case "Update" -> ret += node.toString() + ", value=" + value + '}';
+      default -> ret += node.toString() + '}';
+    }
 
-  public ActionNode getNode() {
-    return node;
-  }
 
-  public ActionNode getParent() {
-    return parent;
-  }
-
-  public int getPosition() {
-    return position;
-  }
-
-  public String getValue() {
-    return value;
+    return ret;
   }
 }

@@ -1,6 +1,9 @@
 package org.example.graph;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.ast.TED;
+import org.example.ast.actions.EditAction;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.*;
 import org.neo4j.driver.types.Node;
@@ -126,27 +129,33 @@ public class Db implements AutoCloseable {
   // CREATE methods
 
   /**
-   * Adds TED property to add derives edges.
+   * Adds TED property to derives edges.
    */
   public void addTEDToEdges() {
     Result res = getEdgesNodePair("Derives");
     TED ted = new TED();
 
     for (Result it = res; it.hasNext(); ) {
+      // Get source and destination nodes of the edge + edge itself
       Value edgeNodes = it.next().get(0);
-      Node src = edgeNodes.get("src").asNode();
-      Node dst = edgeNodes.get("dst").asNode();
+      String srcAST = edgeNodes.get("src").asNode().get("ast").asString();
+      String dstAST = edgeNodes.get("dst").asNode().get("ast").asString();
       Relationship edge = edgeNodes.get("edge").asRelationship();
 
-      int distance = ted.computeEditDistance(src.get("ast").asString(),
-              dst.get("ast").asString());
+      // Compute edit distance
+      int distance = ted.computeEditDistance(srcAST, dstAST);
 
-      runQuery("""
-        MATCH ()-[e:Derives]-()
-        WHERE e.id = '%s'
-        SET e.ted = %d""".formatted(edge.get("id").asString(), distance));
+      // Compute edits between source and destination nodes
+      List<EditAction> edits = ted.getEdits(srcAST, dstAST);
+
+      System.out.println("""
+              MATCH ()-[e:Derives]-()
+              WHERE e.id = '%s'
+              SET e.ted = %d
+              SET e.operations = %s""".formatted(edge.get("id").asString(),
+              distance, edits.toString()));
+
     }
-
   }
 
   /**
@@ -347,7 +356,7 @@ public class Db implements AutoCloseable {
    */
   public void deleteEquivNodes(List<Record> components) {
     // Iterate over all components
-    for (Record component: components) {
+    for (Record component : components) {
       int componentId = component.get("componentId").asInt();
       // Remove equivalent nodes from component
       List<String> queries = getDelEquivNodesQueries(componentId);

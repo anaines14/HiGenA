@@ -9,7 +9,9 @@ import com.github.gumtreediff.actions.EditScript;
 import com.github.gumtreediff.actions.SimplifiedChawatheScriptGenerator;
 import com.github.gumtreediff.actions.model.*;
 import com.github.gumtreediff.matchers.MappingStore;
+import org.example.ast.actions.EditAction;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class TED {
@@ -32,11 +34,19 @@ public class TED {
     return apted.computeEditMapping();
   }
 
-  public EditScript getEdits(String tree1, String tree2) {
-    AptedMatcher matcher = new AptedMatcher(this);
-    MappingStore ms = matcher.match(tree1, tree2);
+  public List<EditAction> getEdits(String tree1, String tree2) {
+    // Get mappings between two trees
+    MappingStore ms = new AptedMatcher(this).match(tree1, tree2);
+    // Calculate edit actions using Chawathe's algorithm
+    EditScript editScript = new SimplifiedChawatheScriptGenerator().computeActions(ms);
+    // Convert edit script actions to EditAction objects
+    List<EditAction> edits = new ArrayList<>();
 
-    return new SimplifiedChawatheScriptGenerator().computeActions(ms);
+    for (Action action: editScript) {
+      edits.add(new EditAction(action));
+    }
+
+    return edits;
   }
 
   public Node<StringNodeData> getTree1() {
