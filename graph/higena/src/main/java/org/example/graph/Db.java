@@ -1,12 +1,10 @@
 package org.example.graph;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.ast.TED;
 import org.example.ast.actions.EditAction;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.*;
-import org.neo4j.driver.types.Node;
+import org.neo4j.driver.summary.SummaryCounters;
 import org.neo4j.driver.types.Relationship;
 
 import java.util.ArrayList;
@@ -16,63 +14,37 @@ public class Db implements AutoCloseable {
   private final Driver driver;
   private final Session session;
   private final String name;
+  private final String challenge;
+  private final String predicate;
 
-  public Db(String uri, String user, String password, String database) {
-    this.name = database;
+  public Db(String uri, String user, String password, String databaseName, String challenge, String predicate) {
+    this.name = databaseName;
+    this.challenge = challenge;
+    this.predicate = predicate;
     driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
-    session = driver.session(SessionConfig.forDatabase(database));
+    session = driver.session(SessionConfig.forDatabase(name));
   }
 
   /**
-   *
+   * Performs a sequence of actions to prepare the database.
+   * 1. Cleans the database by deleting all nodes and edges.
+   * 2. Adds unique constraints to avoid duplicate IDs.
+   * 3. Adds nodes to the database.
+   * 4. Adds edges to the database.
+   * 5. Deletes the derivationOf property from the nodes.
+   * 6. Adds the correct and incorrect labels to the nodes.
+   * 7. Aggregates nodes with the same property.
+   * 8. Adds the TED to the edges.
    */
   public void setup() {
-    deleteEdges("derives");
     deleteAllNodes();
     addUniqueConstraints();
-    addNodes("9jPK8KBWzjFmBx4Hb", "prop1");
-    addEdges();
+    addSubmissionNodes();
+    addDerivationEdges();
     deleteProperty("derivationOf");
-    addCorrectLabel();
-    addIncorrectLabel();
+    addSubmissionLabels();
     aggregateEquivNodes("ast");
-  }
-
-  /**
-   * Runs a query and returns the result.
-   *
-   * @param query Query to run
-   * @return Result of the query
-   */
-  public Result runQuery(String query) {
-    return session.run(new Query(query));
-  }
-
-  /**
-   * Close the driver and session.
-   *
-   * @throws RuntimeException
-   */
-  public void close() throws RuntimeException {
-    driver.close();
-  }
-
-  /**
-   * Verifies that the connection to the database is working.
-   */
-  public void verifyConnection() {
-    driver.verifyConnectivity();
-  }
-
-  /**
-   * Checks if projection exists.
-   *
-   * @param name Name of the projection
-   * @return True if projection exists, false otherwise
-   */
-  public boolean hasProjection(String name) {
-    Result res = runQuery("CALL gds.graph.exists('" + name + "') YIELD exists");
-    return res.single().get("exists").asBoolean();
+    addTEDToEdges();
   }
 
   // Algorithms
@@ -86,118 +58,87 @@ public class Db implements AutoCloseable {
    * @param property Name of the property to aggregate by
    */
   public void aggregateEquivNodes(String property) {
-    String projectionName = "equalGraph";
-    String relName = "EQUAL";
+    String projectionName = "equalGraph", relName = "EQUAL", componentProperty = "componentId";
     // Create edges between nodes with the same property
     runQuery("""
             MATCH (n:Submission)
             MATCH (s:Submission)
             WHERE n.id <> s.id AND n.%s = s.%s
             MERGE (n)-[:%s]-(s)""".formatted(property, property, relName));
-    // Check if graph already exists
+    // Check if graph already exists and create it if it doesn't
     if (!hasProjection(projectionName)) {
-      // Create graph projection
       addProjection(projectionName, "Submission", relName);
     }
     // Run Weakly Connected Components algorithm
-    runConnectedComponents(projectionName, "componentId");
-    // Drop graph projection
+    runConnectedComponents(projectionName, componentProperty);
     deleteProjection(projectionName);
-    // Drop edges
     deleteEdges(relName);
     // Get components
-    List<Record> components = getDistinctPropertyValues("componentId").list();
-    // Add popularity property
+    List<Record> components = getDistinctPropertyValues(componentProperty).list();
     addPopularity(components);
     // Aggregate nodes: delete equivalent nodes except for one
     deleteEquivNodes(components);
   }
 
-  /**
-   * Runs the weakly connected components algorithm on the graph projection
-   * and writes the component id of each node to the indicated property.
-   *
-   * @param graphName     Name of the graph projection
-   * @param writeProperty Name of the property to write the component id to
-   */
-  public void runConnectedComponents(String graphName, String writeProperty) {
-    runQuery("CALL gds.wcc.write('" + graphName + "', {writeProperty: '" +
-            writeProperty + "'}) " + "YIELD " +
-            "nodePropertiesWritten, componentCount");
-  }
-
-  // CREATE methods
 
   /**
    * Adds TED property to derives edges.
    */
   public void addTEDToEdges() {
-    Result res = getEdgesNodePair("Derives");
+    // Get all edges and its nodes
+    Result res = runQuery("""
+            MATCH (src:Submission)-[e:Derives]->(dst:Submission)
+            RETURN src.ast AS src, dst.ast AS dst, e.id AS edgeID""");
     TED ted = new TED();
 
     for (Result it = res; it.hasNext(); ) {
       // Get source and destination nodes of the edge + edge itself
-      Value edgeNodes = it.next().get(0);
-      String srcAST = edgeNodes.get("src").asNode().get("ast").asString();
-      String dstAST = edgeNodes.get("dst").asNode().get("ast").asString();
-      Relationship edge = edgeNodes.get("edge").asRelationship();
+      Record rec = it.next();
+      String srcAST = rec.get("src").asString(),
+              dstAST = rec.get("dst").asString(),
+              edge = rec.get("edgeID").asString();
 
-      // Compute edit distance
+      // Compute edit distance and edits
       int distance = ted.computeEditDistance(srcAST, dstAST);
-
-      // Compute edits between source and destination nodes
       List<EditAction> edits = ted.getEdits(srcAST, dstAST);
-
-      String query = """
+      // Update edge
+      runQuery("""
               MATCH ()-[e:Derives]-()
               WHERE e.id = '%s'
               SET e.ted = %d
-              SET e.operations = %s""".formatted(edge.get("id").asString(),
-              distance, edits);
-
-        runQuery(query);
-
+              SET e.operations = %s""".formatted(edge,
+              distance, edits));
     }
   }
 
-  /**
-   * Creates a new database with the given name.
-   *
-   * @param name Name of the database
-   */
-  public void addDb(String name) {
-    runQuery("CREATE DATABASE " + name + " IF NOT EXISTS");
-  }
+  // ADD methods
 
   /**
    * Adds constraint to ensure that each Submission node has a unique id
-   * property and each edge Derives has a unique id property.
+   * property.
    */
   public void addUniqueConstraints() {
-    runQuery("""
-            CREATE CONSTRAINT UniqueSubmission
+    String query = """
+            CREATE CONSTRAINT %s
             IF NOT EXISTS
-            FOR (s:Submission)
-            REQUIRE s.id IS UNIQUE""");
-    System.out.println("Created unique node.id constraint.");
+            FOR %s
+            REQUIRE %s.id IS UNIQUE
+            """;
 
-    runQuery("""
-            CREATE CONSTRAINT UniqueDerives
-            IF NOT EXISTS
-            FOR (d:Derives)
-            REQUIRE d.id IS UNIQUE""");
-    System.out.println("Created unique edge.id constraint.");
+    Result res = runQuery(String.format(query, "UniqueSubmission", "(s:Submission)", "s"));
+    System.out.println("Added " + res.consume().counters().constraintsAdded() + " unique node.id constraint(s).");
+
+    // TODO: Add when supported by Neo4j
+    //res = runQuery(String.format(query, "UniqueDerives", "()-[r:Derives]-()", "r"));
+    //System.out.println("Added " + res.consume().counters().constraintsAdded() + " unique edge.id constraint(s).");
   }
 
   /**
    * Loads nodes from a csv file with Alloy4Fun submissions into the database.
-   *
-   * @param challenge Challenge/Folder name (e.g. 9jPK8KBWzjFmBx4Hb)
-   * @param pred      Predicate name/File name (e.g. prop1) without extension
    */
-  public void addNodes(String challenge, String pred) {
-    Result res = runQuery("LOAD CSV WITH HEADERS FROM 'file:///" + challenge +
-            "/" + pred + ".csv' AS row\n" +
+  public void addSubmissionNodes() {
+    Result res = runQuery("LOAD CSV WITH HEADERS FROM 'file:///" + this.challenge +
+            "/" + this.predicate + ".csv' AS row\n" +
             "MERGE (s:Submission {\n" +
             "\tid: row._id,\n" +
             "\tcmd_n: row.cmd_n,\n" +
@@ -216,7 +157,7 @@ public class Db implements AutoCloseable {
    * Creates undirected Derives edges between nodes where the derivationOf
    * property of the source node matches the id property of the target node.
    */
-  public void addEdges() {
+  public void addDerivationEdges() {
     Result res = runQuery("""
             MATCH (s:Submission)
             MATCH (d:Submission)
@@ -227,35 +168,36 @@ public class Db implements AutoCloseable {
             " Derives edges.");
   }
 
-  /**
-   * Adds a Correct label to all nodes with a sat property of 1.
-   */
-  public void addCorrectLabel() {
-    Result res = runQuery("""
-            MATCH (s:Submission {sat: 0})
-            SET s:Correct
-            RETURN count(s)""");
-    System.out.println("Set " + res.consume().counters().labelsAdded() + " " +
-            "Correct labels.");
-  }
 
   /**
-   * Adds an Incorrect label to all nodes with a sat property of 0.
+   * Adds Correct and Incorrect labels to nodes based on the sat property
+   * (0 = Correct, 1 = Incorrect).
    */
-  public void addIncorrectLabel() {
-    Result res = runQuery("""
-            MATCH (s:Submission {sat: 1})
-            SET s:Incorrect
-            RETURN count(s)""");
+  public void addSubmissionLabels() {
+    String query = """
+            MATCH (s:Submission {sat: %d})
+            SET s:%s
+            RETURN count(s)""";
+
+    Result res = runQuery(String.format(query, 0, "Correct"));
+    System.out.println("Set " + res.consume().counters().labelsAdded() + " " +
+            "Correct labels.");
+
+    res = runQuery(String.format(query, 1, "Incorrect"));
     System.out.println("Set " + res.consume().counters().labelsAdded() + " " +
             "Incorrect labels.");
   }
 
+  /**
+   * Adds a popularity property for each node based on the number of nodes in the
+   * same component.
+   *
+   * @param components List of existing components
+   */
   public void addPopularity(List<Record> components) {
-    // Iterate over components
     for (Record component : components) {
       int componentId = component.get("componentId").asInt();
-      // Get popularity of component
+      // Set popularity for each component
       runQuery("""
                MATCH (n:Submission {componentId: %d})
                WITH count(n) AS popularity
@@ -287,20 +229,20 @@ public class Db implements AutoCloseable {
    * Deletes all nodes and edges from the database.
    */
   public void deleteAllNodes() {
-    Result res = runQuery("MATCH (n) DETACH DELETE n RETURN count(n)");
-    System.out.println("Delete all nodes (" + res.consume().counters()
-            .nodesDeleted() + " nodes).");
+    Result res = runQuery("MATCH (n) DETACH DELETE n");
+    SummaryCounters counters = res.consume().counters();
+    System.out.println("Delete all nodes (" + counters.nodesDeleted() +
+            " nodes and " + counters.relationshipsDeleted() + " edges).");
   }
 
   /**
-   * Deletes property from all nodes.
+   * Deletes a property from all nodes.
    *
    * @param property Name of the property to delete
    */
   public void deleteProperty(String property) {
     Result res = runQuery("MATCH (s:Submission)\n" +
-            "REMOVE s." + property + "\n" +
-            "RETURN count(s)");
+            "REMOVE s." + property);
     System.out.println("Removed " + res.consume().counters().propertiesSet() +
             " " + property + " properties.");
   }
@@ -315,7 +257,7 @@ public class Db implements AutoCloseable {
   }
 
   /**
-   * Deºetes all edges of the given relationship type.
+   * Deletes all edges of the given relationship type.
    *
    * @param relationship Relationship type of the edges to delete
    */
@@ -324,15 +266,6 @@ public class Db implements AutoCloseable {
             "DELETE r\n" +
             "RETURN count(r)");
     System.out.println("Deleted " + res.consume().counters().relationshipsDeleted() + " edges.");
-  }
-
-  /**
-   * Deletes the database with the given name.
-   *
-   * @param name Name of the database to delete
-   */
-  public void deleteDb(String name) {
-    runQuery("DROP DATABASE " + name + " IF EXISTS");
   }
 
   /**
@@ -355,12 +288,13 @@ public class Db implements AutoCloseable {
    * For each component the first node is kept and all other nodes are deleted.
    * Derivations of deleted nodes are updated to point to the first node of the
    * component.
+   *
+   * @param components List of existing components
    */
   public void deleteEquivNodes(List<Record> components) {
-    // Iterate over all components
     for (Record component : components) {
       int componentId = component.get("componentId").asInt();
-      // Remove equivalent nodes from component
+      // Remove equivalent nodes from each component
       List<String> queries = getDelEquivNodesQueries(componentId);
       for (String query : queries) {
         runQuery(query);
@@ -375,32 +309,6 @@ public class Db implements AutoCloseable {
   // GET methods
 
   /**
-   * Gets edges with the given relationship type and returns them in a list
-   * with the source node, the edge, and the target node. Example: [src,edge,dst]
-   *
-   * @param relation Relationship type of the edges
-   * @return Result object containing lists of the source node, the edge, and the target node
-   */
-  public Result getEdgesNodePair(String relation) {
-    return runQuery("""
-            MATCH (s:Submission)-[e:%s]-(d:Submission)
-            RETURN {src: s, edge: e, dst: d}
-            """.formatted(relation));
-  }
-
-  /**
-   * Returns all nodes with the given property value.
-   *
-   * @param property Name of the property
-   * @param value    Value of the property
-   * @return Result object containing all nodes with the given property value
-   */
-  public Result getNodesWithPropertyValue(String property, int value) {
-    return runQuery("MATCH (s:Submission)\n" +
-            "WHERE s." + property + " = " + value + " RETURN s");
-  }
-
-  /**
    * Returns all distinct values of the given property.
    *
    * @param property Name of the property
@@ -411,20 +319,13 @@ public class Db implements AutoCloseable {
             "RETURN DISTINCT s." + property + " AS " + property);
   }
 
-  /**
-   * Returns the name of the database.
-   *
-   * @return Name of the database
-   */
-  public String getName() {
-    return name;
-  }
 
   /**
    * Auxiliary method to create queries for deleting equivalent nodes.
    *
-   * @param componentId Id of the component
-   * @return List of queries
+   * @param componentId ID of the component
+   * @return List of queries to delete equivalent nodes where each derivation of
+   * a deleted node is updated to point to the first node of the component
    */
   private List<String> getDelEquivNodesQueries(int componentId) {
     List<String> queries = new ArrayList<>();
@@ -434,31 +335,23 @@ public class Db implements AutoCloseable {
             WITH collect(DISTINCT n) AS compNodes
             WITH compNodes, compNodes[0] AS firstN
             UNWIND compNodes as cN
-            """.formatted(componentId);
+            """.formatted(componentId),
+            subquery = """
+                    CALL {
+                        WITH cN, firstN
+                        MATCH (%s)-[r:Derives]->(%s)
+                        WHERE cN <> firstN
+                        MERGE (%s)-[p:Derives]->(%s)
+                        DELETE r
+                        SET p.id = randomUUID()
+                    }
+                    """;
+
     // Swap derivations of component nodes to first node
     // example: (s)-[:Derives]->(cN) -> (s)-[:Derives]->(firstN)
-    queries.add(mainQuery + """
-            CALL {
-                WITH cN, firstN
-                MATCH (s:Submission)-[r:Derives]->(cN)
-                WHERE cN <> firstN
-                MERGE (s)-[p:Derives]->(firstN)
-                DELETE r
-                SET p.id = randomUUID()
-            }
-            """
-    );
-    queries.add(mainQuery + """
-            CALL {
-                WITH cN, firstN
-                MATCH (cN)-[v:Derives]->(o:Submission)
-                WHERE cN <> firstN
-                MERGE (firstN)-[b:Derives]->(o)
-                DELETE v
-                SET b.id = randomUUID()
-            }
-            """
-    );
+    queries.add(mainQuery + subquery.formatted("o:Submission", "cN", "o", "firstN"));
+    queries.add(mainQuery + subquery.formatted("cN", "o:Submission", "firstN", "o"));
+
     // Delete all component nodes except first node
     queries.add(mainQuery + """
             CALL {
@@ -471,4 +364,57 @@ public class Db implements AutoCloseable {
     return queries;
   }
 
+  // RUN methods
+
+  /**
+   * Runs a query and returns the result.
+   *
+   * @param query Query to run
+   * @return Result of the query
+   */
+  public Result runQuery(String query) {
+    return session.run(new Query(query));
+  }
+
+  /**
+   * Runs the weakly connected components algorithm on the graph projection
+   * and writes the component id of each node to the indicated property.
+   *
+   * @param graphName     Name of the graph projection
+   * @param writeProperty Name of the property to write the component id to
+   */
+  public void runConnectedComponents(String graphName, String writeProperty) {
+    runQuery("CALL gds.wcc.write('" + graphName + "', {writeProperty: '" +
+            writeProperty + "'}) " + "YIELD " +
+            "nodePropertiesWritten, componentCount");
+  }
+
+  // CHECK methods
+
+  /**
+   * Verifies that the connection to the database is working.
+   */
+  public void verifyConnection() {
+    driver.verifyConnectivity();
+  }
+
+  /**
+   * Checks if projection exists.
+   *
+   * @param name Name of the projection
+   * @return True if projection exists, false otherwise
+   */
+  public boolean hasProjection(String name) {
+    Result res = runQuery("CALL gds.graph.exists('" + name + "') YIELD exists");
+    return res.single().get("exists").asBoolean();
+  }
+
+  // Other
+
+  /**
+   * Close the driver and session.
+   */
+  public void close() throws RuntimeException {
+    driver.close();
+  }
 }
