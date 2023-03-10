@@ -1,15 +1,17 @@
-package org.example.graph;
+package org.higena.graph;
 
-import org.example.ast.TED;
-import org.example.ast.actions.EditAction;
+import org.higena.ast.TED;
+import org.higena.ast.actions.TreeDiff;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.*;
 import org.neo4j.driver.summary.SummaryCounters;
-import org.neo4j.driver.types.Relationship;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Class that handles the database connection and operations.
+ */
 public class Db implements AutoCloseable {
   private final Driver driver;
   private final Session session;
@@ -44,7 +46,7 @@ public class Db implements AutoCloseable {
     deleteProperty("derivationOf");
     addSubmissionLabels();
     aggregateEquivNodes("ast");
-    addTEDToEdges();
+    addTreeDiffToEdges();
   }
 
   // Algorithms
@@ -84,7 +86,7 @@ public class Db implements AutoCloseable {
   /**
    * Adds TED property to derives edges.
    */
-  public void addTEDToEdges() {
+  public void addTreeDiffToEdges() {
     // Get all edges and its nodes
     Result res = runQuery("""
             MATCH (src:Submission)-[e:Derives]->(dst:Submission)
@@ -98,16 +100,15 @@ public class Db implements AutoCloseable {
               dstAST = rec.get("dst").asString(),
               edge = rec.get("edgeID").asString();
 
-      // Compute edit distance and edits
-      int distance = ted.computeEditDistance(srcAST, dstAST);
-      List<EditAction> edits = ted.getEdits(srcAST, dstAST);
+      // Compute tree differences (edit distance and edits)
+      TreeDiff diff = ted.computeTreeDiff(srcAST, dstAST);
       // Update edge
       runQuery("""
               MATCH ()-[e:Derives]-()
               WHERE e.id = '%s'
               SET e.ted = %d
               SET e.operations = %s""".formatted(edge,
-              distance, edits));
+              diff.getTed(), diff.getActions()));
     }
   }
 

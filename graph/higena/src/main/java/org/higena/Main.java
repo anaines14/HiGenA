@@ -1,6 +1,6 @@
-package org.example;
+package org.higena;
 
-import org.example.graph.Graph;
+import org.higena.graph.Graph;
 
 public class Main {
   public static void main(String[] args) {

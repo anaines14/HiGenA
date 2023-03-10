@@ -1,14 +1,18 @@
-package org.example.ast;
+package org.higena.ast;
 
+import at.unisalzburg.dbresearch.apted.node.Node;
+import at.unisalzburg.dbresearch.apted.node.StringNodeData;
 import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.tree.Tree;
 import com.github.gumtreediff.tree.TreeUtils;
-import org.example.ast.AST;
-import org.example.ast.TED;
 
 import java.util.List;
 
+/**
+ * This class matches two trees using the edit mapping computed by the TED algorithm.
+ * The mapping is then used to generate an edit script using Chawathe's algorithm.
+ */
 public class AptedMatcher implements Matcher {
   private final TED ted;
 
@@ -16,10 +20,9 @@ public class AptedMatcher implements Matcher {
     this.ted = ted;
   }
 
-  public MappingStore match(String tree1, String tree2) {
-    ted.computeEditDistance(tree1, tree2); // must run before
-    AST src = new AST(ted.getTree1());
-    AST dst = new AST(ted.getTree2());
+  public MappingStore match(Node<StringNodeData> t1, Node<StringNodeData> t2) {
+    AST src = new AST(t1);
+    AST dst = new AST(t2);
 
     return this.match(src, dst, new MappingStore(src, dst));
   }

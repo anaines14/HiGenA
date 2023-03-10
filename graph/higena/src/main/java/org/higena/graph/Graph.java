@@ -1,8 +1,10 @@
-package org.example.graph;
+package org.higena.graph;
 
 import io.github.cdimascio.dotenv.Dotenv;
-import org.neo4j.driver.Result;
 
+/**
+ * Wrapper class for the database (Db class).
+ */
 public class Graph {
   private final String uri, user, password, databaseName, challenge, predicate;
 

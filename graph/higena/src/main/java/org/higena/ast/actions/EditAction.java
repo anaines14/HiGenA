@@ -1,10 +1,6 @@
-package org.example.ast.actions;
+package org.higena.ast.actions;
 
-import at.unisalzburg.dbresearch.apted.node.Node;
-import at.unisalzburg.dbresearch.apted.node.StringNodeData;
 import com.github.gumtreediff.actions.model.*;
-import com.github.gumtreediff.tree.Tree;
-import org.example.ast.AST;
 
 public class EditAction {
   private final String type;

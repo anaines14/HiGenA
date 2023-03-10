@@ -1,4 +1,4 @@
-package org.example.ast;
+package org.higena.ast;
 
 import at.unisalzburg.dbresearch.apted.node.Node;
 import at.unisalzburg.dbresearch.apted.node.StringNodeData;

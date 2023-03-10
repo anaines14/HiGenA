@@ -1,34 +1,47 @@
-package org.example.ast;
+package org.higena.ast;
 
 import at.unisalzburg.dbresearch.apted.costmodel.StringUnitCostModel;
 import at.unisalzburg.dbresearch.apted.distance.APTED;
 import at.unisalzburg.dbresearch.apted.node.Node;
 import at.unisalzburg.dbresearch.apted.node.StringNodeData;
 import at.unisalzburg.dbresearch.apted.parser.BracketStringInputParser;
-import com.github.gumtreediff.actions.ChawatheScriptGenerator;
 import com.github.gumtreediff.actions.EditScript;
-import com.github.gumtreediff.actions.InsertDeleteChawatheScriptGenerator;
 import com.github.gumtreediff.actions.SimplifiedChawatheScriptGenerator;
-import com.github.gumtreediff.actions.model.*;
+import com.github.gumtreediff.actions.model.Action;
 import com.github.gumtreediff.matchers.MappingStore;
-import org.example.ast.actions.EditAction;
-
-import java.util.ArrayList;
+import org.higena.ast.actions.EditAction;
+import org.higena.ast.actions.TreeDiff;
 import java.util.List;
 
+/**
+ * This class contains auxiliary methods for computing the TED between two trees
+ * and the edit actions that transform one tree into the other.
+ */
 public class TED {
   private final BracketStringInputParser parser;
   private final APTED<StringUnitCostModel, StringNodeData> apted;
-  private Node<StringNodeData> t1, t2;
 
   public TED() {
     parser = new BracketStringInputParser();
     apted = new APTED<>(new StringUnitCostModel());
   }
 
-  public int computeEditDistance(String ast1, String ast2) {
-    t1 = parser.fromString(ast1);
-    t2 = parser.fromString(ast2);
+  public TreeDiff computeTreeDiff(String tree1, String tree2) {
+    Node<StringNodeData> t1 = parse(tree1), t2 = parse(tree2);
+    // Compute TED (must run before computing edits)
+    TreeDiff td = new TreeDiff(computeEditDistance(t1, t2));
+    // Get edit actions
+    MappingStore ms = new AptedMatcher(this).match(t1, t2);
+    // Calculate edit actions using Chawathe's algorithm
+    EditScript editScript = new SimplifiedChawatheScriptGenerator().computeActions(ms);
+    // Convert edit script actions to EditAction objects
+    for (Action action: editScript) {
+      td.addAction(new EditAction(action));
+    }
+    return td;
+  }
+
+  public int computeEditDistance(Node<StringNodeData> t1, Node<StringNodeData> t2) {
     return (int) apted.computeEditDistance(t1, t2);
   }
 
@@ -36,26 +49,8 @@ public class TED {
     return apted.computeEditMapping();
   }
 
-  public List<EditAction> getEdits(String tree1, String tree2) {
-    // Get mappings between two trees
-    MappingStore ms = new AptedMatcher(this).match(tree1, tree2);
-    // Calculate edit actions using Chawathe's algorithm
-    EditScript editScript = new SimplifiedChawatheScriptGenerator().computeActions(ms);
-    // Convert edit script actions to EditAction objects
-    List<EditAction> edits = new ArrayList<>();
-
-    for (Action action: editScript) {
-      edits.add(new EditAction(action));
-    }
-
-    return edits;
+  private Node<StringNodeData> parse(String tree) {
+    return parser.fromString(tree);
   }
 
-  public Node<StringNodeData> getTree1() {
-    return t1;
-  }
-
-  public Node<StringNodeData> getTree2() {
-    return t2;
-  }
 }

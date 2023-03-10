@@ -1,4 +1,4 @@
-package org.example.ast.actions;
+package org.higena.ast.actions;
 
 import com.github.gumtreediff.tree.Tree;
 
