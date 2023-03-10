@@ -148,12 +148,14 @@ public class Db implements AutoCloseable {
       // Compute edits between source and destination nodes
       List<EditAction> edits = ted.getEdits(srcAST, dstAST);
 
-      System.out.println("""
+      String query = """
               MATCH ()-[e:Derives]-()
               WHERE e.id = '%s'
               SET e.ted = %d
               SET e.operations = %s""".formatted(edge.get("id").asString(),
-              distance, edits.toString()));
+              distance, edits);
+
+        runQuery(query);
 
     }
   }
