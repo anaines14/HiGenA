@@ -1,6 +1,10 @@
 package org.higena.graph;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import org.neo4j.driver.Record;
+import org.neo4j.driver.Result;
+import org.neo4j.driver.types.Path;
+import org.neo4j.driver.types.Relationship;
 
 /**
  * Wrapper class for the database (Db class).
@@ -31,6 +35,14 @@ public class Graph {
       System.out.println("Starting DB setup...");
       db.setup();
       System.out.println("Success: Finished setup.\n");
+    }
+  }
+
+  public void getHint() {
+    try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
+      Result res = db.dijkstra("9jPK8KBWzjFmBx4Hb");
+      Record rec = res.single();
+      Path path = rec.get("path").asPath();
     }
   }
 }

@@ -7,6 +7,7 @@ import org.neo4j.driver.*;
 import org.neo4j.driver.summary.SummaryCounters;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -51,6 +52,35 @@ public class Db implements AutoCloseable {
   }
 
   // Algorithms
+
+  public Result dijkstra(String sourceId) {
+    // Create projection if it doesn't exist
+    if (!hasProjection("dijkstra"))
+      addProjection("dijkstra", "Submission", "DERIVES", Arrays.asList("id", "ted", "operations", "popularity"));
+    // Run Dijkstra's algorithm
+    Result res = runQuery("""
+            MATCH (source:Incorrect {id: "%s"})
+            MATCH (target:Correct)
+            CALL gds.shortestPath.dijkstra.stream('dijkstra', {
+                sourceNode: source,
+                targetNode: target,
+                relationshipWeightProperty: 'ted'
+            })
+            YIELD index, sourceNode, targetNode, totalCost, nodeIds, costs, path
+            RETURN
+                index,
+                gds.util.asNode(sourceNode).id AS sourceNodeId,
+                gds.util.asNode(targetNode).id AS targetNodeId,
+                totalCost,
+                [nodeId IN nodeIds | gds.util.asNode(nodeId).id] AS nodeIds,
+                costs,
+                path
+            ORDER BY totalCost
+            LIMIT 1
+            """.formatted(sourceId));
+
+    return res;
+  }
 
   /**
    * Creates edges between nodes with the same property. Then, runs the
@@ -237,6 +267,20 @@ public class Db implements AutoCloseable {
   public void addProjection(String name, String label, String relationship) {
     runQuery("CALL gds.graph.project('%s', '%s', '%s')"
             .formatted(name, label, relationship));
+  }
+
+  /**
+   * Creates a graph projection with the given name, label, and relationship.
+   * Graph projections are used to run neo4j graph data science algorithms.
+   *
+   * @param name         Name of the graph projection
+   * @param label        Label of the nodes
+   * @param relationship Relationship type of the edges
+   * @param relProperties  Properties of the relationships
+   */
+  public void addProjection(String name, String label, String relationship, List<String> relProperties) {
+    runQuery("CALL gds.graph.project('%s', '%s', '%s', {relationshipProperties: %s})"
+            .formatted(name, label, relationship, relProperties));
   }
 
   // DELETE methods
