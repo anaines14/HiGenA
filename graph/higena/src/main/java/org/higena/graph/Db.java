@@ -45,6 +45,7 @@ public class Db implements AutoCloseable {
     addDerivationEdges();
     deleteProperty("derivationOf");
     addSubmissionLabels();
+    addEdgesPopularity();
     aggregateEquivNodes("ast");
     addTreeDiffToEdges();
   }
@@ -167,6 +168,20 @@ public class Db implements AutoCloseable {
             RETURN count(r)""");
     System.out.println("Created " + res.consume().counters().relationshipsCreated() +
             " Derives edges.");
+  }
+
+  public void addEdgesPopularity() {
+    runQuery("""
+            MATCH (n:Submission)-[r:Derives]->(s:Submission)
+            CALL {
+                WITH n, r, s
+                MATCH (p:Submission)-[e:Derives]->(t:Submission)
+                WHERE n.ast = p.ast AND s.ast = t.ast AND r.id <> e.id 
+                RETURN count(e) AS popularity
+            }
+            SET r.popularity = popularity + 1""");
+
+    System.out.println("Added popularity property to edges.");
   }
 
 
@@ -343,8 +358,9 @@ public class Db implements AutoCloseable {
                         MATCH (%s)-[r:Derives]->(%s)
                         WHERE cN <> firstN
                         MERGE (%s)-[p:Derives]->(%s)
-                        DELETE r
                         SET p.id = randomUUID()
+                        SET p.popularity = r.popularity
+                        DELETE r
                     }
                     """;
 
