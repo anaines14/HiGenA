@@ -5,9 +5,10 @@ import org.higena.ast.actions.TreeDiff;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.*;
 import org.neo4j.driver.summary.SummaryCounters;
+import org.neo4j.driver.types.Node;
+import org.neo4j.driver.types.Relationship;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -56,7 +57,7 @@ public class Db implements AutoCloseable {
   public Result dijkstra(String sourceId) {
     // Create projection if it doesn't exist
     if (!hasProjection("dijkstra"))
-      addProjection("dijkstra", "Submission", "DERIVES", Arrays.asList("id", "ted", "operations", "popularity"));
+      addProjection("dijkstra", "Submission", "Derives", "ted");
     // Run Dijkstra's algorithm
     Result res = runQuery("""
             MATCH (source:Incorrect {id: "%s"})
@@ -74,7 +75,7 @@ public class Db implements AutoCloseable {
                 totalCost,
                 [nodeId IN nodeIds | gds.util.asNode(nodeId).id] AS nodeIds,
                 costs,
-                path
+                nodes(path) AS path
             ORDER BY totalCost
             LIMIT 1
             """.formatted(sourceId));
@@ -127,9 +128,7 @@ public class Db implements AutoCloseable {
     for (Result it = res; it.hasNext(); ) {
       // Get source and destination nodes of the edge + edge itself
       Record rec = it.next();
-      String srcAST = rec.get("src").asString(),
-              dstAST = rec.get("dst").asString(),
-              edge = rec.get("edgeID").asString();
+      String srcAST = rec.get("src").asString(), dstAST = rec.get("dst").asString(), edge = rec.get("edgeID").asString();
 
       // Compute tree differences (edit distance and edits)
       TreeDiff diff = ted.computeTreeDiff(srcAST, dstAST);
@@ -138,8 +137,7 @@ public class Db implements AutoCloseable {
               MATCH ()-[e:Derives]-()
               WHERE e.id = '%s'
               SET e.ted = %d
-              SET e.operations = %s""".formatted(edge,
-              diff.getTed(), diff.getActions()));
+              SET e.operations = %s""".formatted(edge, diff.getTed(), diff.getActions()));
     }
   }
 
@@ -169,18 +167,7 @@ public class Db implements AutoCloseable {
    * Loads nodes from a csv file with Alloy4Fun submissions into the database.
    */
   public void addSubmissionNodes() {
-    Result res = runQuery("LOAD CSV WITH HEADERS FROM 'file:///" + this.challenge +
-            "/" + this.predicate + ".csv' AS row\n" +
-            "MERGE (s:Submission {\n" +
-            "\tid: row._id,\n" +
-            "\tcmd_n: row.cmd_n,\n" +
-            "\tcode: row.code,\n" +
-            "\tderivationOf: row.derivationOf,\n" +
-            "\tsat: toInteger(row.sat),\n" +
-            "\texpr: row.expr,\n" +
-            "\tast: row.ast\n" +
-            "})\n" +
-            "RETURN count(s)\n");
+    Result res = runQuery("LOAD CSV WITH HEADERS FROM 'file:///" + this.challenge + "/" + this.predicate + ".csv' AS row\n" + "MERGE (s:Submission {\n" + "\tid: row._id,\n" + "\tcmd_n: row.cmd_n,\n" + "\tcode: row.code,\n" + "\tderivationOf: row.derivationOf,\n" + "\tsat: toInteger(row.sat),\n" + "\texpr: row.expr,\n" + "\tast: row.ast\n" + "})\n" + "RETURN count(s)\n");
 
     System.out.println("Created " + res.consume().counters().nodesCreated() + " nodes.");
   }
@@ -196,8 +183,7 @@ public class Db implements AutoCloseable {
             WHERE s.id = d.derivationOf AND s.id <> d.id
             MERGE (s)-[r:Derives {id: randomUUID()}]->(d)
             RETURN count(r)""");
-    System.out.println("Created " + res.consume().counters().relationshipsCreated() +
-            " Derives edges.");
+    System.out.println("Created " + res.consume().counters().relationshipsCreated() + " Derives edges.");
   }
 
   public void addEdgesPopularity() {
@@ -226,12 +212,10 @@ public class Db implements AutoCloseable {
             RETURN count(s)""";
 
     Result res = runQuery(String.format(query, 0, "Correct"));
-    System.out.println("Set " + res.consume().counters().labelsAdded() + " " +
-            "Correct labels.");
+    System.out.println("Set " + res.consume().counters().labelsAdded() + " " + "Correct labels.");
 
     res = runQuery(String.format(query, 1, "Incorrect"));
-    System.out.println("Set " + res.consume().counters().labelsAdded() + " " +
-            "Incorrect labels.");
+    System.out.println("Set " + res.consume().counters().labelsAdded() + " " + "Incorrect labels.");
   }
 
   /**
@@ -265,22 +249,21 @@ public class Db implements AutoCloseable {
    * @param relationship Relationship type of the edges
    */
   public void addProjection(String name, String label, String relationship) {
-    runQuery("CALL gds.graph.project('%s', '%s', '%s')"
-            .formatted(name, label, relationship));
+    runQuery("CALL gds.graph.project('%s', '%s', '%s')".formatted(name, label, relationship));
   }
 
   /**
    * Creates a graph projection with the given name, label, and relationship.
    * Graph projections are used to run neo4j graph data science algorithms.
    *
-   * @param name         Name of the graph projection
-   * @param label        Label of the nodes
-   * @param relationship Relationship type of the edges
-   * @param relProperties  Properties of the relationships
+   * @param name          Name of the graph projection
+   * @param label         Label of the nodes
+   * @param relationship  Relationship type of the edges
+   * @param relProperty   Property of the relationship
    */
-  public void addProjection(String name, String label, String relationship, List<String> relProperties) {
-    runQuery("CALL gds.graph.project('%s', '%s', '%s', {relationshipProperties: %s})"
-            .formatted(name, label, relationship, relProperties));
+  public void addProjection(String name, String label, String relationship, String relProperty) {
+    runQuery(("CALL gds.graph.project('%s', '%s', '%s', " +
+            "{relationshipProperties: '%s'})").formatted(name, label, relationship, relProperty));
   }
 
   // DELETE methods
@@ -291,8 +274,7 @@ public class Db implements AutoCloseable {
   public void deleteAllNodes() {
     Result res = runQuery("MATCH (n) DETACH DELETE n");
     SummaryCounters counters = res.consume().counters();
-    System.out.println("Delete all nodes (" + counters.nodesDeleted() +
-            " nodes and " + counters.relationshipsDeleted() + " edges).");
+    System.out.println("Delete all nodes (" + counters.nodesDeleted() + " nodes and " + counters.relationshipsDeleted() + " edges).");
   }
 
   /**
@@ -301,10 +283,8 @@ public class Db implements AutoCloseable {
    * @param property Name of the property to delete
    */
   public void deleteProperty(String property) {
-    Result res = runQuery("MATCH (s:Submission)\n" +
-            "REMOVE s." + property);
-    System.out.println("Removed " + res.consume().counters().propertiesSet() +
-            " " + property + " properties.");
+    Result res = runQuery("MATCH (s:Submission)\n" + "REMOVE s." + property);
+    System.out.println("Removed " + res.consume().counters().propertiesSet() + " " + property + " properties.");
   }
 
   /**
@@ -322,9 +302,7 @@ public class Db implements AutoCloseable {
    * @param relationship Relationship type of the edges to delete
    */
   public void deleteEdges(String relationship) {
-    Result res = runQuery("MATCH ()-[r:" + relationship + "]-()\n" +
-            "DELETE r\n" +
-            "RETURN count(r)");
+    Result res = runQuery("MATCH ()-[r:" + relationship + "]-()\n" + "DELETE r\n" + "RETURN count(r)");
     System.out.println("Deleted " + res.consume().counters().relationshipsDeleted() + " edges.");
   }
 
@@ -335,10 +313,7 @@ public class Db implements AutoCloseable {
    * @param relationship Relationship type of the loops to delete
    */
   public void deleteLoops(String relationship) {
-    Result res = runQuery("MATCH (s:Submission)-[r:" + relationship + "]->" +
-            "(s:Submission)\n" +
-            "DELETE r\n" +
-            "RETURN count(r)");
+    Result res = runQuery("MATCH (s:Submission)-[r:" + relationship + "]->" + "(s:Submission)\n" + "DELETE r\n" + "RETURN count(r)");
     System.out.println("Deleted " + res.consume().counters().relationshipsDeleted() + " loops.");
   }
 
@@ -369,14 +344,27 @@ public class Db implements AutoCloseable {
   // GET methods
 
   /**
+   * Returns the relationship between the given nodes.
+   * @param src Source node.
+   * @param dst Destination node.
+   * @return Relationship between the given nodes.
+   */
+  public Relationship getRelationship(Node src, Node dst) {
+    Result res = runQuery("""
+            MATCH (s:Submission {id: '%s'})-[edge]->(d:Submission {id: '%s'})
+            RETURN edge
+            """.formatted(src.get("id").asString(), dst.get("id").asString()));
+    return res.single().get("edge").asRelationship();
+  }
+
+  /**
    * Returns all distinct values of the given property.
    *
    * @param property Name of the property
    * @return Result object containing all distinct values of the given property
    */
   public Result getDistinctPropertyValues(String property) {
-    return runQuery("MATCH (s:Submission)\n" +
-            "RETURN DISTINCT s." + property + " AS " + property);
+    return runQuery("MATCH (s:Submission)\n" + "RETURN DISTINCT s." + property + " AS " + property);
   }
 
 
@@ -395,18 +383,17 @@ public class Db implements AutoCloseable {
             WITH collect(DISTINCT n) AS compNodes
             WITH compNodes, compNodes[0] AS firstN
             UNWIND compNodes as cN
-            """.formatted(componentId),
-            subquery = """
-                    CALL {
-                        WITH cN, firstN
-                        MATCH (%s)-[r:Derives]->(%s)
-                        WHERE cN <> firstN
-                        MERGE (%s)-[p:Derives]->(%s)
-                        SET p.id = randomUUID()
-                        SET p.popularity = r.popularity
-                        DELETE r
-                    }
-                    """;
+            """.formatted(componentId), subquery = """
+            CALL {
+                WITH cN, firstN
+                MATCH (%s)-[r:Derives]->(%s)
+                WHERE cN <> firstN
+                MERGE (%s)-[p:Derives]->(%s)
+                SET p.id = randomUUID()
+                SET p.popularity = r.popularity
+                DELETE r
+            }
+            """;
 
     // Swap derivations of component nodes to first node
     // example: (s)-[:Derives]->(cN) -> (s)-[:Derives]->(firstN)
@@ -445,9 +432,7 @@ public class Db implements AutoCloseable {
    * @param writeProperty Name of the property to write the component id to
    */
   public void runConnectedComponents(String graphName, String writeProperty) {
-    runQuery("CALL gds.wcc.write('" + graphName + "', {writeProperty: '" +
-            writeProperty + "'}) " + "YIELD " +
-            "nodePropertiesWritten, componentCount");
+    runQuery("CALL gds.wcc.write('" + graphName + "', {writeProperty: '" + writeProperty + "'}) " + "YIELD " + "nodePropertiesWritten, componentCount");
   }
 
   // CHECK methods
