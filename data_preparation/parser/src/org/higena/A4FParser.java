@@ -36,7 +36,6 @@ public class A4FParser {
     }
 
     public static A4FNode parse(Expr expr) {
-        System.out.println("Parsing: " + expr.getClass());
 
         // Parse the expression based on its type
         switch (expr.getClass().getSimpleName()) {
@@ -64,8 +63,6 @@ public class A4FParser {
                 return parse((Sig.Field) expr);
             case "ExprLet":
                 return parse((ExprLet) expr);
-            default:
-                System.out.println("TODO: " + expr.getClass());
         }
 
         return null;
