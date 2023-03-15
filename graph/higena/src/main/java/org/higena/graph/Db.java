@@ -31,7 +31,7 @@ public class Db implements AutoCloseable {
 
   /**
    * Performs a sequence of actions to prepare the database.
-   * 1. Cleans the database by deleting all nodes and edges.
+   * 1. Cleans the database by deleting all nodes and edges and projections.
    * 2. Adds unique constraints to avoid duplicate IDs.
    * 3. Adds nodes to the database.
    * 4. Adds edges to the database.
@@ -42,6 +42,7 @@ public class Db implements AutoCloseable {
    */
   public void setup() {
     deleteAllNodes();
+    deleteAllProjections();
     addUniqueConstraints();
     addSubmissionNodes();
     addDerivationEdges();
@@ -57,7 +58,8 @@ public class Db implements AutoCloseable {
   /**
    * Runs the Dijkstra's algorith using the given weight property to find the
    * shortest path between the source node and a Correct node.
-   * @param sourceId ID of the source node.
+   *
+   * @param sourceId       ID of the source node.
    * @param weightProperty Property to use as weight.
    * @return
    */
@@ -263,10 +265,10 @@ public class Db implements AutoCloseable {
    * Creates a graph projection with the given name, label, and relationship.
    * Graph projections are used to run neo4j graph data science algorithms.
    *
-   * @param name          Name of the graph projection
-   * @param label         Label of the nodes
-   * @param relationship  Relationship type of the edges
-   * @param relProperty   Property of the relationship
+   * @param name         Name of the graph projection
+   * @param label        Label of the nodes
+   * @param relationship Relationship type of the edges
+   * @param relProperty  Property of the relationship
    */
   public void addProjection(String name, String label, String relationship, String relProperty) {
     runQuery(("CALL gds.graph.project('%s', '%s', '%s', " +
@@ -274,6 +276,19 @@ public class Db implements AutoCloseable {
   }
 
   // DELETE methods
+
+  /**
+   * Delete all graph projections.
+   */
+  public void deleteAllProjections() {
+    Result res = runQuery("CALL gds.graph.list()");
+    while (res.hasNext()) {
+      Record record = res.next();
+      String name = record.get("graphName").asString();
+      deleteProjection(name);
+    }
+    System.out.println("Deleted all graph projections.");
+  }
 
   /**
    * Deletes all nodes and edges from the database.
@@ -352,6 +367,7 @@ public class Db implements AutoCloseable {
 
   /**
    * Returns the node with the given ast.
+   *
    * @param ast AST of the node.
    * @return Node with the given ast.
    */
@@ -365,6 +381,7 @@ public class Db implements AutoCloseable {
 
   /**
    * Returns the relationship between the given nodes.
+   *
    * @param src Source node.
    * @param dst Destination node.
    * @return Relationship between the given nodes.

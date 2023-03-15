@@ -6,7 +6,7 @@ import org.neo4j.driver.types.Relationship;
 public class Main {
   public static void main(String[] args) {
     Graph graph = new Graph();
-    //graph.setup();
+    graph.setup();
 
     String ast = graph.parseExpr("before(no Trash and no Protected)");
     Relationship rel = graph.getPoissonHint(ast);
