@@ -8,11 +8,12 @@ public class Main {
     Graph graph = new Graph();
     //graph.setup();
 
-    String ast = graph.parseExpr("no Trash");
-    Relationship rel = graph.getTEDHint(ast);
+    String ast = graph.parseExpr("before(no Trash and no Protected)");
+    Relationship rel = graph.getPoissonHint(ast);
 
     System.out.println("Edge ID: " + rel.get("id"));
     System.out.println("Operations: " + rel.get("operations"));
     System.out.println("TED: " + rel.get("ted"));
+
   }
 }

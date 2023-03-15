@@ -11,6 +11,7 @@ import com.github.gumtreediff.actions.model.Action;
 import com.github.gumtreediff.matchers.MappingStore;
 import org.higena.ast.actions.EditAction;
 import org.higena.ast.actions.TreeDiff;
+
 import java.util.List;
 
 /**
@@ -27,15 +28,17 @@ public class TED {
   }
 
   public TreeDiff computeTreeDiff(String tree1, String tree2) {
-    Node<StringNodeData> t1 = parse(tree1), t2 = parse(tree2);
+    Node<StringNodeData> t1 = parse("{root" + tree1 + "}"),
+            t2 = parse("{root" + tree2 + "}");
     // Compute TED (must run before computing edits)
     TreeDiff td = new TreeDiff(computeEditDistance(t1, t2));
     // Get edit actions
     MappingStore ms = new AptedMatcher(this).match(t1, t2);
     // Calculate edit actions using Chawathe's algorithm
-    EditScript editScript = new SimplifiedChawatheScriptGenerator().computeActions(ms);
+    EditScript editScript =
+            new SimplifiedChawatheScriptGenerator().computeActions(ms);
     // Convert edit script actions to EditAction objects
-    for (Action action: editScript) {
+    for (Action action : editScript) {
       td.addAction(new EditAction(action));
     }
     return td;

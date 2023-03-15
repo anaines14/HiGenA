@@ -54,6 +54,13 @@ public class Db implements AutoCloseable {
 
   // Algorithms
 
+  /**
+   * Runs the Dijkstra's algorith using the given weight property to find the
+   * shortest path between the source node and a Correct node.
+   * @param sourceId ID of the source node.
+   * @param weightProperty Property to use as weight.
+   * @return
+   */
   public Result dijkstra(String sourceId, String weightProperty) {
     String projectionName = "dijkstra|" + weightProperty;
     // Create projection if it doesn't exist

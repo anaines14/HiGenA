@@ -11,14 +11,10 @@ public class ActionNode {
 
   public ActionNode(Tree tree) {
     this.children = new ArrayList<>();
-    if (tree != null) {
-      this.label = tree.getLabel();
+    this.label = tree.getLabel();
 
-      for (Tree child : tree.getChildren()) {
-        this.children.add(new ActionNode(child));
-      }
-    } else {
-      this.label = "root";
+    for (Tree child : tree.getChildren()) {
+      this.children.add(new ActionNode(child));
     }
   }
 
