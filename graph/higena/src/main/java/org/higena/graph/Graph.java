@@ -48,7 +48,7 @@ public class Graph {
     }
   }
 
-  public void getDijkstraHint(String ast) {
+  public Relationship getDijkstraHint(String ast) {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       // Get the node corresponding to the AST
       Node node = db.getNodeByAST(ast);
@@ -59,16 +59,13 @@ public class Graph {
         List<Node> rels = res.single().get("path").asList(Value::asNode);
         Node n1 = rels.get(0), n2 = rels.get(1);
         // Get the relationship between the two nodes
-        Relationship rel = db.getRelationship(n1, n2);
-
-        System.out.println("Edge ID: " + rel.get("id"));
-        System.out.println("Operations: " + rel.get("operations"));
-        System.out.println("TED: " + rel.get("ted"));
-
+        return db.getRelationship(n1, n2);
       } catch (NoSuchRecordException e) {
         System.out.println("ERROR: Cannot retrieve hint.");
       }
     }
+
+    return null;
   }
 
   /**
