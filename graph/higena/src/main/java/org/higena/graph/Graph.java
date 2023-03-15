@@ -49,6 +49,16 @@ public class Graph {
   }
 
   /**
+   * Applies the dijkstra algorithm to find the shortest path and using
+   * the ted and returns the  first edge of the path.
+   * @param ast AST of the node to find the hint for.
+   * @return The first edge of the shortest path.
+   */
+  public Relationship getTEDHint(String ast) {
+    return getDijkstraHint(ast, "ted");
+  }
+  /**
+   *
    * Applies the dijkstra algorithm to find the poisson path and returns the
    * first edge of the path.
    * @param ast AST of the node to find the hint for.

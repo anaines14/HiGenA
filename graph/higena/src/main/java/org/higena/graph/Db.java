@@ -55,14 +55,15 @@ public class Db implements AutoCloseable {
   // Algorithms
 
   public Result dijkstra(String sourceId, String weightProperty) {
+    String projectionName = "dijkstra|" + weightProperty;
     // Create projection if it doesn't exist
-    if (!hasProjection("dijkstra"))
-      addProjection("dijkstra", "Submission", "Derives", weightProperty);
+    if (!hasProjection(projectionName))
+      addProjection(projectionName, "Submission", "Derives", weightProperty);
     // Run Dijkstra's algorithm
     return runQuery("""
             MATCH (source:Incorrect {id: "%s"})
             MATCH (target:Correct)
-            CALL gds.shortestPath.dijkstra.stream('dijkstra', {
+            CALL gds.shortestPath.dijkstra.stream('%s', {
                 sourceNode: source,
                 targetNode: target,
                 relationshipWeightProperty: '%s'
@@ -78,7 +79,7 @@ public class Db implements AutoCloseable {
                 nodes(path) AS path
             ORDER BY totalCost
             LIMIT 1
-            """.formatted(sourceId, weightProperty));
+            """.formatted(sourceId, projectionName, weightProperty));
   }
 
   /**
