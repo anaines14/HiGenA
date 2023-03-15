@@ -344,6 +344,19 @@ public class Db implements AutoCloseable {
   // GET methods
 
   /**
+   * Returns the node with the given ast.
+   * @param ast AST of the node.
+   * @return Node with the given ast.
+   */
+  public Node getNodeByAST(String ast) {
+    Result res = runQuery("""
+            MATCH (s:Submission {ast: '%s'})
+            RETURN s as node
+            """.formatted(ast));
+    return res.single().get("node").asNode();
+  }
+
+  /**
    * Returns the relationship between the given nodes.
    * @param src Source node.
    * @param dst Destination node.

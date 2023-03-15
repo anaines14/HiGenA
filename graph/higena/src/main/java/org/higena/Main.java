@@ -6,7 +6,8 @@ public class Main {
   public static void main(String[] args) {
     Graph graph = new Graph();
     //graph.setup();
-    graph.getHint("9jPK8KBWzjFmBx4Hb");
+    String ast = graph.parseExpr("no File");
+    graph.getDijkstraHint(ast);
 
   }
 }
