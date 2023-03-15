@@ -54,18 +54,18 @@ public class Db implements AutoCloseable {
 
   // Algorithms
 
-  public Result dijkstra(String sourceId) {
+  public Result dijkstra(String sourceId, String weightProperty) {
     // Create projection if it doesn't exist
     if (!hasProjection("dijkstra"))
-      addProjection("dijkstra", "Submission", "Derives", "ted");
+      addProjection("dijkstra", "Submission", "Derives", weightProperty);
     // Run Dijkstra's algorithm
-    Result res = runQuery("""
+    return runQuery("""
             MATCH (source:Incorrect {id: "%s"})
             MATCH (target:Correct)
             CALL gds.shortestPath.dijkstra.stream('dijkstra', {
                 sourceNode: source,
                 targetNode: target,
-                relationshipWeightProperty: 'ted'
+                relationshipWeightProperty: '%s'
             })
             YIELD index, sourceNode, targetNode, totalCost, nodeIds, costs, path
             RETURN
@@ -78,9 +78,7 @@ public class Db implements AutoCloseable {
                 nodes(path) AS path
             ORDER BY totalCost
             LIMIT 1
-            """.formatted(sourceId));
-
-    return res;
+            """.formatted(sourceId, weightProperty));
   }
 
   /**
@@ -109,7 +107,7 @@ public class Db implements AutoCloseable {
     deleteEdges(relName);
     // Get components
     List<Record> components = getDistinctPropertyValues(componentProperty).list();
-    addPopularity(components);
+    addNodesPopularity(components);
     // Aggregate nodes: delete equivalent nodes except for one
     deleteEquivNodes(components);
   }
@@ -195,7 +193,8 @@ public class Db implements AutoCloseable {
                 WHERE n.ast = p.ast AND s.ast = t.ast AND r.id <> e.id 
                 RETURN count(e) AS popularity
             }
-            SET r.popularity = popularity + 1""");
+            SET r.popularity = popularity + 1
+            SET r.poisson = 1.0 / r.popularity""");
 
     System.out.println("Added popularity property to edges.");
   }
@@ -224,7 +223,7 @@ public class Db implements AutoCloseable {
    *
    * @param components List of existing components
    */
-  public void addPopularity(List<Record> components) {
+  public void addNodesPopularity(List<Record> components) {
     for (Record component : components) {
       int componentId = component.get("componentId").asInt();
       // Set popularity for each component
@@ -404,6 +403,7 @@ public class Db implements AutoCloseable {
                 MERGE (%s)-[p:Derives]->(%s)
                 SET p.id = randomUUID()
                 SET p.popularity = r.popularity
+                SET p.poisson = r.poisson
                 DELETE r
             }
             """;

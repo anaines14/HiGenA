@@ -38,7 +38,7 @@ public class Graph {
   }
 
   /**
-   * Creates a new database and sets up the graph.
+   * Sets up the graph database.
    */
   public void setup() {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
@@ -48,12 +48,30 @@ public class Graph {
     }
   }
 
-  public Relationship getDijkstraHint(String ast) {
+  /**
+   * Applies the dijkstra algorithm to find the poisson path and returns the
+   * first edge of the path.
+   * @param ast AST of the node to find the hint for.
+   * @return The first edge of the shortest path.
+   */
+  public Relationship getPoissonHint(String ast) {
+   return getDijkstraHint(ast, "poisson");
+  }
+
+  /**
+   * Finds the node with the given AST on the database and calculates the
+   * shortest path using the dijkstra algorithm to a Correct node using the
+   * given property as edge weight. Then, it returns the first edge of the path.
+   * @param ast AST of the node to find the hint for..
+   * @param property Weight property to use in the dijkstra algorithm.
+   * @return The first edge of the shortest path.
+   */
+  public Relationship getDijkstraHint(String ast, String property) {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       // Get the node corresponding to the AST
       Node node = db.getNodeByAST(ast);
-        // Get the shortest path from the node to the goal node
-      Result res = db.dijkstra(node.get("id").asString());
+      // Get the shortest path from the node to the goal node
+      Result res = db.dijkstra(node.get("id").asString(), property);
       try {
         // Get the two first nodes in the path
         List<Node> rels = res.single().get("path").asList(Value::asNode);
@@ -64,7 +82,6 @@ public class Graph {
         System.out.println("ERROR: Cannot retrieve hint.");
       }
     }
-
     return null;
   }
 

@@ -7,12 +7,14 @@ public class Main {
   public static void main(String[] args) {
     Graph graph = new Graph();
     //graph.setup();
-    String ast = graph.parseExpr("no File");
-    Relationship rel = graph.getDijkstraHint(ast);
+    String ast = graph.parseExpr("");
+    Relationship rel = graph.getPoissonHint(ast);
 
     System.out.println("Edge ID: " + rel.get("id"));
     System.out.println("Operations: " + rel.get("operations"));
     System.out.println("TED: " + rel.get("ted"));
+
+
 
   }
 }
