@@ -88,14 +88,23 @@ public class Graph {
   }
 
   /**
-   * Applies the dijkstra algorithm to find the poisson path and returns the
-   * first edge of the path.
-   *
+   * Applies the dijkstra algorithm to find the poisson path using the
+   * edges' popularity property and returns the first edge of the path.
    * @param ast AST of the node to find the hint for.
    * @return The first edge of the shortest path.
    */
-  public Relationship getPoissonHint(String ast) {
+  public Relationship getEdgePoissonHint(String ast) {
     return getDijkstraHint(ast, "poisson");
+  }
+
+  /**
+   * Applies the dijkstra algorithm to find the poisson path using the
+   * node's popularity and returns the  first edge of the path.
+   * @param ast AST of the node to find the hint for.
+   * @return The first edge of the shortest path.
+   */
+  public Relationship getNodePoissonHint(String ast) {
+    return getDijkstraHint(ast, "dstPoisson");
   }
 
   /**

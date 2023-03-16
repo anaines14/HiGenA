@@ -56,17 +56,19 @@ public class Db implements AutoCloseable {
     addEdgesPopularity();
     aggregateEquivNodes("ast");
     addTreeDiffToEdges();
+    addNodePoissonToEdges();
   }
 
   // Algorithms
 
   /**
-   * Runs the Dijkstra's algorith using the given weight property to find the
+   * Runs the Dijkstra's algorithm using the given weight property to find the
    * shortest path between the source node and a Correct node.
    *
    * @param sourceId       ID of the source node.
    * @param weightProperty Property to use as weight.
-   * @return
+   * @return Result of the dijkstra algorithm. Contains the index, source node,
+   * target node, total cost, node IDs, costs and sequence of nodes in the path.
    */
   public Result dijkstra(String sourceId, String weightProperty) {
     String projectionName = "dijkstra|" + weightProperty;
@@ -127,6 +129,19 @@ public class Db implements AutoCloseable {
     deleteEquivNodes(components);
   }
 
+  // ADD Methods
+
+  /**
+   * Adds a property to the Derives edges called dstPoisson with the value
+   * 1.0 / popularity of the destination node for calculating the poisson path.
+   */
+  public void addNodePoissonToEdges() {
+    runQuery("""
+            MATCH ()-[r:Derives]->(dst:Submission)
+            SET r.dstPoisson = 1.0/dst.popularity
+            """);
+    System.out.println("Added node popularity to edges");
+  }
 
   /**
    * Adds TED property to derives edges.
@@ -153,8 +168,6 @@ public class Db implements AutoCloseable {
               SET e.operations = %s""".formatted(edge, diff.getTed(), diff.getActions()));
     }
   }
-
-  // ADD methods
 
   /**
    * Creates a new database with the given name if it does not exist.
