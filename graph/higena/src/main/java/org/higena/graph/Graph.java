@@ -35,7 +35,7 @@ public class Graph {
     // Connect to the default database
     try (Db db = new Db(uri, user, password, challenge, predicate)) {
       db.verifyConnection();
-       // Create database for this challenge and predicate if it does not exist
+      // Create database for this challenge and predicate if it does not exist
       db.addDb(this.databaseName);
     }
   }
@@ -138,15 +138,13 @@ public class Graph {
     A4FExprParser exprParser = new A4FExprParser(fullCode);
     String ast = null, expr = exprParser.parse(this.predicate);
 
-    if (!expr.equals("")) {
+    try {
+      ast = parseExpr(expr);
+    } catch (Exception e) {
       try {
-        ast = parseExpr(expr);
-      } catch (Exception e) {
-        try {
-          ast = parseExpr(expr, fullCode);
-        } catch (Exception ex) {
-          System.out.println("ERROR: cannot parse expression.");
-        }
+        ast = parseExpr(expr, fullCode);
+      } catch (Exception ex) {
+        System.out.println("ERROR: cannot parse expression.");
       }
     }
     return ast;
