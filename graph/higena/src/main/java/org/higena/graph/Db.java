@@ -207,7 +207,19 @@ public class Db implements AutoCloseable {
    * Loads nodes from a csv file with Alloy4Fun submissions into the database.
    */
   public void addSubmissionNodes() {
-    Result res = runQuery("LOAD CSV WITH HEADERS FROM 'file:///" + this.challenge + "/" + this.predicate + ".csv' AS row\n" + "MERGE (s:Submission {\n" + "\tid: row._id,\n" + "\tcmd_n: row.cmd_n,\n" + "\tcode: row.code,\n" + "\tderivationOf: row.derivationOf,\n" + "\tsat: toInteger(row.sat),\n" + "\texpr: row.expr,\n" + "\tast: row.ast\n" + "})\n" + "RETURN count(s)\n");
+    Result res = runQuery("LOAD CSV WITH HEADERS FROM 'file:///" +
+            this.challenge + "/" + this.predicate + ".csv' AS row\n" +
+            """
+            MERGE (s:Submission {
+              id: row._id,
+              cmd_n: row.cmd_n,
+              code: row.code,
+              derivationOf: CASE WHEN row.derivationOf IS NULL THEN '' ELSE row.derivationOf END,
+              sat: toInteger(row.sat),
+              expr: CASE WHEN row.expr IS NULL THEN '' ELSE row.expr END,
+              ast: CASE WHEN row.ast IS NULL THEN '' ELSE row.ast END
+            })
+            RETURN count(s)""");
 
     System.out.println("Created " + res.consume().counters().nodesCreated() + " nodes.");
   }

@@ -6,7 +6,7 @@ import org.neo4j.driver.types.Relationship;
 public class Main {
   public static void main(String[] args) {
     Graph graph = new Graph("9jPK8KBWzjFmBx4Hb", "prop1");
-    //graph.setup();
+    graph.setup();
 
     String ast = graph.parseExpr("");
     Relationship rel = graph.getTEDHint(ast);

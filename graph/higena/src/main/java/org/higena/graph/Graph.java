@@ -167,6 +167,9 @@ public class Graph {
    * @return The AST of the parsed expression.
    */
   public String parseExpr(String expr) {
+    if (expr.equals("")) {
+      return "";
+    }
     return A4FParser.parse(expr, this.challengeModule).toString();
   }
 
@@ -178,6 +181,9 @@ public class Graph {
    * @return The AST of the parsed expression.
    */
   public String parseExpr(String expr, String code) {
+    if (expr.equals("")) {
+      return "";
+    }
     return A4FParser.parse(code, expr).toString();
   }
 }
