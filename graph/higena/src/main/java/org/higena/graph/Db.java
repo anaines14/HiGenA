@@ -16,12 +16,17 @@ import java.util.List;
  */
 public class Db implements AutoCloseable {
   private final Driver driver;
-  private final Session session;
-  private final String name;
+  private Session session;
+  private String name;
   private final String challenge;
   private final String predicate;
 
-  public Db(String uri, String user, String password, String databaseName, String challenge, String predicate) {
+  public Db(String uri, String user, String password, String challenge, String predicate) {
+    this(uri, user, password, "neo4j", challenge, predicate);
+  }
+
+  public Db(String uri, String user, String password,
+            String databaseName, String challenge, String predicate) {
     this.name = databaseName;
     this.challenge = challenge;
     this.predicate = predicate;
@@ -150,6 +155,20 @@ public class Db implements AutoCloseable {
   }
 
   // ADD methods
+
+  /**
+   * Creates a new database with the given name if it does not exist.
+   * @param databaseName Name of the database to create.
+   */
+  public void addDb(String databaseName) {
+    // Create database
+    runQuery("CREATE DATABASE " + databaseName + " IF NOT EXISTS");
+    // Switch to new database
+    this.name = databaseName;
+    session.close();
+    session = driver.session(SessionConfig.forDatabase(name));
+    System.out.println("Created database " + databaseName);
+  }
 
   /**
    * Adds constraint to ensure that each Submission node has a unique id
