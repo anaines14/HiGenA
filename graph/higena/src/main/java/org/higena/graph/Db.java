@@ -16,10 +16,10 @@ import java.util.List;
  */
 public class Db implements AutoCloseable {
   private final Driver driver;
-  private Session session;
-  private String name;
   private final String challenge;
   private final String predicate;
+  private Session session;
+  private String name;
 
   public Db(String uri, String user, String password, String challenge, String predicate) {
     this(uri, user, password, "neo4j", challenge, predicate);
@@ -171,6 +171,7 @@ public class Db implements AutoCloseable {
 
   /**
    * Creates a new database with the given name if it does not exist.
+   *
    * @param databaseName Name of the database to create.
    */
   public void addDb(String databaseName) {
@@ -210,16 +211,16 @@ public class Db implements AutoCloseable {
     Result res = runQuery("LOAD CSV WITH HEADERS FROM 'file:///" +
             this.challenge + "/" + this.predicate + ".csv' AS row\n" +
             """
-            MERGE (s:Submission {
-              id: row._id,
-              cmd_n: row.cmd_n,
-              code: row.code,
-              derivationOf: CASE WHEN row.derivationOf IS NULL THEN '' ELSE row.derivationOf END,
-              sat: toInteger(row.sat),
-              expr: CASE WHEN row.expr IS NULL THEN '' ELSE row.expr END,
-              ast: CASE WHEN row.ast IS NULL THEN '' ELSE row.ast END
-            })
-            RETURN count(s)""");
+                    MERGE (s:Submission {
+                      id: row._id,
+                      cmd_n: row.cmd_n,
+                      code: row.code,
+                      derivationOf: CASE WHEN row.derivationOf IS NULL THEN '' ELSE row.derivationOf END,
+                      sat: toInteger(row.sat),
+                      expr: CASE WHEN row.expr IS NULL THEN '' ELSE row.expr END,
+                      ast: CASE WHEN row.ast IS NULL THEN '' ELSE row.ast END
+                    })
+                    RETURN count(s)""");
 
     System.out.println("Created " + res.consume().counters().nodesCreated() + " nodes.");
   }
@@ -420,7 +421,38 @@ public class Db implements AutoCloseable {
             MATCH (s:Submission {ast: '%s'})
             RETURN s as node
             """.formatted(ast));
-    return res.single().get("node").asNode();
+    return res.hasNext() ? res.single().get("node").asNode() : null;
+  }
+
+  public void getMostSimilarNode(String ast) {
+    // Get all nodes ordered by popularity
+    Result res = runQuery("""
+            MATCH (s:Submission)
+            RETURN s AS node
+            ORDER BY s.popularity DESC
+            """);
+
+    TED ted = new TED();
+    int minDist = Integer.MAX_VALUE; // Minimum TED found
+    Node similarNode = null; // Most similar node found
+
+    while (res.hasNext()) {
+      Node curNode = res.next().get("node").asNode(); // Current node
+      // Compute TED between n and curNode
+      int curDist = ted.computeEditDistance(ast,
+              curNode.get("ast").asString());
+      // Update minDist and similarNode if lower TED found
+      if (curDist < minDist) {
+        minDist = curDist;
+        similarNode = curNode;
+        // Stop earlier if TED is 1
+        if (minDist == 1) {
+          break;
+        }
+      }
+    }
+
+    System.out.println("Most similar node: " + similarNode.get("ast").asString());
   }
 
   /**

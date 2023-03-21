@@ -76,9 +76,21 @@ public class Graph {
     }
   }
 
+  // Hint methods
+
+  public void getHint(String ast) {
+    try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
+      Node node = db.getNodeByAST(ast);
+
+      if (node == null) {
+        db.getMostSimilarNode(ast);
+      }
+    }
+  }
+
   /**
    * Applies the dijkstra algorithm to find the shortest path and using
-   * the ted and returns the  first edge of the path.
+   * the TED and returns the first edge of the path.
    *
    * @param ast AST of the node to find the hint for.
    * @return The first edge of the shortest path.
@@ -134,6 +146,8 @@ public class Graph {
     }
     return null;
   }
+
+  // Parse functions
 
   /**
    * Extracts the expression from the full code. If the expression exists, it

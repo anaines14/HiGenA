@@ -44,6 +44,10 @@ public class TED {
     return td;
   }
 
+  public int computeEditDistance(String t1, String t2) {
+    return computeEditDistance(parse(t1), parse(t2));
+  }
+
   public int computeEditDistance(Node<StringNodeData> t1, Node<StringNodeData> t2) {
     return (int) apted.computeEditDistance(t1, t2);
   }
