@@ -72,9 +72,10 @@ public class Db implements AutoCloseable {
    */
   public Result dijkstra(String sourceId, String weightProperty) {
     String projectionName = "dijkstra|" + weightProperty;
-    // Create projection if it doesn't exist
-    if (!hasProjection(projectionName))
-      addProjection(projectionName, "Submission", "Derives", weightProperty);
+    // Update projection if it exists
+    if (hasProjection(projectionName))
+      deleteProjection(projectionName);
+    addProjection(projectionName, "Submission", "Derives", weightProperty);
     // Run Dijkstra's algorithm
     return runQuery("""
             MATCH (source:Incorrect {id: "%s"})
@@ -130,6 +131,48 @@ public class Db implements AutoCloseable {
   }
 
   // ADD Methods
+
+  /**
+   * Creates a relationship Derives between the given nodes.
+   * @param n1 Node 1
+   * @param n2 Node 2
+   * @return Relationship created.
+   */
+  public Relationship addEdge(Node n1, Node n2) {
+    String ast1 = n1.get("ast").asString(), ast2 = n2.get("ast").asString();
+    TED ted = new TED();
+    TreeDiff diff = ted.computeTreeDiff(ast1, ast2);
+    Result res = runQuery("""
+            MATCH (n1:Submission {id: '%s'})
+            MATCH (n2:Submission {id: '%s'})
+            MERGE (n1)-[r:Derives {id: randomUUID(), ted: %d,
+              operations: %s, popularity: 1, poisson: 1, dstPoisson: 1.0/n2.popularity}]->(n2)
+            RETURN r AS edge""".formatted(n1.get("id").asString(),
+            n2.get("id").asString(), diff.getTed(), diff.getActions()));
+
+    return res.single().get(0).asRelationship();
+  }
+
+  /**
+   * Creates an incorrect node in the graph with the given properties.
+   *
+   * @param expr Expression of the node
+   * @param ast  AST of the node
+   * @return The created node.
+   */
+  public Node addIncorrectNode(String expr, String ast, String code) {
+    Result res = runQuery("""
+            CREATE (n:Submission:Incorrect {id: randomUUID(),
+            code: '%s',
+            cmd_n: '%s',
+            ast: '%s',
+            expr: '%s',
+            popularity: 1.0})
+            RETURN n AS node""".formatted(code, predicate, ast,
+            expr));
+
+    return res.single().get(0).asNode();
+  }
 
   /**
    * Adds a property to the Derives edges called dstPoisson with the value
@@ -424,7 +467,16 @@ public class Db implements AutoCloseable {
     return res.hasNext() ? res.single().get("node").asNode() : null;
   }
 
-  public void getMostSimilarNode(String ast) {
+  /**
+   * Returns the most similar node to the given AST. The most similar node is
+   * the node with the smaller AST. The AST is computed using the APTED
+   * algorithm. The search starts with the most popular nodes. Upon finding a
+   * TED of 1, the search is stopped.
+   *
+   * @param ast AST of the node to compare to the existing nodes
+   * @return Most similar node to the given AST
+   */
+  public Node getMostSimilarNode(String ast) {
     // Get all nodes ordered by popularity
     Result res = runQuery("""
             MATCH (s:Submission)
@@ -451,8 +503,7 @@ public class Db implements AutoCloseable {
         }
       }
     }
-
-    System.out.println("Most similar node: " + similarNode.get("ast").asString());
+    return similarNode;
   }
 
   /**

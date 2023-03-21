@@ -8,13 +8,12 @@ public class Main {
     Graph graph = new Graph("9jPK8KBWzjFmBx4Hb", "prop1");
     //graph.setup();
 
-    String ast = graph.parseExpr("no Trash and no File");
-    graph.getHint(ast);
+    Relationship rel = graph.getTEDHint("no Trash and no File");
 
-/*
+
     System.out.println("Edge ID: " + rel.get("id"));
     System.out.println("Operations: " + rel.get("operations"));
     System.out.println("TED: " + rel.get("ted"));
-*/
+
   }
 }

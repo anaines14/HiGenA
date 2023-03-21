@@ -78,60 +78,88 @@ public class Graph {
 
   // Hint methods
 
-  public void getHint(String ast) {
-    try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
-      Node node = db.getNodeByAST(ast);
+  /**
+   * Parses the given expression and returns the node from the database with
+   * the same AST. If it does not exist, it searches for the most similar node
+   * and creates a new node with the given expression and adds an edge between
+   * these two nodes.
+   * @param db Database instance.
+   * @param expr Expression
+   * @param code Code
+   * @return Node from the database with the given expression.
+   */
+  public Node getSourceNode(Db db, String expr, String code) {
+    // Get node from database with the AST
+    String ast = "";
+    try {
+      ast = parseExpr(expr);
+    } catch (Exception e) {
+      ast = parseExpr(expr, code);
+    }
+    Node node = db.getNodeByAST(ast);
 
-      if (node == null) {
-        db.getMostSimilarNode(ast);
+    if (node == null) { // If it does not exist, create it
+      // Get the most similar node
+      Node similarNode = db.getMostSimilarNode(ast);
+      if (similarNode != null) {
+        // Create the node with the AST
+        Node n = db.addIncorrectNode(expr, ast, code);
+        // Add edge between the new node and the most similar node
+        db.addEdge(n, similarNode);
+        return n;
       }
     }
+    return node;
   }
 
   /**
    * Applies the dijkstra algorithm to find the shortest path and using
    * the TED and returns the first edge of the path.
    *
-   * @param ast AST of the node to find the hint for.
+   * @param expr Expression of the node to find the hint for.
    * @return The first edge of the shortest path.
    */
-  public Relationship getTEDHint(String ast) {
-    return getDijkstraHint(ast, "ted");
+  public Relationship getTEDHint(String expr) {
+    return getDijkstraHint(expr, "ted");
   }
 
   /**
    * Applies the dijkstra algorithm to find the poisson path using the
    * edges' popularity property and returns the first edge of the path.
-   * @param ast AST of the node to find the hint for.
+   *
+   * @param expr Expression of the node to find the hint for.
    * @return The first edge of the shortest path.
    */
-  public Relationship getEdgePoissonHint(String ast) {
-    return getDijkstraHint(ast, "poisson");
+  public Relationship getEdgePoissonHint(String expr) {
+    return getDijkstraHint(expr, "poisson");
   }
 
   /**
    * Applies the dijkstra algorithm to find the poisson path using the
    * node's popularity and returns the  first edge of the path.
-   * @param ast AST of the node to find the hint for.
+   *
+   * @param expr Expressopm of the node to find the hint for.
    * @return The first edge of the shortest path.
    */
-  public Relationship getNodePoissonHint(String ast) {
-    return getDijkstraHint(ast, "dstPoisson");
+  public Relationship getNodePoissonHint(String expr) {
+    return getDijkstraHint(expr, "dstPoisson");
   }
 
   /**
-   * Finds the node with the given AST on the database and calculates the
-   * shortest path using the dijkstra algorithm to a Correct node using the
-   * given property as edge weight. Then, it returns the first edge of the path.
+   * Finds the node with the given AST or creates it if it does not exist and
+   * calculates the shortest path using the dijkstra algorithm to a Correct
+   * node using the given property as edge weight. Then, it returns the
+   * first edge of the path.
    *
-   * @param ast      AST of the node to find the hint for..
+   * @param expr     Expression of the node to find the hint for.
    * @param property Weight property to use in the dijkstra algorithm.
    * @return The first edge of the shortest path.
    */
-  public Relationship getDijkstraHint(String ast, String property) {
+  public Relationship getDijkstraHint(String expr, String property,
+                                      String code) {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
-      // Get the node corresponding to the AST
-      Node node = db.getNodeByAST(ast);
+      // Get the node to start the path from
+      Node node = getSourceNode(db, expr, code);
       // Get the shortest path from the node to the goal node
       Result res = db.dijkstra(node.get("id").asString(), property);
       try {
@@ -145,6 +173,10 @@ public class Graph {
       }
     }
     return null;
+  }
+
+  public Relationship getDijkstraHint(String expr, String property) {
+    return getDijkstraHint(expr, property, "");
   }
 
   // Parse functions
