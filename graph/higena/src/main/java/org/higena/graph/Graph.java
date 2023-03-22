@@ -88,7 +88,7 @@ public class Graph {
    * @param code Code
    * @return Node from the database with the given expression.
    */
-  public Node getSourceNode(Db db, String expr, String code) {
+  private Node getSourceNode(Db db, String expr, String code) {
     // Get node from database with the AST
     String ast = "";
     try {
@@ -155,7 +155,7 @@ public class Graph {
    * @param property Weight property to use in the dijkstra algorithm.
    * @return The first edge of the shortest path.
    */
-  public Relationship getDijkstraHint(String expr, String property,
+  private Relationship getDijkstraHint(String expr, String property,
                                       String code) {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       // Get the node to start the path from
@@ -175,7 +175,7 @@ public class Graph {
     return null;
   }
 
-  public Relationship getDijkstraHint(String expr, String property) {
+  private Relationship getDijkstraHint(String expr, String property) {
     return getDijkstraHint(expr, property, "");
   }
 
@@ -189,7 +189,7 @@ public class Graph {
    * @param fullCode The full module code.
    * @return The AST of the parsed expression.
    */
-  public String parseExprFromCode(String fullCode) {
+  private String parseExprFromCode(String fullCode) {
     A4FExprParser exprParser = new A4FExprParser(fullCode);
     String ast = null, expr = exprParser.parse(this.predicate);
 
@@ -212,7 +212,7 @@ public class Graph {
    * @param expr The expression to parse.
    * @return The AST of the parsed expression.
    */
-  public String parseExpr(String expr) {
+  private String parseExpr(String expr) {
     if (expr.equals("")) {
       return "";
     }
@@ -226,7 +226,7 @@ public class Graph {
    * @param code The full module code.
    * @return The AST of the parsed expression.
    */
-  public String parseExpr(String expr, String code) {
+  private String parseExpr(String expr, String code) {
     if (expr.equals("")) {
       return "";
     }

@@ -111,7 +111,7 @@ public class Db implements AutoCloseable {
    *
    * @param property Name of the property to aggregate by
    */
-  public void aggregateEquivNodes(String property) {
+  private void aggregateEquivNodes(String property) {
     String projectionName = "equalGraph", relName = "EQUAL", componentProperty = "componentId";
     // Create edges between nodes with the same property
     runQuery("""
@@ -206,7 +206,7 @@ public class Db implements AutoCloseable {
    * Adds a property to the Derives edges called dstPoisson with the value
    * 1.0 / popularity of the destination node for calculating the poisson path.
    */
-  public void addNodePoissonToEdges() {
+  private void addNodePoissonToEdges() {
     runQuery("""
             MATCH ()-[r:Derives]->(dst:Submission)
             SET r.dstPoisson =
@@ -221,7 +221,7 @@ public class Db implements AutoCloseable {
   /**
    * Adds TED property to derives edges.
    */
-  public void addTreeDiffToEdges() {
+  private void addTreeDiffToEdges() {
     // Get all edges and its nodes
     Result res = runQuery("""
             MATCH (src:Submission)-[e:Derives]->(dst:Submission)
@@ -252,11 +252,11 @@ public class Db implements AutoCloseable {
   public void addDb(String databaseName) {
     // Create database
     runQuery("CREATE DATABASE " + databaseName + " IF NOT EXISTS");
+    System.out.println("Created database " + databaseName);
     // Switch to new database
     this.name = databaseName;
     session.close();
     session = driver.session(SessionConfig.forDatabase(name));
-    System.out.println("Created database " + databaseName);
   }
 
   /**
@@ -282,7 +282,7 @@ public class Db implements AutoCloseable {
   /**
    * Loads nodes from a csv file with Alloy4Fun submissions into the database.
    */
-  public void addSubmissionNodes() {
+  private void addSubmissionNodes() {
     Result res = runQuery("LOAD CSV WITH HEADERS FROM 'file:///" + this.challenge + "/" + this.predicate + ".csv' AS row\n" + """
             MERGE (s:Submission {
               id: row._id,
@@ -302,7 +302,7 @@ public class Db implements AutoCloseable {
    * Creates undirected Derives edges between nodes where the derivationOf
    * property of the source node matches the id property of the target node.
    */
-  public void addDerivationEdges() {
+  private void addDerivationEdges() {
     Result res = runQuery("""
             MATCH (s:Submission)
             MATCH (d:Submission)
@@ -312,7 +312,7 @@ public class Db implements AutoCloseable {
     System.out.println("Created " + res.consume().counters().relationshipsCreated() + " Derives edges.");
   }
 
-  public void addEdgesPopularity() {
+  private void addEdgesPopularity() {
     runQuery("""
             MATCH (n:Submission)-[r:Derives]->(s:Submission)
             CALL {
@@ -336,7 +336,7 @@ public class Db implements AutoCloseable {
    * Adds Correct and Incorrect labels to nodes based on the sat property
    * (0 = Correct, 1 = Incorrect).
    */
-  public void addSubmissionLabels() {
+  private void addSubmissionLabels() {
     String query = """
             MATCH (s:Submission {sat: %d})
             SET s:%s
@@ -355,7 +355,7 @@ public class Db implements AutoCloseable {
    *
    * @param components List of existing components
    */
-  public void addNodesPopularity(List<Record> components) {
+  private void addNodesPopularity(List<Record> components) {
     for (Record component : components) {
       int componentId = component.get("componentId").asInt();
       // Set popularity for each component
@@ -379,7 +379,7 @@ public class Db implements AutoCloseable {
    * @param label        Label of the nodes
    * @param relationship Relationship type of the edges
    */
-  public void addProjection(String name, String label, String relationship) {
+  private void addProjection(String name, String label, String relationship) {
     runQuery("CALL gds.graph.project('%s', '%s', '%s')".formatted(name, label, relationship));
   }
 
@@ -392,7 +392,7 @@ public class Db implements AutoCloseable {
    * @param relationship Relationship type of the edges
    * @param relProperty  Property of the relationship
    */
-  public void addProjection(String name, String label, String relationship, String relProperty) {
+  private void addProjection(String name, String label, String relationship, String relProperty) {
     runQuery(("CALL gds.graph.project('%s', '%s', '%s', " + "{relationshipProperties: '%s'})").formatted(name, label, relationship, relProperty));
   }
 
@@ -401,7 +401,7 @@ public class Db implements AutoCloseable {
   /**
    * Delete all graph projections.
    */
-  public void deleteAllProjections() {
+  private void deleteAllProjections() {
     Result res = runQuery("CALL gds.graph.list()");
     while (res.hasNext()) {
       Record record = res.next();
@@ -414,7 +414,7 @@ public class Db implements AutoCloseable {
   /**
    * Deletes all nodes and edges from the database.
    */
-  public void deleteAllNodes() {
+  private void deleteAllNodes() {
     Result res = runQuery("MATCH (n) DETACH DELETE n");
     SummaryCounters counters = res.consume().counters();
     System.out.println("Delete all nodes (" + counters.nodesDeleted() + " nodes and " + counters.relationshipsDeleted() + " edges).");
@@ -425,7 +425,7 @@ public class Db implements AutoCloseable {
    *
    * @param property Name of the property to delete
    */
-  public void deleteProperty(String property) {
+  private void deleteProperty(String property) {
     Result res = runQuery("MATCH (s:Submission)\n" + "REMOVE s." + property);
     System.out.println("Removed " + res.consume().counters().propertiesSet() + " " + property + " properties.");
   }
@@ -435,7 +435,7 @@ public class Db implements AutoCloseable {
    *
    * @param name Name of the graph projection
    */
-  public void deleteProjection(String name) {
+  private void deleteProjection(String name) {
     runQuery("CALL gds.graph.drop('" + name + "')");
   }
 
@@ -444,7 +444,7 @@ public class Db implements AutoCloseable {
    *
    * @param relationship Relationship type of the edges to delete
    */
-  public void deleteEdges(String relationship) {
+  private void deleteEdges(String relationship) {
     Result res = runQuery("MATCH ()-[r:" + relationship + "]-()\n" + "DELETE r\n" + "RETURN count(r)");
     System.out.println("Deleted " + res.consume().counters().relationshipsDeleted() + " edges.");
   }
@@ -455,7 +455,7 @@ public class Db implements AutoCloseable {
    *
    * @param relationship Relationship type of the loops to delete
    */
-  public void deleteLoops(String relationship) {
+  private void deleteLoops(String relationship) {
     Result res = runQuery("MATCH (s:Submission)-[r:" + relationship + "]->" + "(s:Submission)\n" + "DELETE r\n" + "RETURN count(r)");
     System.out.println("Deleted " + res.consume().counters().relationshipsDeleted() + " loops.");
   }
@@ -469,7 +469,7 @@ public class Db implements AutoCloseable {
    *
    * @param components List of existing components
    */
-  public void deleteEquivNodes(List<Record> components) {
+  private void deleteEquivNodes(List<Record> components) {
     for (Record component : components) {
       int componentId = component.get("componentId").asInt();
       // Remove equivalent nodes from each component
@@ -488,6 +488,7 @@ public class Db implements AutoCloseable {
 
   /**
    * Gets Incorrect nodes that do not have a path to a Correct node.
+   *
    * @return Incorrect nodes that do not have a path to a Correct node.
    */
   private Result getIncorrectOnlyPaths() {
@@ -518,7 +519,7 @@ public class Db implements AutoCloseable {
    * algorithm. The search starts with the most popular nodes. Upon finding a
    * TED of 1, the search is stopped.
    *
-   * @param ast AST of the node to compare to the existing nodes
+   * @param ast      AST of the node to compare to the existing nodes
    * @param category Category of the nodes to compare to
    * @return Most similar node to the given AST
    */
@@ -576,7 +577,7 @@ public class Db implements AutoCloseable {
    * @param property Name of the property
    * @return Result object containing all distinct values of the given property
    */
-  public Result getDistinctPropertyValues(String property) {
+  private Result getDistinctPropertyValues(String property) {
     return runQuery("MATCH (s:Submission)\n" + "RETURN DISTINCT s." + property + " AS " + property);
   }
 
@@ -634,7 +635,7 @@ public class Db implements AutoCloseable {
    * @param query Query to run
    * @return Result of the query
    */
-  public Result runQuery(String query) {
+  private Result runQuery(String query) {
     return session.run(new Query(query));
   }
 
@@ -645,7 +646,7 @@ public class Db implements AutoCloseable {
    * @param graphName     Name of the graph projection
    * @param writeProperty Name of the property to write the component id to
    */
-  public void runConnectedComponents(String graphName, String writeProperty) {
+  private void runConnectedComponents(String graphName, String writeProperty) {
     runQuery("CALL gds.wcc.write('" + graphName + "', {writeProperty: '" + writeProperty + "'}) " + "YIELD " + "nodePropertiesWritten, componentCount");
   }
 
@@ -664,7 +665,7 @@ public class Db implements AutoCloseable {
    * @param name Name of the projection
    * @return True if projection exists, false otherwise
    */
-  public boolean hasProjection(String name) {
+  private boolean hasProjection(String name) {
     Result res = runQuery("CALL gds.graph.exists('" + name + "') YIELD exists");
     return res.single().get("exists").asBoolean();
   }
