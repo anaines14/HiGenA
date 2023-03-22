@@ -44,6 +44,8 @@ public class Db implements AutoCloseable {
    * 7. Aggregates nodes with the same property.
    * 8. Adds the TED to the edges.
    * 9. Adds the Poisson distribution to the edges.
+   * 10. Connects incorrect nodes without a path to a Correct node to the
+   * most similar Correct nodes.
    */
   public void setup() {
     deleteAllNodes();
@@ -59,6 +61,7 @@ public class Db implements AutoCloseable {
     aggregateEquivNodes("ast");
     addTreeDiffToEdges();
     addNodePoissonToEdges();
+    fixIncorrectOnlyPaths();
   }
 
   // Algorithms
@@ -131,6 +134,20 @@ public class Db implements AutoCloseable {
     deleteEquivNodes(components);
   }
 
+  private void fixIncorrectOnlyPaths() {
+    // Get all incorrect nodes without a path to a correct node
+    Result badNodes = getIncorrectOnlyPaths();
+    // Get the most similar correct node for each incorrect node
+    while (badNodes.hasNext()) {
+      Node badNode = badNodes.next().get("node").asNode();
+      // Get most similar correct node
+      Node mostSimilarNode = getMostSimilarNode(badNode.get("ast").asString()
+              , "Correct");
+      // Create edge between the two nodes
+      addEdge(badNode, mostSimilarNode);
+    }
+  }
+
   // ADD Methods
 
   /**
@@ -144,7 +161,8 @@ public class Db implements AutoCloseable {
     String ast1 = n1.get("ast").asString(), ast2 = n2.get("ast").asString();
     TED ted = new TED();
     TreeDiff diff = ted.computeTreeDiff(ast1, ast2);
-    Result res = runQuery("""
+
+    String query = """
             MATCH (n1:Submission {id: '%s'})
             MATCH (n2:Submission {id: '%s'})
             MERGE (n1)-[r:Derives {
@@ -159,10 +177,10 @@ public class Db implements AutoCloseable {
                 ELSE 1.0 / n2.popularity
               END
             }]->(n2)
-            RETURN r AS edge""".formatted(n1.get("id").asString(),
-            n2.get("id").asString(), diff.getTed(), diff.getActions()));
+            RETURN r AS edge""".formatted(n1.get("id").asString(), n2.get("id").asString(),
+            diff.getTed(), diff.getActions());
 
-    return res.single().get(0).asRelationship();
+    return runQuery(query).single().get(0).asRelationship();
   }
 
   /**
@@ -469,6 +487,18 @@ public class Db implements AutoCloseable {
   // GET methods
 
   /**
+   * Gets Incorrect nodes that do not have a path to a Correct node.
+   * @return Incorrect nodes that do not have a path to a Correct node.
+   */
+  private Result getIncorrectOnlyPaths() {
+    return runQuery("""
+            MATCH (n:Incorrect)
+            WHERE NOT (n)-[:Derives*]->(:Correct)
+            RETURN n AS node
+            """);
+  }
+
+  /**
    * Returns the node with the given ast.
    *
    * @param ast AST of the node.
@@ -489,15 +519,16 @@ public class Db implements AutoCloseable {
    * TED of 1, the search is stopped.
    *
    * @param ast AST of the node to compare to the existing nodes
+   * @param category Category of the nodes to compare to
    * @return Most similar node to the given AST
    */
-  public Node getMostSimilarNode(String ast) {
+  private Node getMostSimilarNode(String ast, String category) {
     // Get all nodes ordered by popularity
     Result res = runQuery("""
-            MATCH (s:Submission)
+            MATCH (s:%s)
             RETURN s AS node
             ORDER BY s.popularity DESC
-            """);
+            """.formatted(category));
 
     TED ted = new TED();
     int minDist = Integer.MAX_VALUE; // Minimum TED found
@@ -518,6 +549,10 @@ public class Db implements AutoCloseable {
       }
     }
     return similarNode;
+  }
+
+  public Node getMostSimilarNode(String ast) {
+    return getMostSimilarNode(ast, "Submission");
   }
 
   /**
