@@ -169,7 +169,7 @@ public class Graph {
         // Get the relationship between the two nodes
         return db.getRelationship(n1, n2);
       } catch (NoSuchRecordException e) {
-        System.out.println("ERROR: Cannot retrieve hint.");
+        System.err.println("ERROR: Cannot retrieve hint.");
       }
     }
     return null;
@@ -199,7 +199,7 @@ public class Graph {
       try {
         ast = parseExpr(expr, fullCode);
       } catch (Exception ex) {
-        System.out.println("ERROR: cannot parse expression.");
+        System.err.println("ERROR: cannot parse expression.");
       }
     }
     return ast;
