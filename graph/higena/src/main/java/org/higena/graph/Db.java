@@ -25,8 +25,7 @@ public class Db implements AutoCloseable {
     this(uri, user, password, "neo4j", challenge, predicate);
   }
 
-  public Db(String uri, String user, String password,
-            String databaseName, String challenge, String predicate) {
+  public Db(String uri, String user, String password, String databaseName, String challenge, String predicate) {
     this.name = databaseName;
     this.challenge = challenge;
     this.predicate = predicate;
@@ -40,10 +39,11 @@ public class Db implements AutoCloseable {
    * 2. Adds unique constraints to avoid duplicate IDs.
    * 3. Adds nodes to the database.
    * 4. Adds edges to the database.
-   * 5. Deletes the derivationOf property from the nodes.
-   * 6. Adds the correct and incorrect labels to the nodes.
+   * 5. Adds the correct and incorrect labels to the nodes.
+   * 6. Deletes the derivationOf, sat and cmd_n properties from the nodes.
    * 7. Aggregates nodes with the same property.
    * 8. Adds the TED to the edges.
+   * 9. Adds the Poisson distribution to the edges.
    */
   public void setup() {
     deleteAllNodes();
@@ -51,8 +51,10 @@ public class Db implements AutoCloseable {
     addUniqueConstraints();
     addSubmissionNodes();
     addDerivationEdges();
-    deleteProperty("derivationOf");
     addSubmissionLabels();
+    deleteProperty("derivationOf");
+    deleteProperty("sat");
+    deleteProperty("cmd_n");
     addEdgesPopularity();
     aggregateEquivNodes("ast");
     addTreeDiffToEdges();
@@ -73,8 +75,7 @@ public class Db implements AutoCloseable {
   public Result dijkstra(String sourceId, String weightProperty) {
     String projectionName = "dijkstra|" + weightProperty;
     // Update projection if it exists
-    if (hasProjection(projectionName))
-      deleteProjection(projectionName);
+    if (hasProjection(projectionName)) deleteProjection(projectionName);
     addProjection(projectionName, "Submission", "Derives", weightProperty);
     // Run Dijkstra's algorithm
     return runQuery("""
@@ -134,6 +135,7 @@ public class Db implements AutoCloseable {
 
   /**
    * Creates a relationship Derives between the given nodes.
+   *
    * @param n1 Node 1
    * @param n2 Node 2
    * @return Relationship created.
@@ -145,8 +147,18 @@ public class Db implements AutoCloseable {
     Result res = runQuery("""
             MATCH (n1:Submission {id: '%s'})
             MATCH (n2:Submission {id: '%s'})
-            MERGE (n1)-[r:Derives {id: randomUUID(), ted: %d,
-              operations: %s, popularity: 1, poisson: 1, dstPoisson: 1.0/n2.popularity}]->(n2)
+            MERGE (n1)-[r:Derives {
+              id: randomUUID(),
+              ted: %d,
+              operations: %s,
+              popularity: 0,
+              poisson: 1,
+              dstPoisson:
+              CASE
+                WHEN n2.popularity = 0 THEN 0
+                ELSE 1.0 / n2.popularity
+              END
+            }]->(n2)
             RETURN r AS edge""".formatted(n1.get("id").asString(),
             n2.get("id").asString(), diff.getTed(), diff.getActions()));
 
@@ -164,12 +176,10 @@ public class Db implements AutoCloseable {
     Result res = runQuery("""
             CREATE (n:Submission:Incorrect {id: randomUUID(),
             code: '%s',
-            cmd_n: '%s',
             ast: '%s',
             expr: '%s',
             popularity: 1.0})
-            RETURN n AS node""".formatted(code, predicate, ast,
-            expr));
+            RETURN n AS node""".formatted(code, ast, expr));
 
     return res.single().get(0).asNode();
   }
@@ -181,7 +191,11 @@ public class Db implements AutoCloseable {
   public void addNodePoissonToEdges() {
     runQuery("""
             MATCH ()-[r:Derives]->(dst:Submission)
-            SET r.dstPoisson = 1.0/dst.popularity
+            SET r.dstPoisson =
+            CASE
+              WHEN dst.popularity = 0 THEN 0
+              ELSE 1.0/dst.popularity
+            END
             """);
     System.out.println("Added node popularity to edges");
   }
@@ -251,19 +265,17 @@ public class Db implements AutoCloseable {
    * Loads nodes from a csv file with Alloy4Fun submissions into the database.
    */
   public void addSubmissionNodes() {
-    Result res = runQuery("LOAD CSV WITH HEADERS FROM 'file:///" +
-            this.challenge + "/" + this.predicate + ".csv' AS row\n" +
-            """
-                    MERGE (s:Submission {
-                      id: row._id,
-                      cmd_n: row.cmd_n,
-                      code: row.code,
-                      derivationOf: CASE WHEN row.derivationOf IS NULL THEN '' ELSE row.derivationOf END,
-                      sat: toInteger(row.sat),
-                      expr: CASE WHEN row.expr IS NULL THEN '' ELSE row.expr END,
-                      ast: CASE WHEN row.ast IS NULL THEN '' ELSE row.ast END
-                    })
-                    RETURN count(s)""");
+    Result res = runQuery("LOAD CSV WITH HEADERS FROM 'file:///" + this.challenge + "/" + this.predicate + ".csv' AS row\n" + """
+            MERGE (s:Submission {
+              id: row._id,
+              cmd_n: row.cmd_n,
+              code: row.code,
+              derivationOf: CASE WHEN row.derivationOf IS NULL THEN '' ELSE row.derivationOf END,
+              sat: toInteger(row.sat),
+              expr: CASE WHEN row.expr IS NULL THEN '' ELSE row.expr END,
+              ast: CASE WHEN row.ast IS NULL THEN '' ELSE row.ast END
+            })
+            RETURN count(s)""");
 
     System.out.println("Created " + res.consume().counters().nodesCreated() + " nodes.");
   }
@@ -288,11 +300,15 @@ public class Db implements AutoCloseable {
             CALL {
                 WITH n, r, s
                 MATCH (p:Submission)-[e:Derives]->(t:Submission)
-                WHERE n.ast = p.ast AND s.ast = t.ast AND r.id <> e.id 
+                WHERE n.ast = p.ast AND s.ast = t.ast AND r.id <> e.id
                 RETURN count(e) AS popularity
             }
             SET r.popularity = popularity + 1
-            SET r.poisson = 1.0 / r.popularity""");
+            SET r.poisson =
+            CASE
+                WHEN r.popularity = 0 THEN  0
+                ELSE 1.0 / r.popularity
+            END""");
 
     System.out.println("Added popularity property to edges.");
   }
@@ -359,8 +375,7 @@ public class Db implements AutoCloseable {
    * @param relProperty  Property of the relationship
    */
   public void addProjection(String name, String label, String relationship, String relProperty) {
-    runQuery(("CALL gds.graph.project('%s', '%s', '%s', " +
-            "{relationshipProperties: '%s'})").formatted(name, label, relationship, relProperty));
+    runQuery(("CALL gds.graph.project('%s', '%s', '%s', " + "{relationshipProperties: '%s'})").formatted(name, label, relationship, relProperty));
   }
 
   // DELETE methods
@@ -491,8 +506,7 @@ public class Db implements AutoCloseable {
     while (res.hasNext()) {
       Node curNode = res.next().get("node").asNode(); // Current node
       // Compute TED between n and curNode
-      int curDist = ted.computeEditDistance(ast,
-              curNode.get("ast").asString());
+      int curDist = ted.computeEditDistance(ast, curNode.get("ast").asString());
       // Update minDist and similarNode if lower TED found
       if (curDist < minDist) {
         minDist = curDist;

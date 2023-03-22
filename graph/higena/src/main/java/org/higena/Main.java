@@ -14,6 +14,5 @@ public class Main {
     System.out.println("Edge ID: " + rel.get("id"));
     System.out.println("Operations: " + rel.get("operations"));
     System.out.println("TED: " + rel.get("ted"));
-
   }
 }
