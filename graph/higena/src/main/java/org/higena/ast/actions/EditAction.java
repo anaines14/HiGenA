@@ -49,17 +49,15 @@ public class EditAction {
   }
 
   public static EditAction fromString(String actionStr) {
-    String regex = "\"\\{type='(\\w+)'";
-    Pattern pattern = Pattern.compile(regex);
-    var matcher = pattern.matcher(actionStr);
+    String regex = "type='(\\w+)'";
+    var matcher = Pattern.compile(regex).matcher(actionStr);
 
     if (matcher.find()) {
       String type = matcher.group(1);
       switch (type) {
         case "TreeAddition", "Move", "TreeInsert" -> {
-          regex = "tree=(\\{.*?\\}), parent=([a-zA-Z0-9/]+), position=(\\d+)\\}\"";
-          pattern = Pattern.compile(regex);
-          matcher = pattern.matcher(actionStr);
+          regex = "tree=(\\{.*?}), parent=([a-zA-Z0-9/]+), position=(\\d+)";
+          matcher = Pattern.compile(regex).matcher(actionStr);
 
           if (matcher.find()) {
             var node = new ActionNode(matcher.group(1));
@@ -70,9 +68,8 @@ public class EditAction {
           }
         }
         case "Addition", "Insert" -> {
-            regex = "node=([a-zA-Z0-9/]+), parent=([a-zA-Z0-9/]+), position=(\\d+)\\}\"";
-            pattern = Pattern.compile(regex);
-            matcher = pattern.matcher(actionStr);
+            regex = "node=([a-zA-Z0-9/]+), parent=([a-zA-Z0-9/]+), position=(\\d+)";
+            matcher = Pattern.compile(regex).matcher(actionStr);
 
             if (matcher.find()) {
                 var node = new ActionNode(matcher.group(1), new ArrayList<>());
@@ -83,9 +80,8 @@ public class EditAction {
             }
         }
         case "Update" -> {
-          regex = "node=([a-zA-Z0-9/]+), value=([a-zA-Z0-9/]+)\\}\"";
-          pattern = Pattern.compile(regex);
-          matcher = pattern.matcher(actionStr);
+          regex = "node=([a-zA-Z0-9/]+), value=([a-zA-Z0-9/]+)";
+          matcher = Pattern.compile(regex).matcher(actionStr);
 
           if (matcher.find()) {
             var node = new ActionNode(matcher.group(1), new ArrayList<>());
@@ -95,9 +91,8 @@ public class EditAction {
           }
         }
         case "TreeDelete" -> {
-            regex = "tree=(\\{.*?\\})\\}\"";
-            pattern = Pattern.compile(regex);
-            matcher = pattern.matcher(actionStr);
+            regex = "tree=(\\{.*?})}";
+            matcher = Pattern.compile(regex).matcher(actionStr);
 
             if (matcher.find()) {
                 var node = new ActionNode(matcher.group(1));
@@ -105,9 +100,8 @@ public class EditAction {
             }
         }
         default -> {
-          regex = "node=([a-zA-Z0-9/]+)\\}\"";
-          pattern = Pattern.compile(regex);
-          matcher = pattern.matcher(actionStr);
+          regex = "node=([a-zA-Z0-9/]+)";
+          matcher = Pattern.compile(regex).matcher(actionStr);
 
             if (matcher.find()) {
                 var node = new ActionNode(matcher.group(1), new ArrayList<>());
@@ -119,6 +113,7 @@ public class EditAction {
     System.err.println("Error parsing EditAction: " + actionStr);
     return null;
   }
+
 
   @Override
   public String toString() {

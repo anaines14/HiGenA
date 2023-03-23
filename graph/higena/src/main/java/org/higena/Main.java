@@ -20,5 +20,9 @@ public class Main {
     System.out.println("TED: " + rel.get("ted"));
 */
 
+    for (String op : rel.get("operations").asList(Value::asString)) {
+      System.out.println(EditAction.fromString(op));
+    }
+
   }
 }

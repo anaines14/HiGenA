@@ -212,7 +212,7 @@ public class Graph {
    * @param expr The expression to parse.
    * @return The AST of the parsed expression.
    */
-  private String parseExpr(String expr) {
+  public String parseExpr(String expr) {
     if (expr.equals("")) {
       return "";
     }
