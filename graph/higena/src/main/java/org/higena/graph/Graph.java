@@ -6,6 +6,7 @@ import edu.mit.csail.sdg.parser.CompUtil;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.higena.A4FExprParser;
 import org.higena.A4FParser;
+import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.exceptions.NoSuchRecordException;
@@ -119,7 +120,7 @@ public class Graph {
    * @param expr Expression of the node to find the hint for.
    * @return The first edge of the shortest path.
    */
-  public Relationship getTEDHint(String expr) {
+  public Hint getTEDHint(String expr) {
     return getDijkstraHint(expr, "ted");
   }
 
@@ -130,7 +131,7 @@ public class Graph {
    * @param expr Expression of the node to find the hint for.
    * @return The first edge of the shortest path.
    */
-  public Relationship getEdgePoissonHint(String expr) {
+  public Hint getEdgePoissonHint(String expr) {
     return getDijkstraHint(expr, "poisson");
   }
 
@@ -141,7 +142,7 @@ public class Graph {
    * @param expr Expressopm of the node to find the hint for.
    * @return The first edge of the shortest path.
    */
-  public Relationship getNodePoissonHint(String expr) {
+  public Hint getNodePoissonHint(String expr) {
     return getDijkstraHint(expr, "dstPoisson");
   }
 
@@ -155,7 +156,7 @@ public class Graph {
    * @param property Weight property to use in the dijkstra algorithm.
    * @return The first edge of the shortest path.
    */
-  private Relationship getDijkstraHint(String expr, String property,
+  private Hint getDijkstraHint(String expr, String property,
                                       String code) {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       // Get the node to start the path from
@@ -163,11 +164,14 @@ public class Graph {
       // Get the shortest path from the node to the goal node
       Result res = db.dijkstra(node.get("id").asString(), property);
       try {
-        // Get the two first nodes in the path
-        List<Node> rels = res.single().get("path").asList(Value::asNode);
-        Node n1 = rels.get(0), n2 = rels.get(1);
-        // Get the relationship between the two nodes
-        return db.getRelationship(n1, n2);
+        // Get results from the query to generate the hint
+        Record rec = res.single();
+        List<Node> nodes = rec.get("path").asList(Value::asNode);
+        int totalCost = rec.get("totalCost").asInt();
+        Relationship firstRel = db.getRelationship(nodes.get(0), nodes.get(1));
+
+        return new Hint(totalCost, firstRel);
+
       } catch (NoSuchRecordException e) {
         System.err.println("ERROR: Cannot retrieve hint.");
       }
@@ -175,7 +179,7 @@ public class Graph {
     return null;
   }
 
-  private Relationship getDijkstraHint(String expr, String property) {
+  private Hint getDijkstraHint(String expr, String property) {
     return getDijkstraHint(expr, property, "");
   }
 

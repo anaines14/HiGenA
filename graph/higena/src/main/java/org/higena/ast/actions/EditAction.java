@@ -139,4 +139,26 @@ public class EditAction {
     }
     return null;
   }
+
+  // Getters
+
+  public String getType() {
+    return type;
+  }
+
+  public ActionNode getNode() {
+    return node;
+  }
+
+  public ActionNode getParent() {
+    return parent;
+  }
+
+  public int getPosition() {
+    return position;
+  }
+
+  public String getValue() {
+    return value;
+  }
 }

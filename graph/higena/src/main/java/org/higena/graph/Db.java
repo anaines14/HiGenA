@@ -97,7 +97,8 @@ public class Db implements AutoCloseable {
                 totalCost,
                 [nodeId IN nodeIds | gds.util.asNode(nodeId).id] AS nodeIds,
                 costs,
-                nodes(path) AS path
+                nodes(path) AS path,
+                relationships(path) AS rels
             ORDER BY totalCost
             LIMIT 1
             """.formatted(sourceId, projectionName, weightProperty));
