@@ -6,6 +6,7 @@ import com.github.gumtreediff.actions.model.TreeAddition;
 import com.github.gumtreediff.actions.model.Update;
 
 import java.util.ArrayList;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class EditAction {
@@ -49,71 +50,42 @@ public class EditAction {
   }
 
   public static EditAction fromString(String actionStr) {
-    String regex = "type='(\\w+)'";
-    var matcher = Pattern.compile(regex).matcher(actionStr);
+    String type = getMatch("type", actionStr), value = getMatch("value", actionStr),
+            tree = getMatch("tree", actionStr), node = getMatch("node", actionStr),
+            parent = getMatch("parent", actionStr), position = getMatch("position", actionStr);
 
-    if (matcher.find()) {
-      String type = matcher.group(1);
+    if (type != null) {
       switch (type) {
         case "TreeAddition", "Move", "TreeInsert" -> {
-          regex = "tree=(\\{.*?}), parent=([a-zA-Z0-9/]+), position=(\\d+)";
-          matcher = Pattern.compile(regex).matcher(actionStr);
-
-          if (matcher.find()) {
-            var node = new ActionNode(matcher.group(1));
-            var parent = new ActionNode(matcher.group(2), new ArrayList<>());
-            var position = Integer.parseInt(matcher.group(3));
-
-            return new EditAction(type, node, parent, position);
+          if (tree != null && parent != null && position != null) {
+            return new EditAction(type, new ActionNode(tree), new ActionNode(parent, new ArrayList<>()), Integer.parseInt(position));
           }
         }
         case "Addition", "Insert" -> {
-            regex = "node=([a-zA-Z0-9/]+), parent=([a-zA-Z0-9/]+), position=(\\d+)";
-            matcher = Pattern.compile(regex).matcher(actionStr);
-
-            if (matcher.find()) {
-                var node = new ActionNode(matcher.group(1), new ArrayList<>());
-                var parent = new ActionNode(matcher.group(2), new ArrayList<>());
-                var position = Integer.parseInt(matcher.group(3));
-
-                return new EditAction(type, node, parent, position);
-            }
+          if (node != null && parent != null && position != null) {
+            return new EditAction(type, new ActionNode(node, new ArrayList<>()), new ActionNode(parent, new ArrayList<>()), Integer.parseInt(position));
+          }
         }
         case "Update" -> {
-          regex = "node=([a-zA-Z0-9/]+), value=([a-zA-Z0-9/]+)";
-          matcher = Pattern.compile(regex).matcher(actionStr);
-
-          if (matcher.find()) {
-            var node = new ActionNode(matcher.group(1), new ArrayList<>());
-            var value = matcher.group(2);
-
-            return new EditAction(type, node, value);
+          if (node != null && value != null) {
+            return new EditAction(type, new ActionNode(node, new ArrayList<>()), value);
           }
         }
         case "TreeDelete" -> {
-            regex = "tree=(\\{.*?})}";
-            matcher = Pattern.compile(regex).matcher(actionStr);
-
-            if (matcher.find()) {
-                var node = new ActionNode(matcher.group(1));
-                return new EditAction(type, node);
-            }
+          if (tree != null) {
+            return new EditAction(type, new ActionNode(tree));
+          }
         }
         default -> {
-          regex = "node=([a-zA-Z0-9/]+)";
-          matcher = Pattern.compile(regex).matcher(actionStr);
-
-            if (matcher.find()) {
-                var node = new ActionNode(matcher.group(1), new ArrayList<>());
-                return new EditAction(type, node);
-            }
+          if (node != null) {
+            return new EditAction(type, new ActionNode(node, new ArrayList<>()));
+          }
         }
       }
     }
     System.err.println("Error parsing EditAction: " + actionStr);
     return null;
   }
-
 
   @Override
   public String toString() {
@@ -130,11 +102,41 @@ public class EditAction {
         ret += parent.getLabel();
         ret += ", position=" + position + "}\"";
       }
-      case "Update" ->
-              ret += ", node=" + node.getLabel() + ", value=" + value + "}\"";
+      case "Update" -> ret += ", node=" + node.getLabel() + ", value=" + value + "}\"";
       case "TreeDelete" -> ret += ", tree=" + node.toString() + "}\"";
       default -> ret += ", node=" + node.getLabel() + "}\"";
     }
     return ret;
+  }
+
+  // Auxiliar methods
+
+  private static String getMatch(String field, String actionStr) {
+    Matcher match = Pattern.compile(getFieldRegex(field)).matcher(actionStr);
+    return match.find() ? match.group(1) : null;
+  }
+
+  private static String getFieldRegex(String field) {
+    switch (field) {
+      case "type" -> {
+        return "type='(\\w+)'";
+      }
+      case "node" -> {
+        return "node=([a-zA-Z0-9/]+)";
+      }
+      case "parent" -> {
+        return "parent=([a-zA-Z0-9/]+)";
+      }
+      case "position" -> {
+        return "position=(\\d+)";
+      }
+      case "value" -> {
+        return "value=([a-zA-Z0-9/]+)";
+      }
+      case "tree" -> {
+        return "tree=(\\{.*?}),";
+      }
+    }
+    return null;
   }
 }
