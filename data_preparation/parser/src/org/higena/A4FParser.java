@@ -1,6 +1,7 @@
 package org.higena;
 
 import edu.mit.csail.sdg.alloy4.A4Reporter;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.ast.*;
 import edu.mit.csail.sdg.parser.CompModule;
@@ -9,14 +10,17 @@ import edu.mit.csail.sdg.parser.CompUtil;
 import java.util.*;
 
 public class A4FParser {
+    public static HashMap<String, String> variables = new HashMap<>();
 
     public static A4FNode parse(String exprStr, CompModule module) {
+        variables.clear();
         Expr expr = CompUtil.parseOneExpression_fromString(module, exprStr);
         A4FNode tree = parse(expr);
         return tree == null ? null : Canonicalizer.canonicalize(tree);
     }
 
     public static A4FNode parse(String code, String func) {
+        variables.clear();
         // Parse the full module
         CompModule module = CompUtil.parseEverything_fromString(new A4Reporter(), code);
 
@@ -35,7 +39,7 @@ public class A4FParser {
         return null;
     }
 
-    public static A4FNode parse(Expr expr) {
+    private static A4FNode parse(Expr expr) {
 
         // Parse the expression based on its type
         switch (expr.getClass().getSimpleName()) {
@@ -68,7 +72,7 @@ public class A4FParser {
         return null;
     }
 
-    public static A4FNode parse(ExprLet expr) {
+    private static A4FNode parse(ExprLet expr) {
         String name = "let";
         List<A4FNode> children = new ArrayList<>();
 
@@ -78,8 +82,8 @@ public class A4FParser {
         return new A4FNode(name, children);
     }
 
-    public static A4FNode parse(Sig.Field expr) {
-        String name = "field";
+    private static A4FNode parse(Sig.Field expr) {
+        String name = "field/" + expr.label;
         List<A4FNode> children = new ArrayList<>();
 
         children.add(parse(expr.decl().expr));
@@ -87,7 +91,7 @@ public class A4FParser {
         return new A4FNode(name, children);
     }
 
-    public static A4FNode parse(ExprCall expr) {
+    private static A4FNode parse(ExprCall expr) {
         String name = "field";
         List<A4FNode> children = new ArrayList<>();
 
@@ -99,7 +103,7 @@ public class A4FParser {
         return new A4FNode(name, children);
     }
 
-    public static A4FNode parse(ExprITE expr) {
+    private static A4FNode parse(ExprITE expr) {
         String name = "ite";
         List<A4FNode> children = new ArrayList<>();
 
@@ -109,7 +113,7 @@ public class A4FParser {
         return new A4FNode(name, children);
     }
 
-    public static A4FNode parse(ExprList expr) {
+    private static A4FNode parse(ExprList expr) {
         String name = expr.op.toString();
         List<A4FNode> children = new ArrayList<>();
 
@@ -118,15 +122,15 @@ public class A4FParser {
         return new A4FNode(name, children);
     }
 
-    public static A4FNode parse(Sig.SubsetSig expr) {
+    private static A4FNode parse(Sig.SubsetSig expr) {
         return new A4FNode(expr.toString());
     }
 
-    public static A4FNode parse(Sig.PrimSig expr) {
+    private static A4FNode parse(Sig.PrimSig expr) {
         return new A4FNode(expr.toString());
     }
 
-    public static A4FNode parse(ExprBinary expr) {
+    private static A4FNode parse(ExprBinary expr) {
         String name = expr.op.toString();
 
         // Parse left and right children
@@ -137,20 +141,24 @@ public class A4FParser {
         return new A4FNode(name, children);
     }
 
-    public static A4FNode parse(ExprVar expr) {
+    private static A4FNode parse(ExprVar expr) {
         String type = expr.type().toString();
-        String name = "var/" + type.substring(1, type.length() - 1);
+        String name = variables.get(expr.label) +'/' + type.substring(1,
+                type.length() - 1);
 
         return new A4FNode(name);
     }
 
-    public static A4FNode parse(ExprConstant expr) {
+    private static A4FNode parse(ExprConstant expr) {
         return new A4FNode(expr.toString());
     }
 
-    public static A4FNode parse(ExprUnary expr) {
+    private static A4FNode parse(ExprUnary expr) {
+        return parse(expr, null);
+    }
+
+    private static A4FNode parse(ExprUnary expr, A4FNode vars) {
         List<A4FNode> children = new ArrayList<>();
-        String name = expr.op.toString();
 
         if (expr.op == ExprUnary.Op.NOOP) {
             // Skip to children
@@ -159,23 +167,48 @@ public class A4FParser {
         }
 
         // Parse the children
+        String name = expr.op.toString();
+        if (vars != null)
+            children.add(vars);
         children.add(parse(expr.sub));
         return new A4FNode(name, children);
     }
 
-    public static A4FNode parse(ExprQt expr) {
+    private static A4FNode parse(ConstList<? extends ExprHasName> names) {
+        if (names.isEmpty())
+            return null;
+
+        List<A4FNode> children = new ArrayList<>();
+
+        for (ExprHasName name : names) {
+            addVariable(name.label);
+            children.add(new A4FNode(variables.get(name.label)));
+        }
+
+        return new A4FNode("vars", children);
+    }
+
+    private static A4FNode parse(ExprQt expr) {
         String name = expr.op.toString();
         List<A4FNode> children = new ArrayList<>();
 
         // Parse the declarations
         for (Decl decl : expr.decls) {
-            children.add(parse(decl.expr));
+            if (decl.expr instanceof ExprUnary) {
+               children.add(parse((ExprUnary) decl.expr, parse(decl.names)));
+            } else {
+                children.add(parse(decl.expr));
+            }
         }
 
         // Parse the body
         children.add(parse(expr.sub));
 
         return new A4FNode(name, children);
+    }
+
+    private static void addVariable(String var) {
+        variables.putIfAbsent(var, "var" + variables.size());
     }
 }
 
