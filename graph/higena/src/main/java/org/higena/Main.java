@@ -1,12 +1,7 @@
 package org.higena;
 
-import org.higena.ast.actions.EditAction;
 import org.higena.graph.Graph;
 import org.higena.graph.Hint;
-import org.neo4j.driver.Value;
-import org.neo4j.driver.types.Relationship;
-
-import java.util.List;
 
 public class Main {
   public static void main(String[] args) {

@@ -125,6 +125,18 @@ public class Graph {
   }
 
   /**
+   * Applies the dijkstra algorithm to find the shortest path and using
+   * the TED and returns the first edge of the path.
+   *
+   * @param expr Expression of the node to find the hint for.
+   * @param code Full Alloy code that contains the expression.
+   * @return The first edge of the shortest path.
+   */
+  public Hint getTEDHint(String expr, String code) {
+    return getDijkstraHint(expr, "ted", code);
+  }
+
+  /**
    * Applies the dijkstra algorithm to find the poisson path using the
    * edges' popularity property and returns the first edge of the path.
    *
@@ -137,12 +149,36 @@ public class Graph {
 
   /**
    * Applies the dijkstra algorithm to find the poisson path using the
+   * edges' popularity property and returns the first edge of the path.
+   *
+   * @param expr Expression of the node to find the hint for.
+   * @param code Full Alloy code that contains the expression.
+   * @return The first edge of the shortest path.
+   */
+  public Hint getEdgePoissonHint(String expr, String code) {
+    return getDijkstraHint(expr, "poisson", code);
+  }
+
+  /**
+   * Applies the dijkstra algorithm to find the poisson path using the
    * node's popularity and returns the  first edge of the path.
    *
    * @param expr Expressopm of the node to find the hint for.
    * @return The first edge of the shortest path.
    */
   public Hint getNodePoissonHint(String expr) {
+    return getDijkstraHint(expr, "dstPoisson");
+  }
+
+  /**
+   * Applies the dijkstra algorithm to find the poisson path using the
+   * node's popularity and returns the  first edge of the path.
+   *
+   * @param expr Expressopm of the node to find the hint for.
+   * @param code Full Alloy code that contains the expression.
+   * @return The first edge of the shortest path.
+   */
+  public Hint getNodePoissonHint(String expr, String code) {
     return getDijkstraHint(expr, "dstPoisson");
   }
 
