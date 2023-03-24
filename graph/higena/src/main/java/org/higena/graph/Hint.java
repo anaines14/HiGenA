@@ -40,7 +40,7 @@ public class Hint {
       case "Move" -> {
         return "Try changing the position of the " + node + " to " + parent + ". ";
       }
-      case "TreeAddition, TreeInsert", "Addition", "Insert" -> {
+      case "TreeAddition", "TreeInsert", "Addition", "Insert" -> {
         return "Try adding " + node + " to " + parent + ". ";
       }
       case "TreeDelete", "Delete" -> {
