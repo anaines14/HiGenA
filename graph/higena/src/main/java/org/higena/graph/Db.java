@@ -4,6 +4,7 @@ import org.higena.ast.TED;
 import org.higena.ast.actions.TreeDiff;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.*;
+import org.neo4j.driver.exceptions.ClientException;
 import org.neo4j.driver.summary.SummaryCounters;
 import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Relationship;
@@ -61,7 +62,7 @@ public class Db implements AutoCloseable {
     aggregateEquivNodes("ast");
     addTreeDiffToEdges();
     addNodePoissonToEdges();
-    fixIncorrectOnlyPaths();
+    //fixIncorrectOnlyPaths();
   }
 
   // Algorithms
@@ -125,19 +126,24 @@ public class Db implements AutoCloseable {
       addProjection(projectionName, "Submission", relName);
     }
     // Run Weakly Connected Components algorithm
-    runConnectedComponents(projectionName, componentProperty);
-    deleteProjection(projectionName);
-    deleteEdges(relName);
-    // Get components
-    List<Record> components = getDistinctPropertyValues(componentProperty).list();
-    addNodesPopularity(components);
-    // Aggregate nodes: delete equivalent nodes except for one
-    deleteEquivNodes(components);
+    try {
+      runConnectedComponents(projectionName, componentProperty);
+      deleteProjection(projectionName);
+      deleteEdges(relName);
+      // Get components
+      List<Record> components = getDistinctPropertyValues(componentProperty).list();
+      addNodesPopularity(components);
+      // Aggregate nodes: delete equivalent nodes except for one
+      deleteEquivNodes(components);
+    } catch (ClientException e) {
+      System.out.println("No equivalent nodes found so no aggregation was done.");
+    }
   }
 
   private void fixIncorrectOnlyPaths() {
     // Get all incorrect nodes without a path to a correct node
     Result badNodes = getIncorrectOnlyPaths();
+    System.out.println(badNodes.list());
     // Get the most similar correct node for each incorrect node
     while (badNodes.hasNext()) {
       Node badNode = badNodes.next().get("node").asNode();
@@ -147,6 +153,7 @@ public class Db implements AutoCloseable {
       // Create edge between the two nodes
       addEdge(badNode, mostSimilarNode);
     }
+    System.out.println("Fixed incorrect only paths");
   }
 
   // ADD Methods
@@ -646,8 +653,11 @@ public class Db implements AutoCloseable {
    *
    * @param graphName     Name of the graph projection
    * @param writeProperty Name of the property to write the component id to
+   * @throws ClientException If the query fails to run in the case where
+   * there is an invalid relationship projection. For example, when no EQUAL
+   * relationships exist.
    */
-  private void runConnectedComponents(String graphName, String writeProperty) {
+  private void runConnectedComponents(String graphName, String writeProperty) throws ClientException {
     runQuery("CALL gds.wcc.write('" + graphName + "', {writeProperty: '" + writeProperty + "'}) " + "YIELD " + "nodePropertiesWritten, componentCount");
   }
 
