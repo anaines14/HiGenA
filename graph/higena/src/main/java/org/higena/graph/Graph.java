@@ -13,6 +13,8 @@ import org.neo4j.driver.exceptions.NoSuchRecordException;
 import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Relationship;
 
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -31,6 +33,7 @@ public class Graph {
     this.challenge = challenge;
     this.predicate = predicate;
     this.databaseName = genDatabaseName(challenge, predicate);
+    System.out.println("Database name: " + this.databaseName);
     this.challengeModule = CompUtil.parseEverything_fromFile(new A4Reporter(), null, "src/main/resources/challenges/" + challenge + ".als");
 
     // Connect to the default database
@@ -54,16 +57,20 @@ public class Graph {
    */
   private String genDatabaseName(String challenge, String predicate) {
     // remove all digits, convert to lowercase and take the first 4 characters
-    String ret = challenge.replaceAll("\\d", "").toLowerCase().substring(0, 4);
+    StringBuilder ret = new StringBuilder(challenge.replaceAll("\\d", "").toLowerCase().substring(0, 4));
     // If predicate contains digits, transform them into letters
     if (predicate.matches(".*\\d.*")) {
-      int number = Integer.parseInt(predicate.replaceAll("[^0-9]", ""));
-      ret += Character.valueOf((char) (96 + number % 26)).toString();
+
+      String[] numbers = predicate.replaceAll("[^0-9]", "").split("");
+      for (Iterator<String> it = Arrays.stream(numbers).iterator(); it.hasNext(); ) {
+        String number = it.next();
+        ret.append((char) (Integer.parseInt(number) + 97));
+      }
     } else {
       // If predicate does not contain digits, just append it
-      ret += predicate;
+      ret.append(predicate);
     }
-    return ret;
+    return ret.toString();
   }
 
   /**
