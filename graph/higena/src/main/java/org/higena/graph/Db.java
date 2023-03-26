@@ -59,7 +59,7 @@ public class Db implements AutoCloseable {
     deleteProperty("sat");
     deleteProperty("cmd_n");
     addEdgesPopularity();
-    aggregateEquivNodes("ast");
+    aggregateEquivNodes();
     addTreeDiffToEdges();
     addNodePoissonToEdges();
     //fixIncorrectOnlyPaths();
@@ -83,8 +83,7 @@ public class Db implements AutoCloseable {
     addProjection(projectionName, "Submission", "Derives", weightProperty);
     // Run Dijkstra's algorithm
     return runQuery("""
-            MATCH (source:Submission {id: "%s"})
-            MATCH (target:Correct)
+            MATCH (source:Submission {id: "%s"}), (target:Correct)
             WHERE source.id <> target.id
             CALL gds.shortestPath.dijkstra.stream('%s', {
                 sourceNode: source,
@@ -111,20 +110,18 @@ public class Db implements AutoCloseable {
    * Weakly Connected Components algorithm to find the connected components
    * of the graph. Each node gets a componentId property with the id of the
    * component it belongs to.
-   *
-   * @param property Name of the property to aggregate by
    */
-  private void aggregateEquivNodes(String property) {
+  private void aggregateEquivNodes() {
     String projectionName = "equalGraph", relName = "EQUAL", componentProperty = "componentId";
     // Create edges between nodes with the same property
     runQuery("""
             MATCH (n:Submission)
             MATCH (s:Submission)
-            WHERE n.id <> s.id AND n.%s = s.%s
-            MERGE (n)-[:%s]-(s)""".formatted(property, property, relName));
+            WHERE n.id <> s.id AND n.ast = s.ast
+            MERGE (n)-[:%s]-(s)""".formatted(relName));
     // Check if graph already exists and create it if it doesn't
     if (!hasProjection(projectionName)) {
-      addProjection(projectionName, "Submission", relName);
+      addProjection(projectionName, relName);
     }
     // Run Weakly Connected Components algorithm
     try {
@@ -237,9 +234,9 @@ public class Db implements AutoCloseable {
             RETURN src.ast AS src, dst.ast AS dst, e.id AS edgeID""");
     TED ted = new TED();
 
-    for (Result it = res; it.hasNext(); ) {
+    while (res.hasNext()) {
       // Get source and destination nodes of the edge + edge itself
-      Record rec = it.next();
+      Record rec = res.next();
       String srcAST = rec.get("src").asString(), dstAST = rec.get("dst").asString(), edge = rec.get("edgeID").asString();
 
       // Compute tree differences (edit distance and edits)
@@ -385,11 +382,10 @@ public class Db implements AutoCloseable {
    * Graph projections are used to run neo4j graph data science algorithms.
    *
    * @param name         Name of the graph projection
-   * @param label        Label of the nodes
    * @param relationship Relationship type of the edges
    */
-  private void addProjection(String name, String label, String relationship) {
-    runQuery("CALL gds.graph.project('%s', '%s', '%s')".formatted(name, label, relationship));
+  private void addProjection(String name, String relationship) {
+    runQuery("CALL gds.graph.project('%s', '%s', '%s')".formatted(name, "Submission", relationship));
   }
 
   /**
@@ -461,11 +457,12 @@ public class Db implements AutoCloseable {
   /**
    * Deletes all loops of the given relationship type. Loops are edges
    * where the source and target node are the same.
-   *
-   * @param relationship Relationship type of the loops to delete
    */
-  private void deleteLoops(String relationship) {
-    Result res = runQuery("MATCH (s:Submission)-[r:" + relationship + "]->" + "(s:Submission)\n" + "DELETE r\n" + "RETURN count(r)");
+  private void deleteLoops() {
+    Result res = runQuery("""
+            MATCH (s:Submission)-[r:Derives]->(s:Submission)
+            DELETE r
+            RETURN count(r)""");
     System.out.println("Deleted " + res.consume().counters().relationshipsDeleted() + " loops.");
   }
 
@@ -488,7 +485,7 @@ public class Db implements AutoCloseable {
       }
     }
     // Remove resulting loops
-    deleteLoops("Derives");
+    deleteLoops();
     // Delete componentId property
     deleteProperty("componentId");
   }
