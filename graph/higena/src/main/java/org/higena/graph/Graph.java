@@ -79,8 +79,10 @@ public class Graph {
   public void setup() {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       System.out.println("Starting DB setup...");
+      long startTime = System.nanoTime();
       db.setup();
-      System.out.println("Success: Finished setup.\n");
+      long endTime = System.nanoTime() - startTime;
+      System.out.println("Success: Finished setup in " + endTime / Math.pow(10, 6) + " ms.");
     }
   }
 
@@ -128,7 +130,7 @@ public class Graph {
    * @return The first edge of the shortest path.
    */
   public Hint getTEDHint(String expr) {
-    return getDijkstraHint(expr, "ted");
+    return getTEDHint(expr, "");
   }
 
   /**
@@ -151,7 +153,7 @@ public class Graph {
    * @return The first edge of the shortest path.
    */
   public Hint getEdgePoissonHint(String expr) {
-    return getDijkstraHint(expr, "poisson");
+    return getEdgePoissonHint(expr, "");
   }
 
   /**
@@ -174,19 +176,19 @@ public class Graph {
    * @return The first edge of the shortest path.
    */
   public Hint getNodePoissonHint(String expr) {
-    return getDijkstraHint(expr, "dstPoisson");
+    return getNodePoissonHint(expr, "");
   }
 
   /**
    * Applies the dijkstra algorithm to find the poisson path using the
    * node's popularity and returns the  first edge of the path.
    *
-   * @param expr Expressopm of the node to find the hint for.
+   * @param expr Expression of the node to find the hint for.
    * @param code Full Alloy code that contains the expression.
    * @return The first edge of the shortest path.
    */
   public Hint getNodePoissonHint(String expr, String code) {
-    return getDijkstraHint(expr, "dstPoisson");
+    return getDijkstraHint(expr, "dstPoisson", code);
   }
 
   /**
@@ -220,10 +222,6 @@ public class Graph {
       }
     }
     return null;
-  }
-
-  private Hint getDijkstraHint(String expr, String property) {
-    return getDijkstraHint(expr, property, "");
   }
 
   // Parse functions
