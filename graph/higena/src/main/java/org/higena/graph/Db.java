@@ -63,6 +63,7 @@ public class Db implements AutoCloseable {
     addTreeDiffToEdges();
     addNodePoissonToEdges();
     //fixIncorrectOnlyPaths();
+    addPathToIncorrectLeafs();
   }
 
   // Algorithms
@@ -138,23 +139,25 @@ public class Db implements AutoCloseable {
     }
   }
 
-  private void fixIncorrectOnlyPaths() {
-    // Get all incorrect nodes without a path to a correct node
-    Result badNodes = getIncorrectOnlyPaths();
-    System.out.println(badNodes.list());
+  // ADD Methods
+
+  /**
+   * Adds edges between incorrect leaf nodes and the most similar correct node.
+   */
+  private void addPathToIncorrectLeafs() {
+    // Get all incorrect leaf nodes
+    Result badNodes = getIncorrectLeafs();
     // Get the most similar correct node for each incorrect node
     while (badNodes.hasNext()) {
       Node badNode = badNodes.next().get("node").asNode();
+      System.out.println("Node: " + badNode.get("id").asString());
       // Get most similar correct node
-      Node mostSimilarNode = getMostSimilarNode(badNode.get("ast").asString()
-              , "Correct");
+      Node mostSimilarNode = getMostSimilarNode(badNode.get("ast").asString(), "Correct");
       // Create edge between the two nodes
       addEdge(badNode, mostSimilarNode);
     }
-    System.out.println("Fixed incorrect only paths");
+    System.out.println("Added edges to incorrect leaf nodes.");
   }
-
-  // ADD Methods
 
   /**
    * Creates a relationship Derives between the given nodes.
@@ -183,8 +186,7 @@ public class Db implements AutoCloseable {
                 ELSE 1.0 / n2.popularity
               END
             }]->(n2)
-            RETURN r AS edge""".formatted(n1.get("id").asString(), n2.get("id").asString(),
-            diff.getTed(), diff.getActions());
+            RETURN r AS edge""".formatted(n1.get("id").asString(), n2.get("id").asString(), diff.getTed(), diff.getActions());
 
     return runQuery(query).single().get(0).asRelationship();
   }
@@ -493,6 +495,19 @@ public class Db implements AutoCloseable {
   // GET methods
 
   /**
+   * Gets all leaf nodes with an incorrect label.
+   *
+   * @return All nodes that have an Incorrect label.
+   */
+  public Result getIncorrectLeafs() {
+    return runQuery("""
+            MATCH (n:Incorrect)
+            WHERE NOT (n)-[:Derives]->()
+            RETURN n AS node
+            """);
+  }
+
+  /**
    * Gets Incorrect nodes that do not have a path to a Correct node.
    *
    * @return Incorrect nodes that do not have a path to a Correct node.
@@ -652,8 +667,8 @@ public class Db implements AutoCloseable {
    * @param graphName     Name of the graph projection
    * @param writeProperty Name of the property to write the component id to
    * @throws ClientException If the query fails to run in the case where
-   * there is an invalid relationship projection. For example, when no EQUAL
-   * relationships exist.
+   *                         there is an invalid relationship projection. For example, when no EQUAL
+   *                         relationships exist.
    */
   private void runConnectedComponents(String graphName, String writeProperty) throws ClientException {
     runQuery("CALL gds.wcc.write('" + graphName + "', {writeProperty: '" + writeProperty + "'}) " + "YIELD " + "nodePropertiesWritten, componentCount");
