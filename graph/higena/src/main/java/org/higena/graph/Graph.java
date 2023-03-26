@@ -79,10 +79,10 @@ public class Graph {
   public void setup() {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       System.out.println("Starting DB setup...");
-      long startTime = System.nanoTime();
+      long startTime = System.currentTimeMillis();
       db.setup();
-      long endTime = System.nanoTime() - startTime;
-      System.out.println("Success: Finished setup in " + endTime / Math.pow(10, 6) + " ms.");
+      long endTime = System.currentTimeMillis() - startTime;
+      System.out.println("Success: Finished setup in " + endTime + " ms.");
     }
   }
 
@@ -221,9 +221,6 @@ public class Graph {
         Record rec = res.single();
         List<Node> nodes = rec.get("path").asList(Value::asNode);
         int totalCost = rec.get("totalCost").asInt();
-        System.out.println("Total cost: " + totalCost);
-        System.out.println("node0: " + nodes.get(0).get("ast").asString());
-        System.out.println("node1: " + nodes.get(1).get("ast").asString());
         Relationship firstRel = db.getRelationship(nodes.get(0), nodes.get(1));
 
         return new Hint(totalCost, firstRel);
@@ -287,5 +284,24 @@ public class Graph {
       return "";
     }
     return A4FParser.parse(code, expr).toString();
+  }
+
+  // Other
+
+  public void printStatistics() {
+    try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
+      Result res = db.getStatistics();
+        try {
+            Record rec = res.single();
+          System.out.printf("""
+                  Number of nodes: %d
+                  Number of edges: %d
+                  Number of correct nodes: %d
+                  Number of incorrect nodes: %d
+                  """, rec.get("submissions").asInt(), rec.get("derivations").asInt(), rec.get("corrects").asInt(), rec.get("incorrects").asInt());
+        } catch (NoSuchRecordException e) {
+          System.err.println("ERROR: Cannot retrieve statistics.");
+        }
+    }
   }
 }

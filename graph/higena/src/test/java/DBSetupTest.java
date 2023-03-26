@@ -35,6 +35,7 @@ public class DBSetupTest {
   public void testDBSetup(String challenge, String predicate) {
     Graph g = new Graph(challenge, predicate);
     g.setup();
+    g.printStatistics();
   }
 
 }

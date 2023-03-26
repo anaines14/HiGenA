@@ -150,7 +150,6 @@ public class Db implements AutoCloseable {
     // Get the most similar correct node for each incorrect node
     while (badNodes.hasNext()) {
       Node badNode = badNodes.next().get("node").asNode();
-      System.out.println("Node: " + badNode.get("id").asString());
       // Get most similar correct node
       Node mostSimilarNode = getMostSimilarNode(badNode.get("ast").asString(), "Correct");
       // Create edge between the two nodes
@@ -493,6 +492,20 @@ public class Db implements AutoCloseable {
   }
 
   // GET methods
+
+  public Result getStatistics() {
+    return runQuery("""
+            MATCH (s:Submission)
+            WITH count(s) AS submissions
+            MATCH (c:Correct)
+            WITH submissions, count(c) AS corrects
+            MATCH (i:Incorrect)
+            WITH submissions, corrects, count(i) as incorrects
+            MATCH ()-[r:Derives]->()
+            WITH submissions, corrects, incorrects, count(r) AS derivations
+            RETURN submissions, corrects, incorrects, derivations
+            """);
+  }
 
   /**
    * Gets all leaf nodes with an incorrect label.
