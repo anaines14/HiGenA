@@ -113,7 +113,8 @@ public class InteractiveMenu {
       default -> throw new IllegalStateException("Unexpected value: " + option);
     };
     // Show hint
-    System.out.println("HINT:\n" + hint.toHintMsg() + "\n");
+    if (hint != null)
+      System.out.println("HINT:\n" + hint.toHintMsg() + "\n");
   }
 
   private static void execSetup(Graph graph) {

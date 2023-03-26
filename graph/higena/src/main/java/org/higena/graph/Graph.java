@@ -104,7 +104,12 @@ public class Graph {
     try {
       ast = parseExpr(expr);
     } catch (Exception e) {
-      ast = parseExpr(expr, code);
+      try {
+        ast = parseExpr(expr, code);
+      } catch (Exception ex) {
+        System.err.println("Error parsing expression: " + expr);
+        return null;
+      }
     }
     Node node = db.getNodeByAST(ast);
 
@@ -206,6 +211,9 @@ public class Graph {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       // Get the node to start the path from
       Node node = getSourceNode(db, expr, code);
+      if (node == null) { // Failed to generate hint
+        return null;
+      }
       // Get the shortest path from the node to the goal node
       Result res = db.dijkstra(node.get("id").asString(), property);
       try {
@@ -213,6 +221,9 @@ public class Graph {
         Record rec = res.single();
         List<Node> nodes = rec.get("path").asList(Value::asNode);
         int totalCost = rec.get("totalCost").asInt();
+        System.out.println("Total cost: " + totalCost);
+        System.out.println("node0: " + nodes.get(0).get("ast").asString());
+        System.out.println("node1: " + nodes.get(1).get("ast").asString());
         Relationship firstRel = db.getRelationship(nodes.get(0), nodes.get(1));
 
         return new Hint(totalCost, firstRel);

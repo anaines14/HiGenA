@@ -83,8 +83,9 @@ public class Db implements AutoCloseable {
     addProjection(projectionName, "Submission", "Derives", weightProperty);
     // Run Dijkstra's algorithm
     return runQuery("""
-            MATCH (source:Incorrect {id: "%s"})
+            MATCH (source:Submission {id: "%s"})
             MATCH (target:Correct)
+            WHERE source.id <> target.id
             CALL gds.shortestPath.dijkstra.stream('%s', {
                 sourceNode: source,
                 targetNode: target,
