@@ -117,21 +117,22 @@ public class EditAction {
   }
 
   private static String getFieldRegex(String field) {
+    String nodesRegex = "([!a-zA-Z0-9/&+-]+)";
     switch (field) {
       case "type" -> {
         return "type='(\\w+)'";
       }
       case "node" -> {
-        return "node=([a-zA-Z0-9/]+)";
+        return "node=" + nodesRegex;
       }
       case "parent" -> {
-        return "parent=([a-zA-Z0-9/]+)";
+        return "parent=" + nodesRegex;
       }
       case "position" -> {
         return "position=(\\d+)";
       }
       case "value" -> {
-        return "value=([a-zA-Z0-9/]+)";
+        return "value=" + nodesRegex;
       }
       case "tree" -> {
         return "tree=(\\{.*?}),";
