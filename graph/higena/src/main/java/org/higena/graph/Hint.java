@@ -18,16 +18,7 @@ public class Hint {
     rel.get("operations").asList(Value::asString).forEach(op -> actions.add(EditAction.fromString(op)));
   }
 
-  public String toHintMsg() {
-    return distanceToHint() + "\n" + actionsToHint();
-  }
-
-  private String actionsToHint() {
-    int random = new Random().nextInt(actions.size()) % actions.size();
-    return actionToHint(actions.get(random));
-  }
-
-  private String actionToHint(EditAction action) {
+  public static String actionToHint(EditAction action) {
     String type = action.getType();
     String node = action.getNode().getLabel().replace("this/", ""),
             parent = action.getParent() != null ? action.getParent().getLabel().replace("this/", "") : null,
@@ -35,21 +26,44 @@ public class Hint {
 
     switch (type) {
       case "Update" -> {
-        return "Try changing " + node + " to " + value + ". ";
+        return "Try changing \"" + node + "\" to \"" + value + "\". ";
       }
       case "Move" -> {
-        return "Try changing the position of the " + node + " to " + parent + ". ";
+        if (parent != null) {
+          String str = '"' + node + '"' + " is not in the right place. Try " +
+                  "moving it to ";
+          if (parent.equals("root"))
+            return str + "the top level position.";
+          return str + "inside of " + parent + "\".";
+        }
       }
       case "TreeAddition", "TreeInsert", "Addition", "Insert" -> {
-        return "Try adding " + node + " to " + parent + ". ";
+        if (parent != null) {
+          String str = "Missing \"" + node + "\". Try adding it to ";
+          if (parent.equals("root"))
+            return str + "the top level position.";
+          return '"' + parent + "\".";
+        }
       }
       case "TreeDelete", "Delete" -> {
-        return "Try deleting " + node + ". ";
+        return "Try deleting \"" + node + "\". ";
       }
       default -> {
         return "TODO hint for " + type + ". ";
       }
     }
+
+    System.err.println("Failed to generate hint for " + action);
+    return "";
+  }
+
+  public String toHintMsg() {
+    return distanceToHint() + "\n" + actionsToHint();
+  }
+
+  private String actionsToHint() {
+    int random = new Random().nextInt(actions.size()) % actions.size();
+    return actionToHint(actions.get(random));
   }
 
   private String distanceToHint() {
