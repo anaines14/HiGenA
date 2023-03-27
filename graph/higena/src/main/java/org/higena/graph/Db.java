@@ -152,8 +152,10 @@ public class Db implements AutoCloseable {
       Node badNode = badNodes.next().get("node").asNode();
       // Get most similar correct node
       Node mostSimilarNode = getMostSimilarNode(badNode.get("ast").asString(), "Correct");
-      // Create edge between the two nodes
-      addEdge(badNode, mostSimilarNode);
+      if (mostSimilarNode != null) {
+        // Create edge between the two nodes
+        addEdge(badNode, mostSimilarNode);
+      }
     }
     System.out.println("Added edges to incorrect leaf nodes.");
   }
