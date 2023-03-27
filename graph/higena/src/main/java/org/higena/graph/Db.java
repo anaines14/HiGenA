@@ -671,7 +671,7 @@ public class Db implements AutoCloseable {
    * @param query Query to run
    * @return Result of the query
    */
-  private Result runQuery(String query) {
+  public Result runQuery(String query) {
     return session.run(new Query(query));
   }
 

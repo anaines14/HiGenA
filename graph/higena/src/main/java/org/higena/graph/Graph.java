@@ -6,6 +6,7 @@ import edu.mit.csail.sdg.parser.CompUtil;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.higena.A4FExprParser;
 import org.higena.A4FParser;
+import org.higena.ast.actions.EditAction;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Value;
@@ -13,6 +14,7 @@ import org.neo4j.driver.exceptions.NoSuchRecordException;
 import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Relationship;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -286,7 +288,41 @@ public class Graph {
     return A4FParser.parse(code, expr).toString();
   }
 
-  // Other
+  // Auxiliar methods
+
+  public void printAllHints() {
+    try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
+     Result res = db.runQuery("""
+             MATCH (n:Incorrect)
+             RETURN n.id AS nodeId
+             """) ;
+    while (res.hasNext()) {
+      String nodeId = res.next().get("nodeId").asString();
+      Result dijkstra = db.dijkstra(nodeId, "ted");
+
+      try {
+        List<Node> nodes = dijkstra.single().get("path").asList(Value::asNode);
+        Relationship firstRel = db.getRelationship(nodes.get(0), nodes.get(1));
+
+        List<EditAction> actions = new ArrayList<>();
+        firstRel.get("operations").asList(Value::asString).forEach(op -> actions.add(EditAction.fromString(op)));
+
+        System.out.println("\nIncorrect node: " + nodes.get(0).get("expr").asString());
+        System.out.println("Next node: " + nodes.get(1).get("expr").asString());
+        for (EditAction action : actions) {
+          System.out.println("--------------------");
+          System.out.println("Action: " + action);
+          System.out.println("Hint: " + Hint.actionToHint(action));
+        }
+
+      } catch (NoSuchRecordException e) {
+        System.err.println("ERROR: Cannot retrieve hint.");
+      }
+
+    }
+
+    }
+  }
 
   public void printStatistics() {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
@@ -304,4 +340,5 @@ public class Graph {
         }
     }
   }
+
 }
