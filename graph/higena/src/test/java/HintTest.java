@@ -3,31 +3,46 @@ import org.higena.ast.actions.EditAction;
 import org.higena.ast.actions.TreeDiff;
 import org.higena.graph.Graph;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.util.stream.Stream;
 
 public class HintTest {
 
-  @Test
-  public void printAllHints() {
-
-    Graph g = new Graph("9jPK8KBWzjFmBx4Hb", "prop1");
+  @MethodSource("datasetProvider")
+  @ParameterizedTest
+  public void printChallengeHints(String challenge, String predicate) {
+    Graph g = new Graph(challenge, predicate);
     g.printAllHints();
-
   }
 
-  @Test
-  public void parseAction() {
-    String actionStr = "{type='Update', node=&, value=-}";
+  private static Stream<Arguments> datasetProvider() {
+    return Stream.of(Arguments.of("9jPK8KBWzjFmBx4Hb", "prop1"));
+  }
+
+  @ValueSource(strings = {"{type='Update', node=&, value=-}"})
+  @ParameterizedTest
+  public void parseAction(String actionStr) {
     System.out.println(EditAction.fromString(actionStr));
 
   }
 
-  @Test
-  public void printHints() {
-    String tree1 = "{AND{before{no{this/Trash}}}{no{this/Protected}}}",
-            tree2 = "{before{no{+{this/Protected}{this/Trash}}}}";
+  @MethodSource("astInputProvider")
+  @ParameterizedTest
+  public void printAllHints(String ast1, String ast2) {
     TED ted = new TED();
-    TreeDiff diff = ted.computeTreeDiff(tree1, tree2);
-    System.out.println(EditAction.fromString(diff.getActions().get(4).toString()));
-    System.out.println(diff.getActions().get(4));
+    TreeDiff diff = ted.computeTreeDiff(ast1, ast2);
+
+    for (EditAction action : diff.getActions()) {
+      System.out.println("Action: " + action);
+      System.out.println("Hint: " + EditAction.fromString(action.toString()));
+    }
+  }
+
+  private static Stream<Arguments> astInputProvider() {
+    return Stream.of(Arguments.of("9jPK8KBWzjFmBx4Hb", "prop1"));
   }
 }

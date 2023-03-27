@@ -95,7 +95,8 @@ public class Graph {
    * the same AST. If it does not exist, it searches for the most similar node
    * and creates a new node with the given expression and adds an edge between
    * these two nodes.
-   * @param db Database instance.
+   *
+   * @param db   Database instance.
    * @param expr Expression
    * @param code Code
    * @return Node from the database with the given expression.
@@ -209,11 +210,11 @@ public class Graph {
    * @return The first edge of the shortest path.
    */
   private Hint getDijkstraHint(String expr, String property,
-                                      String code) {
+                               String code) {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       // Get the node to start the path from
       Node node = getSourceNode(db, expr, code);
-      if (node == null) { // Failed to generate hint
+      if (node == null) { // Failed to generate hint because of no source node
         return null;
       }
       // Get the shortest path from the node to the goal node
@@ -292,54 +293,52 @@ public class Graph {
 
   public void printAllHints() {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
-     Result res = db.runQuery("""
-             MATCH (n:Incorrect)
-             RETURN n.id AS nodeId
-             """) ;
-    while (res.hasNext()) {
-      String nodeId = res.next().get("nodeId").asString();
-      Result dijkstra = db.dijkstra(nodeId, "ted");
+      Result res = db.runQuery("""
+              MATCH (n:Incorrect)
+              RETURN n.id AS nodeId
+              """);
+      while (res.hasNext()) {
+        String nodeId = res.next().get("nodeId").asString();
+        Result dijkstra = db.dijkstra(nodeId, "ted");
 
-      try {
-        List<Node> nodes = dijkstra.single().get("path").asList(Value::asNode);
-        Relationship firstRel = db.getRelationship(nodes.get(0), nodes.get(1));
+        try {
+          List<Node> nodes = dijkstra.single().get("path").asList(Value::asNode);
+          Relationship firstRel = db.getRelationship(nodes.get(0), nodes.get(1));
 
-        List<EditAction> actions = new ArrayList<>();
-        firstRel.get("operations").asList(Value::asString).forEach(op -> actions.add(EditAction.fromString(op)));
+          List<EditAction> actions = new ArrayList<>();
+          firstRel.get("operations").asList(Value::asString).forEach(op -> actions.add(EditAction.fromString(op)));
 
-        System.out.println("\nIncorrect node: " + nodes.get(0).get("expr").asString());
-        System.out.println("Next node: " + nodes.get(1).get("expr").asString());
-        System.out.println("AST1: " + nodes.get(0).get("ast").asString());
-        System.out.println("AST2: " + nodes.get(1).get("ast").asString());
-        for (EditAction action : actions) {
-          System.out.println("--------------------");
-          System.out.println("Action: " + action);
-          System.out.println("Hint: " + Hint.actionToHint(action));
+          System.out.println("\nIncorrect node: " + nodes.get(0).get("expr").asString());
+          System.out.println("Next node: " + nodes.get(1).get("expr").asString());
+          System.out.println("AST1: " + nodes.get(0).get("ast").asString());
+          System.out.println("AST2: " + nodes.get(1).get("ast").asString());
+          for (EditAction action : actions) {
+            System.out.println("--------------------");
+            System.out.println("Action: " + action);
+            System.out.println("Hint: " + Hint.actionToHint(action));
+          }
+
+        } catch (NoSuchRecordException e) {
+          System.err.println("ERROR: Cannot retrieve hint.");
         }
-
-      } catch (NoSuchRecordException e) {
-        System.err.println("ERROR: Cannot retrieve hint.");
       }
-
-    }
-
     }
   }
 
   public void printStatistics() {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       Result res = db.getStatistics();
-        try {
-            Record rec = res.single();
-          System.out.printf("""
-                  Number of nodes: %d
-                  Number of edges: %d
-                  Number of correct nodes: %d
-                  Number of incorrect nodes: %d
-                  """, rec.get("submissions").asInt(), rec.get("derivations").asInt(), rec.get("corrects").asInt(), rec.get("incorrects").asInt());
-        } catch (NoSuchRecordException e) {
-          System.err.println("ERROR: Cannot retrieve statistics.");
-        }
+      try {
+        Record rec = res.single();
+        System.out.printf("""
+                Number of nodes: %d
+                Number of edges: %d
+                Number of correct nodes: %d
+                Number of incorrect nodes: %d
+                """, rec.get("submissions").asInt(), rec.get("derivations").asInt(), rec.get("corrects").asInt(), rec.get("incorrects").asInt());
+      } catch (NoSuchRecordException e) {
+        System.err.println("ERROR: Cannot retrieve statistics.");
+      }
     }
   }
 
