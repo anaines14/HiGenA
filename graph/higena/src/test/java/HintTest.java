@@ -20,4 +20,14 @@ public class HintTest {
     System.out.println(EditAction.fromString(actionStr));
 
   }
+
+  @Test
+  public void printHints() {
+    String tree1 = "{AND{before{no{this/Trash}}}{no{this/Protected}}}",
+            tree2 = "{before{no{+{this/Protected}{this/Trash}}}}";
+    TED ted = new TED();
+    TreeDiff diff = ted.computeTreeDiff(tree1, tree2);
+    System.out.println(EditAction.fromString(diff.getActions().get(4).toString()));
+    System.out.println(diff.getActions().get(4));
+  }
 }

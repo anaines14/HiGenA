@@ -309,6 +309,8 @@ public class Graph {
 
         System.out.println("\nIncorrect node: " + nodes.get(0).get("expr").asString());
         System.out.println("Next node: " + nodes.get(1).get("expr").asString());
+        System.out.println("AST1: " + nodes.get(0).get("ast").asString());
+        System.out.println("AST2: " + nodes.get(1).get("ast").asString());
         for (EditAction action : actions) {
           System.out.println("--------------------");
           System.out.println("Action: " + action);

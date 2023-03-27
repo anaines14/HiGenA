@@ -53,7 +53,6 @@ public class EditAction {
     String type = getMatch("type", actionStr), value = getMatch("value", actionStr),
             tree = getMatch("tree", actionStr), node = getMatch("node", actionStr),
             parent = getMatch("parent", actionStr), position = getMatch("position", actionStr);
-
     if (type != null) {
       switch (type) {
         case "TreeAddition", "Move", "TreeInsert" -> {
@@ -84,29 +83,30 @@ public class EditAction {
       }
     }
     System.err.println("Error parsing EditAction: " + actionStr);
+
     return null;
   }
 
   @Override
   public String toString() {
-    String ret = "\"{" + "type='" + type + '\'';
+    String ret = "\"(" + "type='" + type + '\'';
 
     switch (type) {
       case "TreeAddition", "Move", "TreeInsert" -> {
         ret += ", tree=" + node.toString() + ", parent=";
         ret += parent.getLabel();
-        ret += ", position=" + position + "}\"";
+        ret += ", position=" + position;
       }
       case "Addition", "Insert" -> {
         ret += ", node=" + node.getLabel() + ", parent=";
         ret += parent.getLabel();
-        ret += ", position=" + position + "}\"";
+        ret += ", position=" + position;
       }
-      case "Update" -> ret += ", node=" + node.getLabel() + ", value=" + value + "}\"";
-      case "TreeDelete" -> ret += ", tree=" + node.toString() + "}\"";
-      default -> ret += ", node=" + node.getLabel() + "}\"";
+      case "Update" -> ret += ", node=" + node.getLabel() + ", value=" + value;
+      case "TreeDelete" -> ret += ", tree=" + node.toString();
+      default -> ret += ", node=" + node.getLabel();
     }
-    return ret;
+    return ret + ")\"";
   }
 
   // Auxiliar methods
@@ -135,7 +135,7 @@ public class EditAction {
         return "value=" + nodesRegex;
       }
       case "tree" -> {
-        return "tree=(\\{.*?}),";
+        return "tree=(\\{.*?})(\\)|,)";
       }
     }
     return null;

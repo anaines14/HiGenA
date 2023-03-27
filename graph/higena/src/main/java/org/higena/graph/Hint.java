@@ -42,7 +42,7 @@ public class Hint {
           String str = "Missing \"" + node + "\". Try adding it to ";
           if (parent.equals("root"))
             return str + "the top level position.";
-          return '"' + parent + "\".";
+          return str + "inside of \"" + parent + "\".";
         }
       }
       case "TreeDelete", "Delete" -> {
@@ -62,8 +62,7 @@ public class Hint {
   }
 
   private String actionsToHint() {
-    int random = new Random().nextInt(actions.size()) % actions.size();
-    return actionToHint(actions.get(random));
+    return actionToHint(actions.get(0));
   }
 
   private String distanceToHint() {
