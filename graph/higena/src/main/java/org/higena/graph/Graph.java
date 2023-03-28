@@ -36,7 +36,6 @@ public class Graph {
     this.challenge = challenge;
     this.predicate = predicate;
     this.databaseName = genDatabaseName(challenge, predicate);
-    System.out.println("Database name: " + this.databaseName);
     this.challengeModule = CompUtil.parseEverything_fromFile(new A4Reporter(), null, "src/main/resources/challenges/" + challenge + ".als");
 
     // Connect to the default database
@@ -104,15 +103,19 @@ public class Graph {
    */
   private Node getSourceNode(Db db, String expr, String code) {
     // Get node from database with the AST
-    String ast = "";
-    try {
-      ast = parseExpr(expr);
-    } catch (Exception e) {
+    String ast;
+    if (expr.isEmpty())
+      ast = "";
+    else {
       try {
-        ast = parseExpr(expr, code);
-      } catch (Exception ex) {
-        System.err.println("Error parsing expression: " + expr);
-        return null;
+        ast = parseExpr(expr);
+      } catch (Exception e) {
+        try {
+          ast = parseExpr(expr, code);
+        } catch (Exception ex) {
+          System.err.println("Error parsing expression: " + expr);
+          return null;
+        }
       }
     }
     Node node = db.getNodeByAST(ast);
@@ -181,7 +184,7 @@ public class Graph {
    * Applies the dijkstra algorithm to find the poisson path using the
    * node's popularity and returns the  first edge of the path.
    *
-   * @param expr Expressopm of the node to find the hint for.
+   * @param expr Expression of the node to find the hint for.
    * @return The first edge of the shortest path.
    */
   public Hint getNodePoissonHint(String expr) {
@@ -295,6 +298,12 @@ public class Graph {
   }
 
   // Auxiliar methods
+
+  public Result runQuery(String query) {
+    try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
+      return db.runQuery(query);
+    }
+  }
 
   public void printAllHints() {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {

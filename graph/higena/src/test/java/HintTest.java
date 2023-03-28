@@ -2,14 +2,24 @@ import org.higena.ast.TED;
 import org.higena.ast.actions.EditAction;
 import org.higena.ast.actions.TreeDiff;
 import org.higena.graph.Graph;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.neo4j.driver.Result;
 
 import java.util.stream.Stream;
 
 public class HintTest {
+
+  private static Stream<Arguments> datasetProvider() {
+    return Stream.of(Arguments.of("9jPK8KBWzjFmBx4Hb", "prop1"));
+  }
+
+  private static Stream<Arguments> astInputProvider() {
+    return Stream.of(Arguments.of("9jPK8KBWzjFmBx4Hb", "prop1"));
+  }
 
   @MethodSource("datasetProvider")
   @ParameterizedTest
@@ -18,8 +28,23 @@ public class HintTest {
     g.printAllHints();
   }
 
-  private static Stream<Arguments> datasetProvider() {
-    return Stream.of(Arguments.of("9jPK8KBWzjFmBx4Hb", "prop1"));
+  @Test
+  public void printHints() {
+    String challenge = "9jPK8KBWzjFmBx4Hb";
+    String predicate = "prop1";
+
+    Graph g = new Graph(challenge, predicate);
+    Result res = g.runQuery("""
+            MATCH (n:Incorrect)
+            RETURN n.expr AS expr
+            """);
+
+    while (res.hasNext()) {
+      String expr = res.next().get("expr").asString();
+      System.out.println("Hint for " + expr + ":");
+      System.out.println(g.getTEDHint(expr).toHintMsg());
+      System.out.println("-----\n");
+    }
   }
 
   @ValueSource(strings = {"{type='Update', node=&, value=-}"})
@@ -39,9 +64,5 @@ public class HintTest {
       System.out.println("Action: " + action);
       System.out.println("Hint: " + EditAction.fromString(action.toString()));
     }
-  }
-
-  private static Stream<Arguments> astInputProvider() {
-    return Stream.of(Arguments.of("9jPK8KBWzjFmBx4Hb", "prop1"));
   }
 }
