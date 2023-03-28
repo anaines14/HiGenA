@@ -6,6 +6,7 @@ import edu.mit.csail.sdg.parser.CompUtil;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.higena.A4FExprParser;
 import org.higena.A4FParser;
+import org.higena.ast.TED;
 import org.higena.ast.actions.EditAction;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
@@ -223,10 +224,14 @@ public class Graph {
         // Get results from the query to generate the hint
         Record rec = res.single();
         List<Node> nodes = rec.get("path").asList(Value::asNode);
-        int totalCost = rec.get("totalCost").asInt();
         Relationship firstRel = db.getRelationship(nodes.get(0), nodes.get(1));
 
-        return new Hint(totalCost, firstRel);
+        // Calculate TED between the first and last node
+        TED ted = new TED();
+        int t = ted.computeEditDistance(nodes.get(0).get("ast").toString(),
+                nodes.get(nodes.size()-1).get("ast").toString());
+
+        return new Hint(t, firstRel);
 
       } catch (NoSuchRecordException e) {
         System.err.println("ERROR: Cannot retrieve hint.");

@@ -8,10 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Hint {
-  private final int distance;
+  private final double distance;
   private final List<EditAction> actions;
 
-  public Hint(int distance, Relationship rel) {
+  public Hint(double distance, Relationship rel) {
     this.distance = distance;
     this.actions = new ArrayList<>();
     rel.get("operations").asList(Value::asString).forEach(op -> actions.add(EditAction.fromString(op)));
