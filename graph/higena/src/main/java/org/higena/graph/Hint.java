@@ -6,7 +6,6 @@ import org.neo4j.driver.types.Relationship;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class Hint {
   private final int distance;

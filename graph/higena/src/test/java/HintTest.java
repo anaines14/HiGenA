@@ -2,7 +2,6 @@ import org.higena.ast.TED;
 import org.higena.ast.actions.EditAction;
 import org.higena.ast.actions.TreeDiff;
 import org.higena.graph.Graph;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
