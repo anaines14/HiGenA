@@ -180,10 +180,10 @@ public class Db implements AutoCloseable {
               ted: %d,
               operations: %s,
               popularity: 0,
-              poisson: 1,
+              poisson: 1.5,
               dstPoisson:
               CASE
-                WHEN n2.popularity = 0 THEN 0
+                WHEN n2.popularity = 0 THEN 1.5
                 ELSE 1.0 / n2.popularity
               END
             }]->(n2)
@@ -220,7 +220,7 @@ public class Db implements AutoCloseable {
             MATCH ()-[r:Derives]->(dst:Submission)
             SET r.dstPoisson =
             CASE
-              WHEN dst.popularity = 0 THEN 0
+              WHEN dst.popularity = 0 THEN 1.5
               ELSE 1.0/dst.popularity
             END
             """);
@@ -333,7 +333,7 @@ public class Db implements AutoCloseable {
             SET r.popularity = popularity + 1
             SET r.poisson =
             CASE
-                WHEN r.popularity = 0 THEN  0
+                WHEN r.popularity = 0 THEN  1.5
                 ELSE 1.0 / r.popularity
             END""");
 
