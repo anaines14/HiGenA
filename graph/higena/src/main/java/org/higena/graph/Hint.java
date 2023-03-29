@@ -1,10 +1,12 @@
 package org.higena.graph;
 
 import org.higena.ast.actions.EditAction;
+import org.higena.ast.actions.EditActionsComparator;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.types.Relationship;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Hint {
@@ -29,19 +31,18 @@ public class Hint {
       }
       case "Move" -> {
         if (parent != null) {
-          String str = '"' + node + '"' + " is not in the right place. Try " +
-                  "moving it to ";
-          if (parent.equals("root"))
-            return str + "the top level position.";
-          return str + "inside of " + parent + "\".";
+          String str = '"' + node + '"' + " is not in the right place.";
+          if (!parent.equals("root"))
+            return str + "Try moving it to the inside of " + parent + "\".";
+          return str;
         }
       }
       case "TreeAddition", "TreeInsert", "Addition", "Insert" -> {
         if (parent != null) {
-          String str = "Missing \"" + node + "\". Try adding it to ";
-          if (parent.equals("root"))
-            return str + "the top level position.";
-          return str + "inside of \"" + parent + "\".";
+          String str = "Missing \"" + node + "\".";
+          if (!parent.equals("root"))
+            return str + "Try adding it inside of \"" + parent + "\".";
+          return str;
         }
       }
       case "TreeDelete", "Delete" -> {
@@ -61,6 +62,7 @@ public class Hint {
   }
 
   private String actionsToHint() {
+    actions.sort(new EditActionsComparator());
     return actionToHint(actions.get(0));
   }
 

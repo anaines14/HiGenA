@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class EditAction {
+public class EditAction  {
   private final String type;
   private final ActionNode node;
   private ActionNode parent;
@@ -162,4 +162,5 @@ public class EditAction {
   public String getValue() {
     return value;
   }
+
 }

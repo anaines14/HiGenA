@@ -31,12 +31,13 @@ public class HintTest {
             RETURN i.expr AS expr
             """);
 
+    int i = 0;
     for (Record rec : exprs) {
       String expr = rec.get("expr").asString();
 
       System.out.println("\nIncorrect expr: " + expr);
       String hint = g.getTEDHint(expr).toHintMsg();
-      System.out.println("HINT:\n" + hint);
+      System.out.println(++i + " HINT:\n" + hint);
 
     }
   }
