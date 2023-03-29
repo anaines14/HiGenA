@@ -299,46 +299,20 @@ public class Graph {
 
   // Auxiliar methods
 
-  public Result runQuery(String query) {
+  /**
+   * Auxiliar method to run a query.
+   * @param query query stings.
+   * @return list of records.
+   */
+  public List<Record> runQuery(String query) {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
-      return db.runQuery(query);
+      return db.runQuery(query).list();
     }
   }
 
-  public void printAllHints() {
-    try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
-      Result res = db.runQuery("""
-              MATCH (n:Incorrect)
-              RETURN n.id AS nodeId
-              """);
-      while (res.hasNext()) {
-        String nodeId = res.next().get("nodeId").asString();
-        Result dijkstra = db.dijkstra(nodeId, "ted");
-
-        try {
-          List<Node> nodes = dijkstra.single().get("path").asList(Value::asNode);
-          Relationship firstRel = db.getRelationship(nodes.get(0), nodes.get(1));
-
-          List<EditAction> actions = new ArrayList<>();
-          firstRel.get("operations").asList(Value::asString).forEach(op -> actions.add(EditAction.fromString(op)));
-
-          System.out.println("\nIncorrect node: " + nodes.get(0).get("expr").asString());
-          System.out.println("Next node: " + nodes.get(1).get("expr").asString());
-          System.out.println("AST1: " + nodes.get(0).get("ast").asString());
-          System.out.println("AST2: " + nodes.get(1).get("ast").asString());
-          for (EditAction action : actions) {
-            System.out.println("--------------------");
-            System.out.println("Action: " + action);
-            System.out.println("Hint: " + Hint.actionToHint(action));
-          }
-
-        } catch (NoSuchRecordException e) {
-          System.err.println("ERROR: Cannot retrieve hint.");
-        }
-      }
-    }
-  }
-
+  /**
+   * Print statistics for the current database (number of nodes, edges, correct nodes, incorrect nodes).
+   */
   public void printStatistics() {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       Result res = db.getStatistics();

@@ -45,6 +45,8 @@ public class TED {
   }
 
   public int computeEditDistance(String t1, String t2) {
+    t1 = "{root" + t1 + "}";
+    t2 = "{root" + t2 + "}";
     return computeEditDistance(parse(t1), parse(t2));
   }
 

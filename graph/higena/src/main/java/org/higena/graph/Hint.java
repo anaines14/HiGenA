@@ -70,11 +70,9 @@ public class Hint {
     } else if (distance == 1) {
       return "One step away from the solution!";
     } else if (distance <= 3) {
-      return "Almost there!";
-    } else if (distance <= 5) {
-      return "Keep going! You are getting closer.";
+      return "Near a solution!";
     } else {
-      return "Keep going! Try again!";
+      return "Keep going!";
     }
   }
 

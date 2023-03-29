@@ -7,8 +7,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 public class HintTest {
@@ -23,27 +25,18 @@ public class HintTest {
 
   @MethodSource("datasetProvider")
   @ParameterizedTest
-  public void printChallengeHints(String challenge, String predicate) {
-    Graph g = new Graph(challenge, predicate);
-    g.printAllHints();
-  }
-
-  @Test
-  public void printHints() {
-    String challenge = "9jPK8KBWzjFmBx4Hb";
-    String predicate = "prop1";
+  public void printHints(String challenge, String predicate) {
 
     Graph g = new Graph(challenge, predicate);
-    Result res = g.runQuery("""
-            MATCH (n:Incorrect)
-            RETURN n.expr AS expr
+    List<Record> exprs = g.runQuery("""
+            MATCH (i:Incorrect)
+            RETURN i.expr AS expr
             """);
 
-    while (res.hasNext()) {
-      String expr = res.next().get("expr").asString();
-      System.out.println("Hint for " + expr + ":");
+    for (Record rec : exprs) {
+      String expr = rec.get("expr").asString();
+      System.out.println("\nHint for " + expr + ":");
       System.out.println(g.getTEDHint(expr).toHintMsg());
-      System.out.println("-----\n");
     }
   }
 
