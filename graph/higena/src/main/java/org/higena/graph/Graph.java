@@ -229,6 +229,11 @@ public class Graph {
         List<Node> nodes = rec.get("path").asList(Value::asNode);
         Relationship firstRel = db.getRelationship(nodes.get(0), nodes.get(1));
 
+        System.out.println("Correct expr: " + nodes.get(nodes.size()-1).get(
+                "expr").toString());
+        System.out.println("Next expr: " + nodes.get(1).get("expr").toString());
+        System.out.println("Edit Operations: " + firstRel.get("operations").toString());
+
         // Calculate TED between the first and last node
         TED ted = new TED();
         int t = ted.computeEditDistance(nodes.get(0).get("ast").toString(),
