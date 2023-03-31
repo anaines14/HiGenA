@@ -35,7 +35,8 @@ public class HintTest {
     for (Record rec : exprs) {
       String expr = rec.get("expr").asString();
 
-      System.out.println("\nIncorrect expr: " + expr);
+      System.out.println("\nIncorrect: " + expr + "\tAST: " + rec.get(
+              "ast").asString());
       String hint = g.getTEDHint(expr).toHintMsg();
       System.out.println(++i + " HINT:\n" + hint);
 
