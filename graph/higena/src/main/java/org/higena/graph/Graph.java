@@ -7,7 +7,6 @@ import io.github.cdimascio.dotenv.Dotenv;
 import org.higena.A4FExprParser;
 import org.higena.A4FParser;
 import org.higena.ast.TED;
-import org.higena.ast.actions.EditAction;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Value;
@@ -15,7 +14,6 @@ import org.neo4j.driver.exceptions.NoSuchRecordException;
 import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Relationship;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -134,73 +132,22 @@ public class Graph {
     return node;
   }
 
-  /**
-   * Applies the dijkstra algorithm to find the shortest path and using
-   * the TED and returns the first edge of the path.
-   *
-   * @param expr Expression of the node to find the hint for.
-   * @return The first edge of the shortest path.
-   */
-  public Hint getTEDHint(String expr) {
-    return getTEDHint(expr, "");
+  public Hint getHint(String expr, HintGenType type) {
+    return getHint(expr, "", type);
   }
 
-  /**
-   * Applies the dijkstra algorithm to find the shortest path and using
-   * the TED and returns the first edge of the path.
-   *
-   * @param expr Expression of the node to find the hint for.
-   * @param code Full Alloy code that contains the expression.
-   * @return The first edge of the shortest path.
-   */
-  public Hint getTEDHint(String expr, String code) {
-    return getDijkstraHint(expr, "ted", code);
-  }
-
-  /**
-   * Applies the dijkstra algorithm to find the poisson path using the
-   * edges' popularity property and returns the first edge of the path.
-   *
-   * @param expr Expression of the node to find the hint for.
-   * @return The first edge of the shortest path.
-   */
-  public Hint getEdgePoissonHint(String expr) {
-    return getEdgePoissonHint(expr, "");
-  }
-
-  /**
-   * Applies the dijkstra algorithm to find the poisson path using the
-   * edges' popularity property and returns the first edge of the path.
-   *
-   * @param expr Expression of the node to find the hint for.
-   * @param code Full Alloy code that contains the expression.
-   * @return The first edge of the shortest path.
-   */
-  public Hint getEdgePoissonHint(String expr, String code) {
-    return getDijkstraHint(expr, "poisson", code);
-  }
-
-  /**
-   * Applies the dijkstra algorithm to find the poisson path using the
-   * node's popularity and returns the  first edge of the path.
-   *
-   * @param expr Expression of the node to find the hint for.
-   * @return The first edge of the shortest path.
-   */
-  public Hint getNodePoissonHint(String expr) {
-    return getNodePoissonHint(expr, "");
-  }
-
-  /**
-   * Applies the dijkstra algorithm to find the poisson path using the
-   * node's popularity and returns the  first edge of the path.
-   *
-   * @param expr Expression of the node to find the hint for.
-   * @param code Full Alloy code that contains the expression.
-   * @return The first edge of the shortest path.
-   */
-  public Hint getNodePoissonHint(String expr, String code) {
-    return getDijkstraHint(expr, "dstPoisson", code);
+  public Hint getHint(String expr, String code, HintGenType type) {
+    Hint hint = null;
+    long startTime = System.currentTimeMillis();
+    hint = switch (type) {
+      case TED -> getDijkstraHint(expr, "ted", code);
+      case REL_POISSON -> getDijkstraHint(expr, "poisson", code);
+      case NODE_POISSON -> getDijkstraHint(expr, "dstPoisson", code);
+      default -> null;
+    };
+    long endTime = System.currentTimeMillis() - startTime;
+    System.out.println("Success: Finished hint gen in " + endTime + " ms.");
+    return hint;
   }
 
   /**
@@ -221,6 +168,7 @@ public class Graph {
       if (node == null) { // Failed to generate hint because of no source node
         return null;
       }
+      System.out.println("Incorrect: " + node.get("expr").toString() + "\tAST: " + node.get("ast").toString());
       // Get the shortest path from the node to the goal node
       Result res = db.dijkstra(node.get("id").asString(), property);
       try {
@@ -229,15 +177,15 @@ public class Graph {
         List<Node> nodes = rec.get("path").asList(Value::asNode);
         Relationship firstRel = db.getRelationship(nodes.get(0), nodes.get(1));
 
-        System.out.println("Correct: " + nodes.get(nodes.size()-1).get(
-                "expr").toString() + "\tAST: " + nodes.get(nodes.size()-1).get("ast").toString());
+        System.out.println("Correct: " + nodes.get(nodes.size() - 1).get(
+                "expr").toString() + "\tAST: " + nodes.get(nodes.size() - 1).get("ast").toString());
         System.out.println("Next: " + nodes.get(1).get("expr").toString() + "\tAST: " + nodes.get(1).get("ast").toString());
         System.out.println("Edit Operations: " + firstRel.get("operations").toString());
 
         // Calculate TED between the first and last node
         TED ted = new TED();
         int t = ted.computeEditDistance(nodes.get(0).get("ast").toString(),
-                nodes.get(nodes.size()-1).get("ast").toString());
+                nodes.get(nodes.size() - 1).get("ast").toString());
 
         return new Hint(t, firstRel);
 
@@ -306,6 +254,7 @@ public class Graph {
 
   /**
    * Auxiliar method to run a query.
+   *
    * @param query query stings.
    * @return list of records.
    */

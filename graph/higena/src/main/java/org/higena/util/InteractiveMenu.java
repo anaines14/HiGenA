@@ -5,6 +5,7 @@ import edu.mit.csail.sdg.parser.CompModule;
 import edu.mit.csail.sdg.parser.CompUtil;
 import org.higena.graph.Graph;
 import org.higena.graph.Hint;
+import org.higena.graph.HintGenType;
 
 import java.io.File;
 import java.util.Arrays;
@@ -105,16 +106,21 @@ public class InteractiveMenu {
     System.out.println("2. Dijkstra - Node popularity");
     System.out.println("3. Dijkstra - Edge popularity");
     int option = getOption(scanner, 3);
+
     // Get hint
-    Hint hint = switch (option) {
-      case 1 -> graph.getTEDHint(expression);
-      case 2 -> graph.getNodePoissonHint(expression);
-      case 3 -> graph.getEdgePoissonHint(expression);
+    HintGenType type = switch (option) {
+      case 1 -> HintGenType.TED;
+      case 2 -> HintGenType.NODE_POISSON;
+      case 3 -> HintGenType.REL_POISSON;
       default -> throw new IllegalStateException("Unexpected value: " + option);
     };
+    Hint hint = graph.getHint(expression, type);
+
     // Show hint
     if (hint != null)
       System.out.println("HINT:\n" + hint.toHintMsg() + "\n");
+    else
+      System.out.println("No hint found.\n");
   }
 
   private static void execSetup(Graph graph) {

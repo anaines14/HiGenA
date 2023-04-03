@@ -2,6 +2,7 @@ import org.higena.ast.TED;
 import org.higena.ast.actions.EditAction;
 import org.higena.ast.actions.TreeDiff;
 import org.higena.graph.Graph;
+import org.higena.graph.HintGenType;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -34,10 +35,7 @@ public class HintTest {
     int i = 0;
     for (Record rec : exprs) {
       String expr = rec.get("expr").asString();
-
-      System.out.println("\nIncorrect: " + expr + "\tAST: " + rec.get(
-              "ast").asString());
-      String hint = g.getTEDHint(expr).toHintMsg();
+      String hint = g.getHint(expr, HintGenType.TED).toHintMsg();
       System.out.println(++i + " HINT:\n" + hint);
 
     }
