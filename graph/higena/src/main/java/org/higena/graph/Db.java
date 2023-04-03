@@ -414,7 +414,8 @@ public class Db implements AutoCloseable {
     while (res.hasNext()) {
       Record record = res.next();
       String name = record.get("graphName").asString();
-      deleteProjection(name);
+      if (record.get("database").asString().equals(this.name))
+        deleteProjection(name);
     }
     System.out.println("Deleted all graph projections.");
   }
