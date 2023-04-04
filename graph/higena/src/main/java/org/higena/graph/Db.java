@@ -558,7 +558,7 @@ public class Db implements AutoCloseable {
    * @param category Category of the nodes to compare to
    * @return Most similar node to the given AST
    */
-  private Node getMostSimilarNode(String ast, String category) {
+  public Node getMostSimilarNode(String ast, String category) {
     // Get all nodes ordered by popularity
     Result res = runQuery("""
             MATCH (s:%s)

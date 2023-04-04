@@ -14,6 +14,7 @@ import org.neo4j.driver.exceptions.NoSuchRecordException;
 import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Relationship;
 
+import javax.management.relation.Relation;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -102,8 +103,7 @@ public class Graph {
   private Node getSourceNode(Db db, String expr, String code) {
     // Get node from database with the AST
     String ast;
-    if (expr.isEmpty())
-      ast = "";
+    if (expr.isEmpty()) ast = "";
     else {
       try {
         ast = parseExpr(expr);
@@ -160,40 +160,62 @@ public class Graph {
    * @param property Weight property to use in the dijkstra algorithm.
    * @return The first edge of the shortest path.
    */
-  private Hint getDijkstraHint(String expr, String property,
-                               String code) {
+  private Hint getDijkstraHint(String expr, String property, String code) {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       // Get the node to start the path from
-      Node node = getSourceNode(db, expr, code);
-      if (node == null) { // Failed to generate hint because of no source node
+      Node source_node = getSourceNode(db, expr, code);
+      if (source_node == null) { // Failed to generate hint because of no
+        // source node
         return null;
       }
-      System.out.println("Incorrect: " + node.get("expr").toString() + "\tAST: " + node.get("ast").toString());
+      System.out.println("Incorrect: " + source_node.get("expr").toString() +
+              "\tAST: " + source_node.get("ast").toString());
       // Get the shortest path from the node to the goal node
-      Result res = db.dijkstra(node.get("id").asString(), property);
+      Result res = db.dijkstra(source_node.get("id").asString(), property);
+
       try {
         // Get results from the query to generate the hint
         Record rec = res.single();
         List<Node> nodes = rec.get("path").asList(Value::asNode);
         Relationship firstRel = db.getRelationship(nodes.get(0), nodes.get(1));
-
-        System.out.println("Correct: " + nodes.get(nodes.size() - 1).get(
-                "expr").toString() + "\tAST: " + nodes.get(nodes.size() - 1).get("ast").toString());
-        System.out.println("Next: " + nodes.get(1).get("expr").toString() + "\tAST: " + nodes.get(1).get("ast").toString());
-        System.out.println("Edit Operations: " + firstRel.get("operations").toString());
-
-        // Calculate TED between the first and last node
-        TED ted = new TED();
-        int t = ted.computeEditDistance(nodes.get(0).get("ast").toString(),
-                nodes.get(nodes.size() - 1).get("ast").toString());
-
-        return new Hint(t, firstRel);
+        return genHint(firstRel, source_node, nodes.get(nodes.size() - 1), nodes.get(1));
 
       } catch (NoSuchRecordException e) {
-        System.err.println("ERROR: Cannot retrieve hint.");
+        // No path found
+        // Find most similar correct node
+        Node similarNode =
+                db.getMostSimilarNode(source_node.get("ast").toString(),
+                        "Correct");
+        if (similarNode != null) {
+          // Create edge between the two nodes
+          Relationship hint_rel = db.addEdge(source_node, similarNode);
+          return genHint(hint_rel, source_node, similarNode);
+        } else {
+          System.err.println("Error: Cannot generate hint.");
+        }
       }
     }
     return null;
+  }
+
+  private Hint genHint(Relationship edge, Node source, Node solution) {
+    return genHint(edge, source, solution, solution);
+  }
+
+  private Hint genHint(Relationship edge, Node source, Node solution,
+                       Node next) {
+    // Log
+    System.out.println("Correct: " + solution.get("expr").toString() + "\tAST" +
+            ": " + solution.get("ast").toString());
+    System.out.println("Next: " + next.get("expr").toString() + "\tAST: " + next.get("ast").toString());
+    System.out.println("Edit Operations: " + edge.get("operations").toString());
+
+    // Calculate TED between the first and last node
+    TED ted = new TED();
+    int t = ted.computeEditDistance(source.get("ast").toString(),
+            solution.get("ast").toString());
+
+    return new Hint(t, edge);
   }
 
   // Parse functions
