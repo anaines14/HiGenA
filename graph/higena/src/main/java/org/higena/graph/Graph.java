@@ -265,22 +265,14 @@ public class Graph {
   }
 
   /**
-   * Print statistics for the current database (number of nodes, edges, correct nodes, incorrect nodes).
+   * Returns statistics for the current database (number of nodes, edges,
+   * correct nodes, incorrect nodes).
+   *
+   * @return Record with the statistics.
    */
-  public void printStatistics() {
+  public Record getStatistics() {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
-      Result res = db.getStatistics();
-      try {
-        Record rec = res.single();
-        System.out.printf("""
-                Number of nodes: %d
-                Number of edges: %d
-                Number of correct nodes: %d
-                Number of incorrect nodes: %d
-                """, rec.get("submissions").asInt(), rec.get("derivations").asInt(), rec.get("corrects").asInt(), rec.get("incorrects").asInt());
-      } catch (NoSuchRecordException e) {
-        System.err.println("ERROR: Cannot retrieve statistics.");
-      }
+      return db.getStatistics().single();
     }
   }
 
