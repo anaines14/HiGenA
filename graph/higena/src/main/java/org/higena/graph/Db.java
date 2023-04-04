@@ -45,8 +45,6 @@ public class Db implements AutoCloseable {
    * 7. Aggregates nodes with the same property.
    * 8. Adds the TED to the edges.
    * 9. Adds the Poisson distribution to the edges.
-   * 10. Connects incorrect nodes without a path to a Correct node to the
-   * most similar Correct nodes.
    */
   public void setup() {
     deleteAllNodes();
@@ -63,7 +61,7 @@ public class Db implements AutoCloseable {
     addTreeDiffToEdges();
     addNodePoissonToEdges();
     //fixIncorrectOnlyPaths();
-    addPathToIncorrectLeafs();
+    //addPathToIncorrectLeafs();
   }
 
   // Algorithms
