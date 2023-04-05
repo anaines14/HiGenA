@@ -26,7 +26,6 @@ public class HintTest {
         // Get challenge and predicate names
         String challenge = challenge_dir.getName();
         String predicate = predicate_file.getName().replace(".json", "");
-        if (!predicate.equals("oriented")) continue; // Skip non-oriented
         // Append arguments to stream (challenge, predicate, predicate file
         // with test data)
         stream = Stream.concat(stream, Stream.of(Arguments.of(challenge,

@@ -549,8 +549,9 @@ public class Db implements AutoCloseable {
   }
 
   /**
-   * Returns the most similar node to the given AST. The most similar node is
-   * the node with the smaller AST. The AST is computed using the APTED
+   * Returns the most similar node to the given AST.  The
+   * most similar node is different from the given AST and is
+   * the node with the smaller TED. The TEd is computed using the APTED
    * algorithm. The search starts with the most popular nodes. Upon finding a
    * TED of 1, the search is stopped.
    *
@@ -559,6 +560,7 @@ public class Db implements AutoCloseable {
    * @return Most similar node to the given AST
    */
   public Node getMostSimilarNode(String ast, String category) {
+
     // Get all nodes ordered by popularity
     Result res = runQuery("""
             MATCH (s:%s)
@@ -573,7 +575,14 @@ public class Db implements AutoCloseable {
     while (res.hasNext()) {
       Node curNode = res.next().get("node").asNode(); // Current node
       // Compute TED between n and curNode
-      int curDist = ted.computeEditDistance(ast, curNode.get("ast").asString());
+      String curAst = curNode.get("ast").asString();
+      int curDist = ted.computeEditDistance(ast, curAst);
+
+        // Skip if TED is 0
+      if (curDist == 0) {
+        continue;
+      }
+
       // Update minDist and similarNode if lower TED found
       if (curDist < minDist) {
         minDist = curDist;

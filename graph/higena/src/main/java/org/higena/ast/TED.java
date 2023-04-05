@@ -45,6 +45,10 @@ public class TED {
   }
 
   public int computeEditDistance(String t1, String t2) {
+    // TODO: Change. This is a workaround for a bug where one string comes with quotes and the other doesn't
+    t1 = t1.replace("\"", "");
+    t2 = t2.replace("\"", "");
+
     t1 = "{root" + t1 + "}";
     t2 = "{root" + t2 + "}";
     return computeEditDistance(parse(t1), parse(t2));

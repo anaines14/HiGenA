@@ -162,7 +162,6 @@ public class Graph {
   private Hint getDijkstraHint(String expr, String property, String code) {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       // Get the node to start the path from
-      System.out.println("Original expr:\t" + expr);
       Node source_node = getSourceNode(db, expr, code);
       if (source_node == null) { // Failed to generate hint because of no
         // source node
@@ -178,7 +177,9 @@ public class Graph {
         Record rec = res.single();
         List<Node> nodes = rec.get("path").asList(Value::asNode);
         Relationship firstRel = db.getRelationship(nodes.get(0), nodes.get(1));
-        return genHint(firstRel, source_node, nodes.get(nodes.size() - 1), nodes.get(1));
+        Node dstNode = nodes.get(nodes.size() - 1), nextNode = nodes.get(1);
+
+        return genHint(firstRel, source_node, dstNode, nextNode);
 
       } catch (NoSuchRecordException e) {
         // No path found
@@ -186,6 +187,7 @@ public class Graph {
         Node similarNode =
                 db.getMostSimilarNode(source_node.get("ast").toString(),
                         "Correct");
+
         if (similarNode != null) {
           // Create edge between the two nodes
           Relationship hint_rel = db.addEdge(source_node, similarNode);
