@@ -542,7 +542,7 @@ public class Db implements AutoCloseable {
    */
   public Node getNodeByAST(String ast) {
     Result res = runQuery("""
-            MATCH (s:Submission {ast: '%s'})
+            MATCH (s:Submission {ast: "%s"})
             RETURN s as node
             """.formatted(ast));
     return res.hasNext() ? res.single().get("node").asNode() : null;

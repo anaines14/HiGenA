@@ -143,7 +143,6 @@ public class Graph {
       case TED -> getDijkstraHint(expr, "ted", code);
       case REL_POISSON -> getDijkstraHint(expr, "poisson", code);
       case NODE_POISSON -> getDijkstraHint(expr, "dstPoisson", code);
-      default -> null;
     };
     long endTime = System.currentTimeMillis() - startTime;
     System.out.println("Success: Finished hint gen in " + endTime + " ms.");
@@ -163,12 +162,13 @@ public class Graph {
   private Hint getDijkstraHint(String expr, String property, String code) {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       // Get the node to start the path from
+      System.out.println("Original expr:\t" + expr);
       Node source_node = getSourceNode(db, expr, code);
       if (source_node == null) { // Failed to generate hint because of no
         // source node
         return null;
       }
-      System.out.println("Incorrect: " + source_node.get("expr").toString() +
+      System.out.println("Hint for:\t" + source_node.get("expr").toString() +
               "\tAST: " + source_node.get("ast").toString());
       // Get the shortest path from the node to the goal node
       Result res = db.dijkstra(source_node.get("id").asString(), property);
@@ -205,10 +205,12 @@ public class Graph {
   private Hint genHint(Relationship edge, Node source, Node solution,
                        Node next) {
     // Log
-    System.out.println("Correct: " + solution.get("expr").toString() + "\tAST" +
+    System.out.println("Correct:\t" + solution.get("expr").toString() +
+            "\tAST" +
             ": " + solution.get("ast").toString());
-    System.out.println("Next: " + next.get("expr").toString() + "\tAST: " + next.get("ast").toString());
-    System.out.println("Edit Operations: " + edge.get("operations").toString());
+    System.out.println("Next:\t\t" + next.get("expr").toString() + "\tAST: " +
+            next.get("ast").toString());
+    System.out.println("Edit Operations:\t" + edge.get("operations").toString());
 
     // Calculate TED between the first and last node
     TED ted = new TED();
