@@ -1,7 +1,6 @@
 package org.higena;
 
 import edu.mit.csail.sdg.alloy4.A4Reporter;
-import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.ast.*;
 import edu.mit.csail.sdg.parser.CompModule;
 import edu.mit.csail.sdg.parser.CompUtil;
@@ -20,24 +19,12 @@ public class A4FParser {
     return tree == null ? null : Canonicalizer.canonicalize(tree);
   }
 
-  public static A4FNode parse(String code, String func) {
+  public static A4FNode parse(String expr, String full_code) {
     variables.clear();
     // Parse the full module
-    CompModule module = CompUtil.parseEverything_fromString(new A4Reporter(), code);
-
-    // Parse each function
-    SafeList<Func> functions = module.getAllFunc();
-    String funcName;
-    for (Func function : functions) {
-      if (!function.label.contains("Default")) { // Skip default function
-        funcName = function.label.replace("this/", ""); // remove prefix
-        if (funcName.equals(func)) {
-          A4FNode tree = parse(function.getBody());
-          return tree == null ? null : Canonicalizer.canonicalize(tree);
-        }
-      }
-    }
-    return null;
+    CompModule module = CompUtil.parseEverything_fromString(new A4Reporter(),
+            full_code);
+    return parse(expr, module);
   }
 
   private static A4FNode parse(Expr expr) {

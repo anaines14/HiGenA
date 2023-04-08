@@ -14,7 +14,6 @@ import org.neo4j.driver.exceptions.NoSuchRecordException;
 import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Relationship;
 
-import javax.management.relation.Relation;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -101,21 +100,20 @@ public class Graph {
    * @return Node from the database with the given expression.
    */
   private Node getSourceNode(Db db, String expr, String code) {
-    // Get node from database with the AST
+    // Parse expression
     String ast;
-    if (expr.isEmpty()) ast = "";
-    else {
+    try {
+      ast = parseExpr(expr);
+    } catch (Exception e) {
       try {
-        ast = parseExpr(expr);
-      } catch (Exception e) {
-        try {
-          ast = parseExpr(expr, code);
-        } catch (Exception ex) {
-          System.err.println("Error parsing expression: " + expr);
-          return null;
-        }
+        ast = parseExpr(expr, code);
+      } catch (Exception ex) {
+        System.err.println("Error parsing expression: " + expr);
+        return null;
       }
     }
+
+    // Get node from database with the AST
     Node node = db.getNodeByAST(ast);
 
     if (node == null) { // If it does not exist, create it
@@ -225,30 +223,6 @@ public class Graph {
   // Parse functions
 
   /**
-   * Extracts the expression from the full code. If the expression exists, it
-   * parses it against the challenge module. If the parsing fails, it parses it
-   * against the full module code passed as a parameter.
-   *
-   * @param fullCode The full module code.
-   * @return The AST of the parsed expression.
-   */
-  private String parseExprFromCode(String fullCode) {
-    A4FExprParser exprParser = new A4FExprParser(fullCode);
-    String ast = null, expr = exprParser.parse(this.predicate);
-
-    try {
-      ast = parseExpr(expr);
-    } catch (Exception e) {
-      try {
-        ast = parseExpr(expr, fullCode);
-      } catch (Exception ex) {
-        System.err.println("ERROR: cannot parse expression.");
-      }
-    }
-    return ast;
-  }
-
-  /**
    * Parses an Alloy expression using the challenge module and returns the AST
    * of the parsed expression.
    *
@@ -270,10 +244,7 @@ public class Graph {
    * @return The AST of the parsed expression.
    */
   private String parseExpr(String expr, String code) {
-    if (expr.equals("")) {
-      return "";
-    }
-    return A4FParser.parse(code, expr).toString();
+    return A4FParser.parse(expr, code).toString();
   }
 
   // Auxiliar methods
