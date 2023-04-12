@@ -115,7 +115,7 @@ public class A4FParser {
   }
 
   private static A4FNode parse(Sig.PrimSig expr) {
-    return new A4FNode(expr.toString());
+    return new A4FNode(expr.toString().replace("this/", ""));
   }
 
   private static A4FNode parse(ExprBinary expr) {
@@ -130,9 +130,13 @@ public class A4FParser {
   }
 
   private static A4FNode parse(ExprVar expr) {
-    String type = expr.type().toString();
-    String name = variables.get(expr.label) + '/' + type.substring(1,
-            type.length() - 1);
+    // fix type {this/Sig} -> Sig
+    String type = expr.type().toString()
+            .replace("this/", "")
+            .replace("{", "")
+            .replace("}", "");
+    // name = var/Sig
+    String name = variables.get(expr.label) + '/' + type;
 
     return new A4FNode(name);
   }
@@ -157,6 +161,7 @@ public class A4FParser {
     // Parse the children
     String name = expr.op.toString();
     if (var != null) {
+      var = var.replace("this/", "");
       addVariable(var);
       children.add(new A4FNode(variables.get(var)));
     }
@@ -166,17 +171,22 @@ public class A4FParser {
 
 
   private static A4FNode parse(ExprQt expr) {
+    return parse(expr, 0, 0);
+  }
+
+  private static A4FNode parse(ExprQt expr, int declIndex, int varIndex) {
     String name = expr.op.toString();
     List<A4FNode> children = new ArrayList<>();
 
+    // parse declarations
     if (!expr.decls.isEmpty()) {
-      Decl decl = expr.decls.get(0);
-      if (decl.expr instanceof ExprUnary && !decl.names.isEmpty()) {
-        children.add(parse((ExprUnary) decl.expr, decl.names.get(0).label));
-      }
+      Decl decl = expr.decls.get(declIndex);
+      children.add(parse((ExprUnary) decl.expr, decl.names.get(varIndex).label));
 
-      if (decl.names.size() > 1) {
-        children.add(parse(expr, 1));
+      if (decl.names.size() > varIndex + 1) { // more variables: Qt x, y: Sig
+        children.add(parse(expr, declIndex, varIndex + 1));
+      } else if (expr.decls.size() > declIndex + 1) { //more declarations: Qt x: Sig, y: Sig
+        children.add(parse(expr, declIndex + 1, 0));
       } else {
         children.add(parse(expr.sub));
       }
@@ -184,21 +194,6 @@ public class A4FParser {
     }
     // Parse the body
     children.add(parse(expr.sub));
-    return new A4FNode(name, children);
-  }
-
-  private static A4FNode parse(ExprQt expr, int varIndex) {
-    String name = expr.op.toString();
-    List<A4FNode> children = new ArrayList<>();
-
-    Decl decl = expr.decls.get(0);
-    children.add(parse((ExprUnary) decl.expr, decl.names.get(varIndex).label));
-
-    if (decl.names.size() > varIndex + 1) {
-      children.add(parse(expr, varIndex + 1));
-    } else {
-      children.add(parse(expr.sub));
-    }
     return new A4FNode(name, children);
   }
 
