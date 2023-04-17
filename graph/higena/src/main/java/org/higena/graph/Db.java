@@ -198,11 +198,12 @@ public class Db implements AutoCloseable {
    * @return The created node.
    */
   public Node addIncorrectNode(String expr, String ast, String code) {
+
     Result res = runQuery("""
             CREATE (n:Submission:Incorrect {id: randomUUID(),
-            code: '%s',
-            ast: '%s',
-            expr: '%s',
+            code: "%s",
+            ast: "%s",
+            expr: "%s",
             popularity: 1.0})
             RETURN n AS node""".formatted(code, ast, expr));
 
