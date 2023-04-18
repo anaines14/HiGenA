@@ -1,4 +1,4 @@
-package org.higena.graph;
+package org.higena.graph.hint;
 
 import org.higena.ast.actions.EditAction;
 import org.higena.ast.actions.EditActionsComparator;

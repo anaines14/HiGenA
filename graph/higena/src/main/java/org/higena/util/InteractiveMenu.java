@@ -4,8 +4,8 @@ import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.parser.CompModule;
 import edu.mit.csail.sdg.parser.CompUtil;
 import org.higena.graph.Graph;
-import org.higena.graph.Hint;
-import org.higena.graph.HintGenType;
+import org.higena.graph.hint.Hint;
+import org.higena.graph.hint.HintGenType;
 
 import java.io.File;
 import java.util.Arrays;

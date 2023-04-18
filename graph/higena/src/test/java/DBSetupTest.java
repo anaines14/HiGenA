@@ -28,6 +28,19 @@ public class DBSetupTest {
     createCSV("analytics", "src/main/resources/");
   }
 
+  // Test method
+
+  @ParameterizedTest
+  @MethodSource("getDatasets")
+  public void testDBSetup(String challenge, String predicate) {
+    Graph g = new Graph(challenge, predicate);
+    g.setup();
+
+    if (analytics) {
+      writeStatistics(g.getStatistics(), challenge, predicate);
+    }
+  }
+
   public static Stream<Arguments> getDatasets() {
     List<String> challenges = Arrays.stream(Objects.requireNonNull(new File(challenges_path).list())).toList();
     HashMap<String, List<String>> arguments = new HashMap<>();
@@ -42,6 +55,8 @@ public class DBSetupTest {
 
     return arguments.entrySet().stream().flatMap(e -> e.getValue().stream().map(p -> Arguments.of(e.getKey().replace(".als", ""), p.replace("this/", ""))));
   }
+
+  // Logging methods
 
   public static void createCSV(String name, String path) {
     String columns = "Challenge,Predicate,NumSubmissions,NumCorrect," + "NumIncorrect,NumEdges";
@@ -71,16 +86,5 @@ public class DBSetupTest {
   public static void writeStatistics(Record record, String challenge, String predicate) {
     String row = challenge + "," + predicate + "," + record.get("submissions").asInt() + "," + record.get("corrects").asInt() + "," + record.get("incorrects").asInt() + "," + record.get("derivations").asInt();
     writeLineToCSV(row);
-  }
-
-  @ParameterizedTest
-  @MethodSource("getDatasets")
-  public void testDBSetup(String challenge, String predicate) {
-    Graph g = new Graph(challenge, predicate);
-    g.setup();
-
-    if (analytics) {
-      writeStatistics(g.getStatistics(), challenge, predicate);
-    }
   }
 }
