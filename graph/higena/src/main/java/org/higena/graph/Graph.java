@@ -5,6 +5,7 @@ import edu.mit.csail.sdg.parser.CompModule;
 import edu.mit.csail.sdg.parser.CompUtil;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.higena.A4FParser;
+import org.higena.ast.Parser;
 import org.higena.ast.TED;
 import org.higena.graph.hint.Hint;
 import org.higena.graph.hint.HintGenType;
@@ -24,7 +25,7 @@ import java.util.List;
  */
 public class Graph {
   private final String uri, user, password, databaseName, challenge, predicate;
-  private final CompModule challengeModule;
+  private final Parser parser;
 
   public Graph(String challenge, String predicate) {
     Dotenv dotenv = Dotenv.configure().directory("src/main/resources").load();
@@ -35,7 +36,7 @@ public class Graph {
     this.challenge = challenge;
     this.predicate = predicate;
     this.databaseName = genDatabaseName(challenge, predicate);
-    this.challengeModule = CompUtil.parseEverything_fromFile(new A4Reporter(), null, "src/main/resources/challenges/" + challenge + ".als");
+    this.parser = new Parser(challenge);
 
     // Connect to the default database
     try (Db db = new Db(uri, user, password, challenge, predicate)) {
@@ -102,17 +103,7 @@ public class Graph {
    */
   private Node getSourceNode(Db db, String expr, String code) {
     // Parse expression
-    String ast;
-    try {
-      ast = parseExpr(expr);
-    } catch (Exception e) {
-      try {
-        ast = parseExpr(expr, code);
-      } catch (Exception ex) {
-        System.err.println("Error parsing expression: " + expr);
-        return null;
-      }
-    }
+    String ast = parser.parse(expr, code);
 
     // Get node from database with the AST
     Node node = db.getNodeByAST(ast);
@@ -221,46 +212,7 @@ public class Graph {
     return new Hint(t, edge);
   }
 
-  // Parse functions
-
-  /**
-   * Parses an Alloy expression using the challenge module and returns the AST
-   * of the parsed expression.
-   *
-   * @param expr The expression to parse.
-   * @return The AST of the parsed expression.
-   */
-  public String parseExpr(String expr) {
-    if (expr.equals("")) {
-      return "";
-    }
-    return A4FParser.parse(expr, this.challengeModule).toString();
-  }
-
-  /**
-   * Parses an Alloy expression using the full module code and returns the AST of the parsed expression.
-   *
-   * @param expr The expression to parse.
-   * @param code The full module code.
-   * @return The AST of the parsed expression.
-   */
-  private String parseExpr(String expr, String code) {
-    return A4FParser.parse(expr, code).toString();
-  }
-
   // Auxiliar methods
-
-  /**
-   * Auxiliar method to run a query.
-   *
-   * @param query query stings.
-   * @return list of records.
-   */
-  public List<Record> runQuery(String query) {
-    try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
-      return db.runQuery(query).list();
-    }
-  }
 
   /**
    * Returns statistics for the current database (number of nodes, edges,
