@@ -1,20 +1,21 @@
 package org.higena.graph.hint;
 
+import org.higena.ast.TED;
 import org.higena.ast.actions.EditAction;
 import org.higena.ast.actions.EditActionsComparator;
 import org.neo4j.driver.Value;
+import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Relationship;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class Hint {
   private final double distance;
   private final List<EditAction> actions;
 
-  public Hint(double distance, Relationship rel) {
-    this.distance = distance;
+  public Hint(Node sourceNode, Node targetNode, Relationship rel) {
+    this.distance = new TED().computeEditDistance(sourceNode.get("ast").asString(), targetNode.get("ast").asString());
     this.actions = new ArrayList<>();
     rel.get("operations").asList(Value::asString).forEach(op -> actions.add(EditAction.fromString(op)));
   }
@@ -58,11 +59,13 @@ public class Hint {
   }
 
   public String toHintMsg() {
-    return distanceToHint() + "\n" + actionsToHint();
+    return distanceToHint() + " " + actionsToHint();
   }
 
   private String actionsToHint() {
+    // Sort actions by priority
     actions.sort(new EditActionsComparator());
+    // Return the first action
     return actionToHint(actions.get(0));
   }
 
@@ -80,5 +83,9 @@ public class Hint {
 
   public List<EditAction> getActions() {
     return actions;
+  }
+
+  public Double getDistance() {
+    return distance;
   }
 }

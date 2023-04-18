@@ -19,13 +19,12 @@ import java.util.stream.Stream;
 
 public class DBSetupTest {
   private static final String challenges_path = "src/main/resources" + "/challenges/";
-  private static boolean analytics = false;
   private static File csv = null;
+  private static boolean analytics = true;
 
   @BeforeAll
   public static void setup() {
-    analytics = true;
-    createCSV("analytics", "src/main/resources/");
+    createCSV("setupAnalytics", "src/test/outputs/");
   }
 
   // Test method

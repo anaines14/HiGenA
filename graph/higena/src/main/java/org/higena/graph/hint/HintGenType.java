@@ -1,5 +1,16 @@
 package org.higena.graph.hint;
 
 public enum HintGenType {
-  TED, REL_POISSON, NODE_POISSON
+  TED("ted"), REL_POISSON("poisson"), NODE_POISSON("dstPoisson");
+
+  private final String property;
+
+  HintGenType(String property) {
+    this.property = property;
+  }
+
+  @Override
+  public String toString() {
+    return property;
+  }
 }

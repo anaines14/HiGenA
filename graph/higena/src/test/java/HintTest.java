@@ -1,12 +1,11 @@
 import org.higena.graph.Graph;
-import org.higena.graph.hint.Hint;
 import org.higena.graph.hint.HintGenType;
+import org.higena.graph.hint.HintGenerator;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.neo4j.driver.Record;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -16,34 +15,14 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class HintTest {
-  private static boolean analytics = false;
-  private static File csv = null;
+  private static File file = null;
 
   @BeforeAll
   public static void setup() {
-    analytics = true;
-    createCSV("analytics", "src/main/resources/");
+    createFile("hints", "src/test/outputs/");
   }
 
   // Test method
-
-  @MethodSource("testDataProvider")
-  @ParameterizedTest
-  public void testHintGen(String challenge, String predicate, File test_data) {
-    // Load train data
-    Graph g = new Graph(challenge, predicate);
-    //g.setup();
-    System.out.println("\n");
-    // Load test data
-    List<Map.Entry<String, String>> expressions = getTestData(test_data);
-    // Generate hints
-    for (Map.Entry<String, String> entry : expressions) {
-      String expr = entry.getKey(), code = entry.getValue();
-      System.out.println("----------------------------------------\n");
-      Hint hint = g.getHint(expr, code, HintGenType.TED);
-      System.out.println("HINT:\n" + hint.toHintMsg() + "\n");
-    }
-  }
 
   private static Stream<Arguments> testDataProvider() {
     String test_dir = "../data/test";
@@ -65,10 +44,52 @@ public class HintTest {
     return stream;
   }
 
+  public static void createFile(String name, String path) {
+    file = new File(path + name + ".json");
+    file.delete();
+  }
+
   // Auxiliary methods
 
+  public static void writeLineToFile(String line) {
+    try {
+      FileWriter writer = new FileWriter(file, true);
+      writer.write(line + '\n');
+      writer.close();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  // Logging methods
+
+  public static void writeStatistics(HintGenerator hintGen, String challenge,
+                                     String predicate) {
+    JSONObject obj = hintGen.getJSON();
+    obj.put("challenge", challenge);
+    obj.put("predicate", predicate);
+    String row = obj.toString();
+    writeLineToFile(row);
+  }
+
+  @MethodSource("testDataProvider")
+  @ParameterizedTest
+  public void testHintGen(String challenge, String predicate, File test_data) {
+    // Load train data
+    Graph g = new Graph(challenge, predicate);
+    g.setup();
+    // Load test data
+    List<Map.Entry<String, String>> expressions = getTestData(test_data);
+    // Generate hints
+    for (Map.Entry<String, String> entry : expressions) {
+      String expr = entry.getKey(), code = entry.getValue();
+      HintGenerator hintGen = g.generateHint(expr, code, HintGenType.TED);
+      writeStatistics(hintGen, challenge, predicate);
+    }
+  }
+
   private List<Map.Entry<String, String>> getTestData(File data_file) {
-    List<Map.Entry<String, String>> expressions = new ArrayList<>();
+    List<Map.Entry<String, String>> submissions = new ArrayList<>();
 
     // Parse JSON file
     try {
@@ -81,46 +102,12 @@ public class HintTest {
         int sat = obj.getInt("sat");
         if (sat == 0) continue; // Skip correct expressions
         String expr = obj.getString("expr"), code = obj.getString("code");
-        expressions.add(new AbstractMap.SimpleEntry<>(expr, code));
+        submissions.add(new AbstractMap.SimpleEntry<>(expr, code));
       }
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);
     }
 
-    return expressions;
+    return submissions;
   }
-
-  // Logging methods
-
-  public static void createCSV(String name, String path) {
-    String columns = "Challenge,Predicate,Expression,Code,IsNew,AST," +
-            "NextExpr,NextAST,DstExpr,DstAST,Operations,Hint,pathTED,srcDstTED";
-    csv = new File(path + name + ".csv");
-    csv.delete();
-
-    try {
-      if (csv.createNewFile()) { // create new file
-        // Write columns to file
-        writeLineToCSV(columns);
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static void writeLineToCSV(String line) {
-    try {
-      FileWriter writer = new FileWriter(csv, true);
-      writer.write(line + '\n');
-      writer.close();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static void writeStatistics(Record record, String challenge, String predicate) {
-    String row = challenge + "," + predicate + "," + record.get("submissions").asInt() + "," + record.get("corrects").asInt() + "," + record.get("incorrects").asInt() + "," + record.get("derivations").asInt();
-    writeLineToCSV(row);
-  }
-
 }

@@ -9,6 +9,7 @@ import org.higena.ast.Parser;
 import org.higena.ast.TED;
 import org.higena.graph.hint.Hint;
 import org.higena.graph.hint.HintGenType;
+import org.higena.graph.hint.HintGenerator;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Value;
@@ -90,129 +91,25 @@ public class Graph {
 
   // Hint methods
 
-  /**
-   * Parses the given expression and returns the node from the database with
-   * the same AST. If it does not exist, it searches for the most similar node
-   * and creates a new node with the given expression and adds an edge between
-   * these two nodes.
-   *
-   * @param db   Database instance.
-   * @param expr Expression
-   * @param code Code
-   * @return Node from the database with the given expression.
-   */
-  private Node getSourceNode(Db db, String expr, String code) {
-    // Parse expression
-    String ast = parser.parse(expr, code);
-
-    // Get node from database with the AST
-    Node node = db.getNodeByAST(ast);
-
-    if (node == null) { // If it does not exist, create it
-      // Get the most similar node
-      Node similarNode = db.getMostSimilarNode(ast);
-      if (similarNode != null) {
-        // Create the node with the AST
-        Node n = db.addIncorrectNode(expr, ast, code);
-        // Add edge between the new node and the most similar node
-        db.addEdge(n, similarNode);
-        return n;
-      }
-    }
-    return node;
-  }
-
   public Hint getHint(String expr, HintGenType type) {
     return getHint(expr, "", type);
   }
 
   public Hint getHint(String expr, String code, HintGenType type) {
-    Hint hint = null;
-    long startTime = System.currentTimeMillis();
-    hint = switch (type) {
-      case TED -> getDijkstraHint(expr, "ted", code);
-      case REL_POISSON -> getDijkstraHint(expr, "poisson", code);
-      case NODE_POISSON -> getDijkstraHint(expr, "dstPoisson", code);
-    };
-    long endTime = System.currentTimeMillis() - startTime;
-    System.out.println("Success: Finished hint gen in " + endTime + " ms.");
-    return hint;
+    return generateHint(expr, code, type).getHint();
   }
 
-  /**
-   * Finds the node with the given AST or creates it if it does not exist and
-   * calculates the shortest path using the dijkstra algorithm to a Correct
-   * node using the given property as edge weight. Then, it returns the
-   * first edge of the path.
-   *
-   * @param expr     Expression of the node to find the hint for.
-   * @param property Weight property to use in the dijkstra algorithm.
-   * @return The first edge of the shortest path.
-   */
-  private Hint getDijkstraHint(String expr, String property, String code) {
+  public HintGenerator generateHint(String expr, String code,
+                                    HintGenType type) {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
-      // Get the node to start the path from
-      Node source_node = getSourceNode(db, expr, code);
-      if (source_node == null) { // Failed to generate hint because of no
-        // source node
-        return null;
-      }
-      System.out.println("Hint for:\t" + source_node.get("expr").toString() +
-              "\tAST: " + source_node.get("ast").toString());
-      // Get the shortest path from the node to the goal node
-      Result res = db.dijkstra(source_node.get("id").asString(), property);
-
-      try {
-        // Get results from the query to generate the hint
-        Record rec = res.single();
-        List<Node> nodes = rec.get("path").asList(Value::asNode);
-        Relationship firstRel = db.getRelationship(nodes.get(0), nodes.get(1));
-        Node dstNode = nodes.get(nodes.size() - 1), nextNode = nodes.get(1);
-
-        return genHint(firstRel, source_node, dstNode, nextNode);
-
-      } catch (NoSuchRecordException e) {
-        // No path found
-        // Find most similar correct node
-        Node similarNode =
-                db.getMostSimilarNode(source_node.get("ast").toString(),
-                        "Correct");
-
-        if (similarNode != null) {
-          // Create edge between the two nodes
-          Relationship hint_rel = db.addEdge(source_node, similarNode);
-          return genHint(hint_rel, source_node, similarNode);
-        } else {
-          System.err.println("Error: Cannot generate hint.");
-        }
-      }
+      String ast = parser.parse(expr, code);
+      HintGenerator generator = new HintGenerator(expr, code, type, db);
+      generator.generateHint(ast);
+      System.out.println("\n---------------------");
+      System.out.println(generator);
+      return generator;
     }
-    return null;
   }
-
-  private Hint genHint(Relationship edge, Node source, Node solution) {
-    return genHint(edge, source, solution, solution);
-  }
-
-  private Hint genHint(Relationship edge, Node source, Node solution,
-                       Node next) {
-    // Log
-    System.out.println("Correct:\t" + solution.get("expr").toString() +
-            "\tAST" +
-            ": " + solution.get("ast").toString());
-    System.out.println("Next:\t\t" + next.get("expr").toString() + "\tAST: " +
-            next.get("ast").toString());
-    System.out.println("Edit Operations:\t" + edge.get("operations").toString());
-
-    // Calculate TED between the first and last node
-    TED ted = new TED();
-    int t = ted.computeEditDistance(source.get("ast").toString(),
-            solution.get("ast").toString());
-
-    return new Hint(t, edge);
-  }
-
-  // Auxiliar methods
 
   /**
    * Returns statistics for the current database (number of nodes, edges,
