@@ -9,6 +9,8 @@ import org.neo4j.driver.types.Relationship;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Hint {
   private final double distance;
@@ -22,9 +24,12 @@ public class Hint {
 
   public static String actionToHint(EditAction action) {
     String type = action.getType();
-    String node = action.getNode().getLabel().replace("this/", ""),
-            parent = action.getParent() != null ? action.getParent().getLabel().replace("this/", "") : null,
-            value = action.getValue() != null ? action.getValue().replace("this/", "") : null;
+    String node = replaceVariable(action.getNode().getLabel()),
+            parent = replaceVariable(action.getParent() != null ?
+                    action.getParent().getLabel() : null),
+            value = replaceVariable(action.getValue() != null ?
+                    action.getValue() : null);
+
 
     switch (type) {
       case "Update" -> {
@@ -58,6 +63,17 @@ public class Hint {
     return "";
   }
 
+  private static String replaceVariable(String value) {
+    if (value == null) return null;
+    // Match var0/Int, var1/Bool, etc.
+    Pattern p = Pattern.compile("var\\d+/(\\w+)");
+    Matcher m = p.matcher(value);
+    if (m.matches()) {
+      return "a variable of type " + m.group(1);
+    }
+    return value;
+  }
+
   public String toHintMsg() {
     return distanceToHint() + " " + actionsToHint();
   }
@@ -80,6 +96,8 @@ public class Hint {
       return "Keep going!";
     }
   }
+
+  // Getters
 
   public List<EditAction> getActions() {
     return actions;
