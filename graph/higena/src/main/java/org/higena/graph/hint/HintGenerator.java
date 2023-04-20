@@ -94,6 +94,7 @@ public class HintGenerator {
   private Node getSourceNode(String ast) {
     Node source = db.getNodeByAST(ast);
     if (source == null) { // If it does not exist, create it
+      isNewNode = true;
       // Get the most similar node
       Node similarNode = db.getMostSimilarNode(ast);
       if (similarNode != null) {
@@ -102,6 +103,9 @@ public class HintGenerator {
         // Add edge between the new node and the most similar node
         db.addEdge(source, similarNode);
       }
+    }
+    else {
+      isNewNode = false;
     }
     return source;
   }
@@ -114,6 +118,7 @@ public class HintGenerator {
             .append('\t').append(expression)
             // Source node
             .append("\nSource node:")
+            .append("\n\tIs new node: ").append(isNewNode ? "Yes" : "No")
             .append("\n\tExpression: ").append(sourceNode.get("expr").asString())
             .append("\n\tAST: ").append(sourceNode.get("ast").asString());
     // Next node
