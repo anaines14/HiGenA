@@ -20,11 +20,11 @@ import java.util.stream.Stream;
 public class DBSetupTest {
   private static final String challenges_path = "src/main/resources" + "/challenges/";
   private static File csv = null;
-  private static boolean analytics = true;
+  private static final boolean statistics = true;
 
   @BeforeAll
   public static void setup() {
-    createCSV("setupAnalytics", "src/test/outputs/");
+    createCSV("graph_statistics", "src/test/outputs/");
   }
 
   // Test method
@@ -35,7 +35,7 @@ public class DBSetupTest {
     Graph g = new Graph(challenge, predicate);
     g.setup();
 
-    if (analytics) {
+    if (statistics) {
       writeStatistics(g.getStatistics(), challenge, predicate);
     }
   }

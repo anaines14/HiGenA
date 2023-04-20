@@ -16,10 +16,12 @@ import java.util.stream.Stream;
 
 public class HintTest {
   private static File file = null;
+  private static boolean statistics = true;
 
   @BeforeAll
   public static void setup() {
-    createFile("hints", "src/test/outputs/");
+    if (statistics)
+      createFile("hints_statistics", "src/test/outputs/");
   }
 
   // Test method
@@ -39,7 +41,9 @@ public class HintTest {
         // with test data)
         stream = Stream.concat(stream, Stream.of(Arguments.of(challenge,
                 predicate, predicate_file)));
+        break;
       }
+      break;
     }
     return stream;
   }
@@ -77,14 +81,17 @@ public class HintTest {
   public void testHintGen(String challenge, String predicate, File test_data) {
     // Load train data
     Graph g = new Graph(challenge, predicate);
-    g.setup();
     // Load test data
     List<Map.Entry<String, String>> expressions = getTestData(test_data);
     // Generate hints
     for (Map.Entry<String, String> entry : expressions) {
+      g.setup(); // Reset graph
       String expr = entry.getKey(), code = entry.getValue();
+      // Generate hint
       HintGenerator hintGen = g.generateHint(expr, code, HintGenType.TED);
-      writeStatistics(hintGen, challenge, predicate);
+      // Log hint if analytics enabled
+      if (statistics)
+        writeStatistics(hintGen, challenge, predicate);
     }
   }
 
