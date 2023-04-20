@@ -130,11 +130,8 @@ public class A4FParser {
   }
 
   private static A4FNode parse(ExprVar expr) {
-    // fix type {this/Sig} -> Sig
-    String type = expr.type().toString()
-            .replace("this/", "")
-            .replace("{", "")
-            .replace("}", "");
+    // Sig : a -> Sig
+    String type = expr.explain().split(":")[0].trim();
     // name = var/Sig
     String name = variables.get(expr.label) + '/' + type;
 
@@ -181,6 +178,11 @@ public class A4FParser {
     // parse declarations
     if (!expr.decls.isEmpty()) {
       Decl decl = expr.decls.get(declIndex);
+
+      // Add disjoint node
+      if (decl.disjoint != null) {
+        children.add(new A4FNode("disj"));
+      }
       children.add(parse((ExprUnary) decl.expr, decl.names.get(varIndex).label));
 
       if (decl.names.size() > varIndex + 1) { // more variables: Qt x, y: Sig
