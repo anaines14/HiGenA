@@ -119,7 +119,7 @@ public class EditAction  {
   }
 
   private static String getFieldRegex(String field) {
-    String nodesRegex = "([#:=><*~^.!a-zA-Z0-9/&+-]+)";
+    String nodesRegex = "(['#:=><*~^.!a-zA-Z0-9/&+-]+)";
     switch (field) {
       case "type" -> {
         return "type='(\\w+)'";

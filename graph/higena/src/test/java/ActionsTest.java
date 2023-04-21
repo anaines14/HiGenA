@@ -10,7 +10,7 @@ import java.util.stream.Stream;
 
 public class ActionsTest {
 
-  @ValueSource(strings = {"{type='Update', node=AND, value==>}"})
+  @ValueSource(strings = {"{type='Delete', node='}"})
   @ParameterizedTest
   public void parseAction(String actionStr) {
     System.out.println(EditAction.fromString(actionStr));
