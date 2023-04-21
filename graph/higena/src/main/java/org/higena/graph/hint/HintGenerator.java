@@ -22,7 +22,7 @@ public class HintGenerator {
   private Node targetNode; // Closest solution in the graph
   private Node nextNode; // Next node in the path to the solution
   private Relationship first_edge; // First edge in the path to the solution
-  private double totalCost; // Total cost of the path to the solution
+  private double totalTED; // Total cost of the path to the solution
   private Hint hint; // Generated hint
   private long time; // Time it took to generate the hint
 
@@ -59,7 +59,10 @@ public class HintGenerator {
       targetNode = nodes.get(nodes.size() - 1);
       nextNode = nodes.get(1);
       first_edge = db.getRelationship(sourceNode, nextNode);
-      totalCost = rec.get("totalCost").asDouble();
+      if (type == HintGenType.TED)
+        totalTED = rec.get("totalCost").asDouble();
+      else
+        totalTED = getTotalTED(nodes);
 
     } catch (NoSuchRecordException e) {
       // No path found - Create path to most similar correct node
@@ -69,7 +72,7 @@ public class HintGenerator {
         // Create edge between the two nodes
         first_edge = db.addEdge(sourceNode, targetNode);
         nextNode = targetNode;
-        totalCost = first_edge.get("ted").asDouble();
+        totalTED = first_edge.get("ted").asDouble();
       } else {
         System.err.println("Error: Cannot generate hint.");
       }
@@ -103,11 +106,27 @@ public class HintGenerator {
         // Add edge between the new node and the most similar node
         db.addEdge(source, similarNode);
       }
-    }
-    else {
+    } else {
       isNewNode = false;
     }
     return source;
+  }
+
+  /**
+   * Calculates the total TED of the path to the solution.
+   *
+   * @param nodes List of nodes in the path to the solution.
+   * @return Total TED of the path to the solution.
+   */
+  private double getTotalTED(List<Node> nodes) {
+    double totalTED = 0;
+    for (int i = 0; i < nodes.size() - 1; i++) {
+      Node src = nodes.get(i);
+      Node dst = nodes.get(i + 1);
+      Relationship edge = db.getRelationship(src, dst);
+      totalTED += edge.get("ted").asDouble();
+    }
+    return totalTED;
   }
 
   public JSONObject getJSON() {
@@ -122,7 +141,7 @@ public class HintGenerator {
     json.put("targetAST", targetNode.get("ast").asString());
     json.put("nextExpr", nextNode.get("expr").asString());
     json.put("nextAST", nextNode.get("ast").asString());
-    json.put("totalCost", totalCost);
+    json.put("totalTED", totalTED);
     json.put("srcDstTED", hint.getDistance());
     json.put("Operations", first_edge.get("operations").toString());
     json.put("hint", hint.toHintMsg());
@@ -158,7 +177,7 @@ public class HintGenerator {
             .append("\n\tAST: ").append(targetNode.get("ast").asString())
             // First edge
             .append("\nPath:")
-            .append("\n\tTotal cost: ").append(totalCost)
+            .append("\n\tTotal TED: ").append(totalTED)
             .append("\n\tTED(source,target): ").append(hint.getDistance())
             .append("\n\tOperations: ").append(first_edge.get("operations").toString())
             // Time
