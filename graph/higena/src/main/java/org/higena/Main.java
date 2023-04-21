@@ -8,9 +8,10 @@ public class Main {
       usage();
       return;
     }
-    switch (args[0]) {
-      case "-i" -> InteractiveMenu.run();
-      default -> usage();
+    if ("-i".equals(args[0])) {
+      InteractiveMenu.run();
+    } else {
+      usage();
     }
   }
 

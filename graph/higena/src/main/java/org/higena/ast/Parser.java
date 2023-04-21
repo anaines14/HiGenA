@@ -7,7 +7,6 @@ import org.higena.A4FParser;
 
 public class Parser {
   private final CompModule challenge_module;
-  private final String file_extension = ".als";
 
   public Parser(String challenge) {
     // Path to the file with the challenge

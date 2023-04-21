@@ -13,9 +13,9 @@ import java.util.List;
 
 public class HintGenerator {
 
-  private Db db; // Database connection
-  private String expression, code; // Student submission
-  private HintGenType type; // Hint generation type
+  private final Db db; // Database connection
+  private final String expression, code; // Student submission
+  private final HintGenType type; // Hint generation type
   // Hint generation data
   private boolean isNewNode; // True if submission is new on the graph
   private Node sourceNode; // Node from the graph with the same AST as the submission
@@ -41,17 +41,16 @@ public class HintGenerator {
    * returns the first edge of the path.
    *
    * @param ast AST of the expression to find the hint for.
-   * @return The first edge of the shortest path.
    */
-  public Hint generateHint(String ast) {
+  public void generateHint(String ast) {
     // Start timer
     long startTime = System.currentTimeMillis();
     // Get source node
     sourceNode = getSourceNode(ast);
     if (sourceNode == null) { // cannot generate hint without source node
-      return null;
+      return;
     }
-    // Get shortest path to a solution
+    // Get the shortest path to a solution
     Result res = db.dijkstra(sourceNode.get("id").asString(), type.toString());
 
     try {
@@ -79,8 +78,9 @@ public class HintGenerator {
     hint = new Hint(sourceNode, targetNode, first_edge);
     // Stop timer
     time = System.currentTimeMillis() - startTime;
-    return hint;
   }
+
+  // Getters
 
   /**
    * Returns the node from the database with the same AST. If it
@@ -108,6 +108,30 @@ public class HintGenerator {
       isNewNode = false;
     }
     return source;
+  }
+
+  public JSONObject getJSON() {
+    JSONObject json = new JSONObject();
+    json.put("expression", expression);
+    json.put("code", code);
+    json.put("type", type.toString());
+    json.put("isNewNode", isNewNode);
+    json.put("sourceExpr", sourceNode.get("expr").asString());
+    json.put("sourceAST", sourceNode.get("ast").asString());
+    json.put("targetExpr", targetNode.get("expr").asString());
+    json.put("targetAST", targetNode.get("ast").asString());
+    json.put("nextExpr", nextNode.get("expr").asString());
+    json.put("nextAST", nextNode.get("ast").asString());
+    json.put("totalCost", totalCost);
+    json.put("srcDstTED", hint.getDistance());
+    json.put("Operations", first_edge.get("operations").toString());
+    json.put("hint", hint.toHintMsg());
+    json.put("time", time);
+    return json;
+  }
+
+  public Hint getHint() {
+    return hint;
   }
 
   @Override
@@ -144,71 +168,4 @@ public class HintGenerator {
 
     return sb.toString();
   }
-
-  // Getters
-
-  public JSONObject getJSON() {
-    JSONObject json = new JSONObject();
-    json.put("expression", expression);
-    json.put("code", code);
-    json.put("type", type.toString());
-    json.put("isNewNode", isNewNode);
-    json.put("sourceExpr", sourceNode.get("expr").asString());
-    json.put("sourceAST", sourceNode.get("ast").asString());
-    json.put("targetExpr", targetNode.get("expr").asString());
-    json.put("targetAST", targetNode.get("ast").asString());
-    json.put("nextExpr", nextNode.get("expr").asString());
-    json.put("nextAST", nextNode.get("ast").asString());
-    json.put("totalCost", totalCost);
-    json.put("srcDstTED", hint.getDistance());
-    json.put("Operations", first_edge.get("operations").toString());
-    json.put("hint", hint.toHintMsg());
-    json.put("time", time);
-    return json;
-  }
-
-  public String getExpression() {
-    return expression;
-  }
-
-  public String getCode() {
-    return code;
-  }
-
-  public HintGenType getType() {
-    return type;
-  }
-
-  public boolean isNewNode() {
-    return isNewNode;
-  }
-
-  public Node getSourceNode() {
-    return sourceNode;
-  }
-
-  public Node getTargetNode() {
-    return targetNode;
-  }
-
-  public Node getNextNode() {
-    return nextNode;
-  }
-
-  public Relationship getFirst_edge() {
-    return first_edge;
-  }
-
-  public double getTotalCost() {
-    return totalCost;
-  }
-
-  public Hint getHint() {
-    return hint;
-  }
-
-  public long getTime() {
-    return time;
-  }
-
 }

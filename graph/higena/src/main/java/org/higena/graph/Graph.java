@@ -1,25 +1,14 @@
 package org.higena.graph;
 
-import edu.mit.csail.sdg.alloy4.A4Reporter;
-import edu.mit.csail.sdg.parser.CompModule;
-import edu.mit.csail.sdg.parser.CompUtil;
 import io.github.cdimascio.dotenv.Dotenv;
-import org.higena.A4FParser;
 import org.higena.ast.Parser;
-import org.higena.ast.TED;
 import org.higena.graph.hint.Hint;
 import org.higena.graph.hint.HintGenType;
 import org.higena.graph.hint.HintGenerator;
 import org.neo4j.driver.Record;
-import org.neo4j.driver.Result;
-import org.neo4j.driver.Value;
-import org.neo4j.driver.exceptions.NoSuchRecordException;
-import org.neo4j.driver.types.Node;
-import org.neo4j.driver.types.Relationship;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * Wrapper class for the database (Db class).
@@ -91,10 +80,25 @@ public class Graph {
 
   // Hint methods
 
+  /**
+   * Returns a hint for the given expression. The hint is generated using the
+   * given type of generation.
+   * @param expr Expression to generate the hint for.
+   * @param type Type of hint generation.
+   * @return Hint for the given expression.
+   */
   public Hint getHint(String expr, HintGenType type) {
     return getHint(expr, "", type);
   }
 
+  /**
+   * Returns a hint for the given expression. The hint is generated using the
+   * given type of generation.
+   * @param expr Expression to generate the hint for.
+   * @param code Code used by expression.
+   * @param type Type of hint generation.
+   * @return Hint for the given expression.
+   */
   public Hint getHint(String expr, String code, HintGenType type) {
     return generateHint(expr, code, type).getHint();
   }

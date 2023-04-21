@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 
 public class HintTest {
   private static File file = null;
-  private static boolean statistics = true;
+  private static final boolean statistics = true;
 
   @BeforeAll
   public static void setup() {
@@ -41,9 +41,7 @@ public class HintTest {
         // with test data)
         stream = Stream.concat(stream, Stream.of(Arguments.of(challenge,
                 predicate, predicate_file)));
-        break;
       }
-      break;
     }
     return stream;
   }

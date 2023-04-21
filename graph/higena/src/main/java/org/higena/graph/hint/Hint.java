@@ -99,10 +99,6 @@ public class Hint {
 
   // Getters
 
-  public List<EditAction> getActions() {
-    return actions;
-  }
-
   public Double getDistance() {
     return distance;
   }

@@ -109,10 +109,12 @@ public class EditAction  {
     return ret + ")\"";
   }
 
-  // Auxiliar methods
+  // Auxiliary methods
 
   private static String getMatch(String field, String actionStr) {
-    Matcher match = Pattern.compile(getFieldRegex(field)).matcher(actionStr);
+    String regex = getFieldRegex(field);
+    if (regex == null) return null;
+    Matcher match = Pattern.compile(regex).matcher(actionStr);
     return match.find() ? match.group(1) : null;
   }
 
@@ -153,10 +155,6 @@ public class EditAction  {
 
   public ActionNode getParent() {
     return parent;
-  }
-
-  public int getPosition() {
-    return position;
   }
 
   public String getValue() {

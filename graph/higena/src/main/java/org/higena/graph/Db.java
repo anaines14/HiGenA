@@ -39,7 +39,7 @@ public class Db implements AutoCloseable {
    * 1. Cleans the database by deleting all nodes and edges and projections.
    * 2. Adds unique constraints to avoid duplicate IDs.
    * 3. Adds nodes to the database.
-   * 4. Adds edges to the database.
+   * 4. Add edges to the database.
    * 5. Adds the correct and incorrect labels to the nodes.
    * 6. Deletes the derivationOf, sat and cmd_n properties from the nodes.
    * 7. Aggregates nodes with the same property.
@@ -60,8 +60,6 @@ public class Db implements AutoCloseable {
     aggregateEquivNodes();
     addTreeDiffToEdges();
     addNodePoissonToEdges();
-    //fixIncorrectOnlyPaths();
-    //addPathToIncorrectLeafs();
   }
 
   // Algorithms
@@ -138,25 +136,6 @@ public class Db implements AutoCloseable {
   }
 
   // ADD Methods
-
-  /**
-   * Adds edges between incorrect leaf nodes and the most similar correct node.
-   */
-  private void addPathToIncorrectLeafs() {
-    // Get all incorrect leaf nodes
-    Result badNodes = getIncorrectLeafs();
-    // Get the most similar correct node for each incorrect node
-    while (badNodes.hasNext()) {
-      Node badNode = badNodes.next().get("node").asNode();
-      // Get most similar correct node
-      Node mostSimilarNode = getMostSimilarNode(badNode.get("ast").asString(), "Correct");
-      if (mostSimilarNode != null) {
-        // Create edge between the two nodes
-        addEdge(badNode, mostSimilarNode);
-      }
-    }
-    System.out.println("Added edges to incorrect leaf nodes.");
-  }
 
   /**
    * Creates a relationship Derives between the given nodes.
@@ -282,9 +261,10 @@ public class Db implements AutoCloseable {
     Result res = runQuery(String.format(query, "UniqueSubmission", "(s:Submission)", "s"));
     System.out.println("Added " + res.consume().counters().constraintsAdded() + " unique node.id constraint(s).");
 
-    // TODO: Add when supported by Neo4j
-    //res = runQuery(String.format(query, "UniqueDerives", "()-[r:Derives]-()", "r"));
-    //System.out.println("Added " + res.consume().counters().constraintsAdded() + " unique edge.id constraint(s).");
+    /* TODO: Add when supported by Neo4j
+    res = runQuery(String.format(query, "UniqueDerives", "()-[r:Derives]-()", "r"));
+    System.out.println("Added " + res.consume().counters().constraintsAdded() + " unique edge.id constraint(s).");
+    */
   }
 
   /**
@@ -390,15 +370,6 @@ public class Db implements AutoCloseable {
     runQuery("CALL gds.graph.project('%s', '%s', '%s')".formatted(name, "Submission", relationship));
   }
 
-  /**
-   * Creates a graph projection with the given name, label, and relationship.
-   * Graph projections are used to run neo4j graph data science algorithms.
-   *
-   * @param name         Name of the graph projection
-   * @param label        Label of the nodes
-   * @param relationship Relationship type of the edges
-   * @param relProperty  Property of the relationship
-   */
   private void addProjection(String name, String label, String relationship, String relProperty) {
     runQuery(("CALL gds.graph.project('%s', '%s', '%s', " + "{relationshipProperties: '%s'})").formatted(name, label, relationship, relProperty));
   }
@@ -471,7 +442,7 @@ public class Db implements AutoCloseable {
 
   /**
    * Deletes equivalent nodes. Equivalent nodes are nodes that belong to the
-   * same component after running the connected components algorithm.
+   * same component after running the WCC algorithm.
    * For each component the first node is kept and all other nodes are deleted.
    * Derivations of deleted nodes are updated to point to the first node of the
    * component.
@@ -506,32 +477,6 @@ public class Db implements AutoCloseable {
             MATCH ()-[r:Derives]->()
             WITH submissions, corrects, incorrects, count(r) AS derivations
             RETURN submissions, corrects, incorrects, derivations
-            """);
-  }
-
-  /**
-   * Gets all leaf nodes with an incorrect label.
-   *
-   * @return All nodes that have an Incorrect label.
-   */
-  public Result getIncorrectLeafs() {
-    return runQuery("""
-            MATCH (n:Incorrect)
-            WHERE NOT (n)-[:Derives]->()
-            RETURN n AS node
-            """);
-  }
-
-  /**
-   * Gets Incorrect nodes that do not have a path to a Correct node.
-   *
-   * @return Incorrect nodes that do not have a path to a Correct node.
-   */
-  private Result getIncorrectOnlyPaths() {
-    return runQuery("""
-            MATCH (n:Incorrect)
-            WHERE NOT (n)-[:Derives*]->(:Correct)
-            RETURN n AS node
             """);
   }
 

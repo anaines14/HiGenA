@@ -33,19 +33,13 @@ public class InteractiveMenu {
     while (running) {
       showMenu();
       switch (scanner.nextInt()) {
-        case 1 -> {
-          execSetup(graph);
-        }
-        case 2 -> {
-          execHint(scanner, graph);
-        }
+        case 1 -> execSetup(graph);
+        case 2 -> execHint(scanner, graph);
         case 3 -> {
           running = false;
           System.out.println("Bye!");
         }
-        default -> {
-          System.out.println("Invalid option. Try again.");
-        }
+        default -> System.out.println("Invalid option. Try again.");
       }
     }
   }
