@@ -22,6 +22,12 @@ public class Hint {
     rel.get("operations").asList(Value::asString).forEach(op -> actions.add(EditAction.fromString(op)));
   }
 
+  public Hint(double distance, Relationship rel) {
+    this.distance = distance;
+    this.actions = new ArrayList<>();
+    rel.get("operations").asList(Value::asString).forEach(op -> actions.add(EditAction.fromString(op)));
+  }
+
   public static String actionToHint(EditAction action) {
     String type = action.getType();
     String node = replaceVariable(action.getNode().getLabel()),
