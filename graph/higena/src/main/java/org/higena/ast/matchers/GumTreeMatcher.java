@@ -1,7 +1,11 @@
 package org.higena.ast.matchers;
 
+import at.unisalzburg.dbresearch.apted.node.Node;
+import at.unisalzburg.dbresearch.apted.node.StringNodeData;
 import com.github.gumtreediff.matchers.MappingStore;
-import com.github.gumtreediff.tree.Tree;
+import com.github.gumtreediff.matchers.Matcher;
+import com.github.gumtreediff.matchers.Matchers;
+import org.higena.ast.AST;
 
 /**
  * This class matches two trees using the edit mapping computed by the GumTree
@@ -12,10 +16,11 @@ public class GumTreeMatcher extends TreeMatcher{
 
   public GumTreeMatcher() {}
 
-  @Override
-  public MappingStore match(Tree src, Tree dst, MappingStore mappingStore) {
-    if (mappingStore.isMappingAllowed(src, dst))
-      mappingStore.addMappingRecursively(src, dst);
-    return mappingStore;
+  public MappingStore match(Node<StringNodeData> t1,
+                            Node<StringNodeData> t2) {
+    AST src = new AST(t1), dst = new AST(t2);
+    System.out.println(src.toTreeString());
+    Matcher defaultMatcher = Matchers.getInstance().getMatcher();
+    return defaultMatcher.match(src, dst);
   }
 }

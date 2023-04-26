@@ -2,21 +2,19 @@ package org.higena.ast;
 
 import at.unisalzburg.dbresearch.apted.node.Node;
 import at.unisalzburg.dbresearch.apted.node.StringNodeData;
+import com.github.gumtreediff.tree.AbstractTree;
 import com.github.gumtreediff.tree.Tree;
-import com.github.gumtreediff.tree.TreeMetrics;
 import com.github.gumtreediff.tree.Type;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
-public class AST implements Tree {
-  private List<Tree> children = new ArrayList<>();
-  private Tree parent;
+public class AST extends AbstractTree {
   private String label;
 
   public AST(Node<StringNodeData> root) {
+    this.children = new ArrayList<>();
     this.setLabel(root.getNodeData().getLabel());
 
     for (Node<StringNodeData> child : root.getChildren()) {
@@ -25,51 +23,8 @@ public class AST implements Tree {
   }
 
   public AST(Tree other) {
+    this.children = new ArrayList<>();
     this.label = other.getLabel();
-  }
-
-  @Override
-  public void addChild(Tree tree) {
-    children.add(tree);
-    tree.setParent(this);
-  }
-
-  @Override
-  public void insertChild(Tree tree, int i) {
-    children.add(i, tree);
-    tree.setParent(this);
-  }
-
-  @Override
-  public void setChildren(List<Tree> list) {
-    this.children = list;
-    for (Tree child : list) {
-      child.setParent(this);
-    }
-  }
-
-  @Override
-  public List<Tree> getChildren() {
-    return children;
-  }
-
-  @Override
-  public void setParent(Tree tree) {
-    this.parent = tree;
-  }
-
-  @Override
-  public void setParentAndUpdateChildren(Tree tree) {
-    if (this.parent != null)
-      this.parent.getChildren().remove(this);
-    this.parent = tree;
-    if (this.parent != null)
-      parent.getChildren().add(this);
-  }
-
-  @Override
-  public Tree getParent() {
-    return parent;
   }
 
   @Override
@@ -98,6 +53,7 @@ public class AST implements Tree {
 
   @Override
   public void setPos(int i) {
+
   }
 
   @Override
@@ -107,6 +63,7 @@ public class AST implements Tree {
 
   @Override
   public void setLength(int i) {
+
   }
 
   @Override
@@ -119,6 +76,7 @@ public class AST implements Tree {
 
   }
 
+
   @Override
   public String toTreeString() {
     StringBuilder ret = new StringBuilder("{" + label);
@@ -127,16 +85,6 @@ public class AST implements Tree {
     }
     ret.append("}");
     return ret.toString();
-  }
-
-  @Override
-  public TreeMetrics getMetrics() {
-    return null;
-  }
-
-  @Override
-  public void setMetrics(TreeMetrics treeMetrics) {
-
   }
 
   @Override
@@ -158,5 +106,6 @@ public class AST implements Tree {
   public String toString() {
     return label;
   }
+
 }
 

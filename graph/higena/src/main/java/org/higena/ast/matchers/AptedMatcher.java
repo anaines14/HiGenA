@@ -1,8 +1,11 @@
 package org.higena.ast.matchers;
 
+import at.unisalzburg.dbresearch.apted.node.Node;
+import at.unisalzburg.dbresearch.apted.node.StringNodeData;
 import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.tree.Tree;
 import com.github.gumtreediff.tree.TreeUtils;
+import org.higena.ast.AST;
 import org.higena.ast.TED;
 
 import java.util.List;
@@ -19,8 +22,11 @@ public class AptedMatcher extends TreeMatcher {
     this.ted = ted;
   }
 
-  @Override
-  public MappingStore match(Tree src, Tree dst, MappingStore mappingStore) {
+  public MappingStore match(Node<StringNodeData> t1, Node<StringNodeData> t2) {
+    AST src = new AST(t1);
+    AST dst = new AST(t2);
+    MappingStore ms = new MappingStore(src, dst);
+
     List<int[]> arrayMappings = this.ted.computeEdits();
     List<Tree> srcs = TreeUtils.postOrder(src);
     List<Tree> dsts = TreeUtils.postOrder(dst);
@@ -30,10 +36,12 @@ public class AptedMatcher extends TreeMatcher {
         Tree srcg = srcs.get(m[0] - 1);
         Tree dstg = dsts.get(m[1] - 1);
 
-        if (mappingStore.isMappingAllowed(srcg, dstg))
-          mappingStore.addMapping(srcg, dstg);
+        if (ms.isMappingAllowed(srcg, dstg))
+          ms.addMapping(srcg, dstg);
       }
     }
-    return mappingStore;
+
+    return ms;
   }
+
 }
