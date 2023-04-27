@@ -12,11 +12,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+
 public class AlloyAST extends AbstractTree {
   private String label;
-  private List<Tree> children = new ArrayList<>();
 
   public AlloyAST(Node<StringNodeData> root) {
+    this.children = new ArrayList<>();
     this.setLabel(root.getNodeData().getLabel());
 
     for (Node<StringNodeData> child : root.getChildren()) {
@@ -25,15 +26,134 @@ public class AlloyAST extends AbstractTree {
   }
 
   public AlloyAST(Tree other) {
+    this.children = new ArrayList<>();
     this.label = other.getLabel();
   }
 
   public AlloyAST(Tree t, Tree parent) {
-   this.label = t.getLabel();
+    this.children = new ArrayList<>();
+    this.label = t.getLabel();
     for (Tree child : t.getChildren()) {
       this.addChild(child.deepCopy());
     }
     setParent(parent);
+  }
+
+  /**
+   * Returns true if the two trees are equal. Two trees are equal if they have the same label and
+   * the same children.
+   *
+   * @param t1 The first tree
+   * @param t2 The second tree
+   * @return True if the two trees are equal
+   */
+  public static boolean areEqual(Tree t1, Tree t2) {
+    // Null check
+    if (t1 == null && t2 == null) {
+      return false;
+    }
+
+    // Label check
+    if (!t1.getLabel().equals(t2.getLabel())) {
+      return false;
+    }
+
+    // Number of children check
+    if (t1.getChildren().size() != t2.getChildren().size()) {
+      return false;
+    }
+
+    // Children check
+    List<Tree> children1 = t1.getChildren(),
+            children2 = t2.getChildren();
+    for (int i = 0; i < children1.size(); i++) {
+      Tree child1 = children1.get(i),
+              child2 = children2.get(i);
+      if (!areEqual(child1, child2)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  @Override
+  public Tree deepCopy() {
+    Tree copy = new AlloyAST(this);
+    for (Tree child : this.getChildren()) {
+      copy.addChild(child.deepCopy());
+    }
+    return copy;
+  }
+
+  @Override
+  public String getLabel() {
+    return label;
+  }
+
+  @Override
+  public void setLabel(String s) {
+    this.label = s;
+  }
+
+  @Override
+  public int getPos() {
+    return 0;
+  }
+
+  @Override
+  public void setPos(int i) {
+
+  }
+
+  @Override
+  public int getLength() {
+    return 0;
+  }
+
+  @Override
+  public void setLength(int i) {
+
+  }
+
+  @Override
+  public Type getType() {
+    return null;
+  }
+
+  @Override
+  public void setType(Type type) {
+
+  }
+
+  @Override
+  public String toTreeString() {
+    StringBuilder ret = new StringBuilder("{" + label);
+    for (Tree child : children) {
+      ret.append(child.toTreeString());
+    }
+    ret.append("}");
+    return ret.toString();
+  }
+
+  @Override
+  public Object getMetadata(String s) {
+    return null;
+  }
+
+  @Override
+  public Object setMetadata(String s, Object o) {
+    return null;
+  }
+
+  @Override
+  public Iterator<Map.Entry<String, Object>> getMetadata() {
+    return null;
+  }
+
+  @Override
+  public String toString() {
+    return label;
   }
 
   /**
@@ -117,17 +237,16 @@ public class AlloyAST extends AbstractTree {
     }
 
     // Check left equals other's right
-    Tree left =  children.get(0), right = children.get(1),
+    Tree left = children.get(0), right = children.get(1),
             otherLeft = other.children.get(0), otherRight = other.children.get(1);
 
-    if (left.equals(otherRight)) {
+    if (areEqual(left, otherRight)) {
       return true;
     }
 
     // Check right equals other's left
-    return right.equals(otherLeft);
+    return areEqual(right, otherLeft);
   }
-
 
   /**
    * Swaps the children of this AST if the AST has two children.
@@ -141,172 +260,4 @@ public class AlloyAST extends AbstractTree {
     children.set(1, temp);
   }
 
-  // To string methods
-
-  @Override
-  public String toTreeString() {
-    StringBuilder ret = new StringBuilder("{" + label);
-    for (Tree child : children) {
-      ret.append(child.toTreeString());
-    }
-    ret.append("}");
-    return ret.toString();
-  }
-
-  @Override
-  public String toString() {
-    return label;
-  }
-
-  // Getters
-
-  @Override
-  public Tree getParent() {
-    return parent;
-  }
-
-  @Override
-  public List<Tree> getChildren() {
-    return children;
-  }
-
-  @Override
-  public String getLabel() {
-    return label;
-  }
-
-  @Override
-  public int getPos() {
-    return 0;
-  }
-
-  @Override
-  public Type getType() {
-    return null;
-  }
-
-  @Override
-  public int getLength() {
-    return 0;
-  }
-
-  @Override
-  public Iterator<Map.Entry<String, Object>> getMetadata() {
-    return null;
-  }
-
-  @Override
-  public Object getMetadata(String s) {
-    return null;
-  }
-
-  // Setters
-
-  @Override
-  public void setChildren(List<Tree> list) {
-    this.children = list;
-    for (Tree child : children) {
-      child.setParent(this);
-    }
-  }
-
-  @Override
-  public void setLabel(String s) {
-    this.label = s;
-  }
-
-
-  @Override
-  public void setLength(int i) {
-
-  }
-
-  @Override
-  public void setType(Type type) {
-
-  }
-
-  @Override
-  public void setParentAndUpdateChildren(Tree tree) {
-    if (this.parent != null)
-      this.parent.getChildren().remove(this);
-    this.parent = tree;
-    if (this.parent != null)
-      parent.getChildren().add(this);
-  }
-
-  @Override
-  public void addChild(Tree tree) {
-    children.add(tree);
-    tree.setParent(this);
-  }
-
-  @Override
-  public void insertChild(Tree tree, int i) {
-    children.add(i, tree);
-    tree.setParent(this);
-  }
-
-  @Override
-  public Object setMetadata(String s, Object o) {
-    return null;
-  }
-
-  @Override
-  public void setPos(int i) {
-
-  }
-
-  // Other methods
-
-  @Override
-  public Tree deepCopy() {
-    Tree copy = new AlloyAST(this);
-    for (Tree child : this.getChildren()) {
-      copy.addChild(child.deepCopy());
-    }
-    return copy;
-  }
-
-  /**
-   * Returns true if the two trees are equal. Two trees are equal if they have the same label and
-   * the same children.
-   *
-   * @param obj The other AST to compare to.
-   * @return True if the two AST are equal.
-   */
-  @Override
-  public boolean equals(Object obj) {
-    // Null check
-    if (obj == null) {
-      return false;
-    }
-
-    // Not an AlloyAST
-    if (!(obj instanceof AlloyAST other)) {
-      return false;
-    }
-
-    // Label check
-    if (!this.label.equals(other.label)) {
-      return false;
-    }
-
-    // Number of children check
-    if (this.children.size() != other.children.size()) {
-      return false;
-    }
-
-    // Children check
-    for (int i = 0; i < this.children.size(); i++) {
-      Tree child = this.children.get(i),
-              otherChild = other.children.get(i);
-      if (!child.equals(otherChild)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
 }
-
