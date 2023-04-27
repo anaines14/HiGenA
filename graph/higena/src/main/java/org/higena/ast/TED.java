@@ -5,6 +5,7 @@ import at.unisalzburg.dbresearch.apted.distance.APTED;
 import at.unisalzburg.dbresearch.apted.node.Node;
 import at.unisalzburg.dbresearch.apted.node.StringNodeData;
 import at.unisalzburg.dbresearch.apted.parser.BracketStringInputParser;
+import com.github.gumtreediff.actions.ChawatheScriptGenerator;
 import com.github.gumtreediff.actions.EditScript;
 import com.github.gumtreediff.actions.SimplifiedChawatheScriptGenerator;
 import com.github.gumtreediff.actions.model.Action;
@@ -42,10 +43,17 @@ public class TED {
     Node<StringNodeData> t1 = parse("{root" + tree1 + "}"), t2 = parse("{root" + tree2 + "}");
     // Compute TED (must run before computing edits)
     TreeDiff td = new TreeDiff(computeEditDistance(t1, t2));
-    // Get edit actions
-    MappingStore ms = matcher.match(t1, t2);
+
+    // Order children of commutative operations to optimize matching
+    AlloyAST ast1 = new AlloyAST(t1), ast2 = new AlloyAST(t2);
+    ast1.prepareForMatching(ast2);
+
+    // Get mapping between the two trees
+    MappingStore ms = matcher.match(ast1, ast2);
+
     // Calculate edit actions using Chawathe's algorithm
     EditScript editScript = new SimplifiedChawatheScriptGenerator().computeActions(ms);
+
     // Convert edit script actions to EditAction objects
     for (Action action : editScript) {
       td.addAction(new EditAction(action));

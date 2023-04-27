@@ -1,11 +1,9 @@
 package org.higena.ast.matchers;
 
-import at.unisalzburg.dbresearch.apted.node.Node;
-import at.unisalzburg.dbresearch.apted.node.StringNodeData;
 import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.tree.Tree;
 import com.github.gumtreediff.tree.TreeUtils;
-import org.higena.ast.AST;
+import org.higena.ast.AlloyAST;
 import org.higena.ast.TED;
 
 import java.util.List;
@@ -22,14 +20,12 @@ public class AptedMatcher extends TreeMatcher {
     this.ted = ted;
   }
 
-  public MappingStore match(Node<StringNodeData> t1, Node<StringNodeData> t2) {
-    AST src = new AST(t1);
-    AST dst = new AST(t2);
-    MappingStore ms = new MappingStore(src, dst);
+  public MappingStore match(AlloyAST t1, AlloyAST t2) {
+    MappingStore ms = new MappingStore(t1, t2);
 
     List<int[]> arrayMappings = this.ted.computeEdits();
-    List<Tree> srcs = TreeUtils.postOrder(src);
-    List<Tree> dsts = TreeUtils.postOrder(dst);
+    List<Tree> srcs = TreeUtils.postOrder(t1);
+    List<Tree> dsts = TreeUtils.postOrder(t2);
 
     for (int[] m : arrayMappings) {
       if (m[0] != 0 && m[1] != 0) {

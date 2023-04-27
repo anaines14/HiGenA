@@ -1,15 +1,14 @@
 package org.higena.ast.matchers;
 
-import at.unisalzburg.dbresearch.apted.node.Node;
-import at.unisalzburg.dbresearch.apted.node.StringNodeData;
 import com.github.gumtreediff.matchers.MappingStore;
+import org.higena.ast.AlloyAST;
 
 public abstract class TreeMatcher {
 
   public TreeMatcher() {
   }
 
-  public abstract MappingStore match(Node<StringNodeData> t1,
-                                     Node<StringNodeData> t2);
+  public abstract MappingStore match(AlloyAST t1,
+                                     AlloyAST t2);
 
 }
