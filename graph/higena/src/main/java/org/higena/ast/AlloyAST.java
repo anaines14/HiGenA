@@ -39,122 +39,7 @@ public class AlloyAST extends AbstractTree {
     setParent(parent);
   }
 
-  /**
-   * Returns true if the two trees are equal. Two trees are equal if they have the same label and
-   * the same children.
-   *
-   * @param t1 The first tree
-   * @param t2 The second tree
-   * @return True if the two trees are equal
-   */
-  public static boolean areEqual(Tree t1, Tree t2) {
-    // Null check
-    if (t1 == null && t2 == null) {
-      return false;
-    }
-
-    // Label check
-    if (!t1.getLabel().equals(t2.getLabel())) {
-      return false;
-    }
-
-    // Number of children check
-    if (t1.getChildren().size() != t2.getChildren().size()) {
-      return false;
-    }
-
-    // Children check
-    List<Tree> children1 = t1.getChildren(),
-            children2 = t2.getChildren();
-    for (int i = 0; i < children1.size(); i++) {
-      Tree child1 = children1.get(i),
-              child2 = children2.get(i);
-      if (!areEqual(child1, child2)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  @Override
-  public Tree deepCopy() {
-    Tree copy = new AlloyAST(this);
-    for (Tree child : this.getChildren()) {
-      copy.addChild(child.deepCopy());
-    }
-    return copy;
-  }
-
-  @Override
-  public String getLabel() {
-    return label;
-  }
-
-  @Override
-  public void setLabel(String s) {
-    this.label = s;
-  }
-
-  @Override
-  public int getPos() {
-    return 0;
-  }
-
-  @Override
-  public void setPos(int i) {
-
-  }
-
-  @Override
-  public int getLength() {
-    return 0;
-  }
-
-  @Override
-  public void setLength(int i) {
-
-  }
-
-  @Override
-  public Type getType() {
-    return null;
-  }
-
-  @Override
-  public void setType(Type type) {
-
-  }
-
-  @Override
-  public String toTreeString() {
-    StringBuilder ret = new StringBuilder("{" + label);
-    for (Tree child : children) {
-      ret.append(child.toTreeString());
-    }
-    ret.append("}");
-    return ret.toString();
-  }
-
-  @Override
-  public Object getMetadata(String s) {
-    return null;
-  }
-
-  @Override
-  public Object setMetadata(String s, Object o) {
-    return null;
-  }
-
-  @Override
-  public Iterator<Map.Entry<String, Object>> getMetadata() {
-    return null;
-  }
-
-  @Override
-  public String toString() {
-    return label;
-  }
+  // Matching methods
 
   /**
    * If the two ASTs have the same commutative operation with one branch in
@@ -204,16 +89,6 @@ public class AlloyAST extends AbstractTree {
   }
 
   /**
-   * Returns true if the label of the root represents a commutative operation
-   * in Alloy.
-   *
-   * @return True if the label is commutative
-   */
-  private boolean isCommutative() {
-    return Canonicalizer.isCommutative(label);
-  }
-
-  /**
    * Return true if both ASTs have two branches in common in swapped
    * positions. Example: The left branch of this AST is equal to the right
    * branch of the other AST or vice versa.
@@ -260,4 +135,140 @@ public class AlloyAST extends AbstractTree {
     children.set(1, temp);
   }
 
+  // Static methods
+
+  /**
+   * Returns true if the two trees are equal. Two trees are equal if they have the same label and
+   * the same children.
+   *
+   * @param t1 The first tree
+   * @param t2 The second tree
+   * @return True if the two trees are equal
+   */
+  public static boolean areEqual(Tree t1, Tree t2) {
+    // Null check
+    if (t1 == null && t2 == null) {
+      return false;
+    }
+
+    // Label check
+    if (!t1.getLabel().equals(t2.getLabel())) {
+      return false;
+    }
+
+    // Number of children check
+    if (t1.getChildren().size() != t2.getChildren().size()) {
+      return false;
+    }
+
+    // Children check
+    List<Tree> children1 = t1.getChildren(),
+            children2 = t2.getChildren();
+    for (int i = 0; i < children1.size(); i++) {
+      Tree child1 = children1.get(i),
+              child2 = children2.get(i);
+      if (!areEqual(child1, child2)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  // Getters
+
+  @Override
+  public String getLabel() {
+    return label;
+  }
+
+  @Override
+  public int getPos() {
+    return 0;
+  }
+
+  @Override
+  public int getLength() {
+    return 0;
+  }
+
+  @Override
+  public Type getType() {
+    return null;
+  }
+
+  @Override
+  public Object getMetadata(String s) {
+    return null;
+  }
+
+  @Override
+  public Iterator<Map.Entry<String, Object>> getMetadata() {
+    return null;
+  }
+
+  // Setters
+
+  @Override
+  public void setLabel(String s) {
+    this.label = s;
+  }
+
+  @Override
+  public void setPos(int i) {
+
+  }
+
+  @Override
+  public void setLength(int i) {
+
+  }
+
+  @Override
+  public void setType(Type type) {
+
+  }
+
+  @Override
+  public Object setMetadata(String s, Object o) {
+    return null;
+  }
+
+  // To String methods
+
+  @Override
+  public String toString() {
+    return label;
+  }
+
+  @Override
+  public String toTreeString() {
+    StringBuilder ret = new StringBuilder("{" + label);
+    for (Tree child : children) {
+      ret.append(child.toTreeString());
+    }
+    ret.append("}");
+    return ret.toString();
+  }
+
+  // Other methods
+
+  @Override
+  public Tree deepCopy() {
+    Tree copy = new AlloyAST(this);
+    for (Tree child : this.getChildren()) {
+      copy.addChild(child.deepCopy());
+    }
+    return copy;
+  }
+
+  /**
+   * Returns true if the label of the root represents a commutative operation
+   * in Alloy.
+   *
+   * @return True if the label is commutative
+   */
+  private boolean isCommutative() {
+    return Canonicalizer.isCommutative(label);
+  }
 }
