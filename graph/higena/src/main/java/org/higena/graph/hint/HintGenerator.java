@@ -149,14 +149,11 @@ public class HintGenerator {
     Node source = db.getNodeByAST(ast);
     if (source == null) { // If it does not exist, create it
       isNewNode = true;
-      // Get the most similar node
-      Node similarNode = db.getMostSimilarNode(ast);
-      if (similarNode != null) {
-        // Create the node with the AST
-        source = db.addIncorrectNode(expression, ast, code);
-        // Add edge between the new node and the most similar node
-        db.addEdge(source, similarNode);
-      }
+      // Create the node with the AST
+      source = db.addIncorrectNode(expression, ast, code);
+      // Add edge from empty node to the new node
+      Node emptyNode = db.getNodeByAST("");
+      db.addEdge(emptyNode, source);
     } else {
       isNewNode = false;
     }
