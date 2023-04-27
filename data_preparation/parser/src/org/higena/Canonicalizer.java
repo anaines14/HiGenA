@@ -17,11 +17,15 @@ public class Canonicalizer {
     }
 
     // Commutative operation
-    if (commutativeOps.contains(tree.getName())) {
+    if (isCommutative(tree.getName())) {
       // Sort children
       children.sort(Comparator.comparing(A4FNode::toString));
     }
 
     return tree;
+  }
+
+  public static boolean isCommutative(String op) {
+    return commutativeOps.contains(op.toUpperCase());
   }
 }
