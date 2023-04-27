@@ -58,12 +58,12 @@ public class AlloyAST extends AbstractTree {
   }
 
   /**
-   * Returns a list of commutative nodes in the AST..
+   * Returns a list of commutative nodes in the AST.
    *
    * @return List of commutative nodes
    */
   private List<AlloyAST> findCommutativeNodes() {
-    List<Tree> allchildren = new ArrayList<>();
+    List<Tree> allChildren = new ArrayList<>();
     List<AlloyAST> commutative = new ArrayList<>();
 
     // Add itself if it is commutative
@@ -74,11 +74,11 @@ public class AlloyAST extends AbstractTree {
     for (Tree child : children) {
       AlloyAST childAST = new AlloyAST(child, this);
       commutative.addAll(childAST.findCommutativeNodes());
-      allchildren.add(childAST);
+      allChildren.add(childAST);
     }
 
     // Update children
-    this.children = allchildren;
+    this.children = allChildren;
 
     return commutative;
   }
@@ -201,11 +201,6 @@ public class AlloyAST extends AbstractTree {
   }
 
   // Setters
-
-  @Override
-  public void setParent(Tree tree) {
-    this.parent = tree;
-  }
 
   @Override
   public void setChildren(List<Tree> list) {

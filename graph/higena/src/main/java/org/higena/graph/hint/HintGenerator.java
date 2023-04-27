@@ -119,7 +119,7 @@ public class HintGenerator {
       System.err.println("Error: Cannot generate hint without source node.");
       return;
     }
-    // Dijsktra algorithm to find the shortest path to a solution
+    // Dijkstra algorithm to find the shortest path to a solution
     Record rec = db.dijkstra(sourceNode.get("id").asString(), type.toString()).single();
     List<Node> nodes = rec.get("path").asList(Value::asNode);
     targetNode = nodes.get(nodes.size() - 1);
