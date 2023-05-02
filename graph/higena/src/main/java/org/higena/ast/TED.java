@@ -22,8 +22,10 @@ import java.util.List;
  * and the edit actions that transform one tree into the other.
  */
 public class TED {
-  private final BracketStringInputParser parser = new BracketStringInputParser();
-  private final APTED<StringUnitCostModel, StringNodeData> apted = new APTED<>(new StringUnitCostModel());
+  private static final BracketStringInputParser parser =
+          new BracketStringInputParser();
+  private static final APTED<StringUnitCostModel, StringNodeData> apted =
+          new APTED<>(new StringUnitCostModel());
   private final TreeMatcher aptedMatcher = new AptedMatcher(this);
   private final TreeMatcher gumTreeMatcher = new GumTreeMatcher();
 
@@ -60,7 +62,7 @@ public class TED {
     return td;
   }
 
-  public int computeEditDistance(String t1, String t2) {
+  public static int computeEditDistance(String t1, String t2) {
     // TODO: Change. This is a workaround for a bug where one string comes with quotes and the other doesn't
     t1 = t1.replace("\"", "");
     t2 = t2.replace("\"", "");
@@ -77,7 +79,8 @@ public class TED {
    * @param t2 The second tree
    * @return The tree edit distance between the two trees.
    */
-  public int computeEditDistance(Node<StringNodeData> t1, Node<StringNodeData> t2) {
+  public static int computeEditDistance(Node<StringNodeData> t1,
+                                  Node<StringNodeData> t2) {
     return (int) apted.computeEditDistance(t1, t2);
   }
 
@@ -97,7 +100,7 @@ public class TED {
    *             {root{child1}{child2}}
    * @return The parsed tree instance.
    */
-  private Node<StringNodeData> parse(String tree) {
+  private static Node<StringNodeData> parse(String tree) {
     return parser.fromString(tree);
   }
 

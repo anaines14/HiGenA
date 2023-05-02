@@ -18,11 +18,11 @@ public class HintGenerator {
   private final Db db; // Database connection
   private final String expression, code; // Student submission
   private final HintGenType type; // Hint generation type
+
   // Hint generation data
   private boolean isNewNode; // True if submission is new on the graph
   private boolean createdShorterPath = false; // True if a shorter path to a
-  // solution
-  // was created
+  // solution was created
   private Node sourceNode; // Node from the graph with the same AST as the submission
   private Node targetNode; // Closest solution in the graph
   private Node nextNode; // Next node in the path to the solution
@@ -74,7 +74,7 @@ public class HintGenerator {
 
       // Compute TED between the source and the target nodes
       String srcAST = sourceNode.get("ast").toString(), dstAST = targetNode.get("ast").toString();
-      double srcDstTED = new TED().computeEditDistance(srcAST, dstAST);
+      int srcDstTED = TED.computeEditDistance(srcAST, dstAST);
 
       // If total TED of the path is higher than the TED between the source
       // and the target nodes, create a better path to a target node
@@ -196,7 +196,7 @@ public class HintGenerator {
     json.put("totalTED", totalTED);
     json.put("srcDstTED", hint.getDistance());
     json.put("operations", first_edge.get("operations").toString());
-    json.put("hint", hint.toHintMsg());
+    json.put("hint", hint);
     json.put("time", time);
     return json;
   }
@@ -224,7 +224,7 @@ public class HintGenerator {
             // Time
             .append("\nTime:\n\t").append(time).append(" ms")
             // Hint
-            .append("\nHint:\n\t").append(hint.toHintMsg());
+            .append("\nHint:\n\t").append(hint);
 
     return sb.toString();
   }

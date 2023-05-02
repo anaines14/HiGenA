@@ -109,7 +109,6 @@ public class Graph {
       String ast = parser.parse(expr, code);
       HintGenerator generator = new HintGenerator(expr, code, type, db);
       generator.generateHint(ast);
-      System.out.println("\n---------------------");
       System.out.println(generator);
       return generator;
     }

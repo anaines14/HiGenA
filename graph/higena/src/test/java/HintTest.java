@@ -67,14 +67,21 @@ public class HintTest {
                        File logFile) {
     // Load train data
     Graph g = new Graph(challenge, predicate);
+
     // Load test data
     List<Map.Entry<String, String>> expressions = getTestSubmissions(test_data);
+
     // Generate hints
     for (Map.Entry<String, String> entry : expressions) {
-      g.setup(); // Reset graph for each submission
-      String expr = entry.getKey(), code = entry.getValue();
+      // Reset graph for each submission
+      System.out.println("\n[SETUP]");
+      g.setup();
+
       // Generate hint
+      String expr = entry.getKey(), code = entry.getValue();
+      System.out.println("\n[HINT]");
       HintGenerator hintGen = g.generateHint(expr, code, HintGenType.TED);
+
       // Log hint
       writeStatistics(logFile, hintGen, challenge, predicate);
     }

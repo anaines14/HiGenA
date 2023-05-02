@@ -112,7 +112,7 @@ public class InteractiveMenu {
 
     // Show hint
     if (hint != null)
-      System.out.println("HINT:\n" + hint.toHintMsg() + "\n");
+      System.out.println("HINT:\n" + hint + "\n");
     else
       System.out.println("No hint found.\n");
   }
