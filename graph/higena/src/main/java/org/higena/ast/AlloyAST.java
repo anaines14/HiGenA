@@ -12,7 +12,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-
+/**
+ * This class represents an AST of an Alloy expression.
+ */
 public class AlloyAST extends AbstractTree {
   private String label;
 

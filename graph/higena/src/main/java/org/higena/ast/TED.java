@@ -34,7 +34,7 @@ public class TED {
 
   private static final EditScriptGenerator generator =
           new SimplifiedChawatheScriptGenerator(); // Edit script generator
-  private static final boolean USE_APTED = true;
+  public static boolean USE_APTED = true; // True to use APTED; else use GumTree
 
   public TED() {
   }

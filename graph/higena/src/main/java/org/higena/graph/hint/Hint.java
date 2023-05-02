@@ -92,7 +92,6 @@ public class Hint {
     return value;
   }
 
-
   /**
    * Generates part of a hint using the information of the edit actions. Given
    * a list of edit actions, the list is sorted by priority and the first action

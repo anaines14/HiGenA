@@ -33,6 +33,9 @@ public class EditAction {
   private int position; // Position of the node in the parent (only for Addition)
   private String value; // Value of the node (only for Update)
 
+  private static final BracketStringInputParser parser =
+          new BracketStringInputParser(); // Parser for string representations of trees
+
   public EditAction(Action action) {
     this.type = action.getClass().getSimpleName();
     this.node = action.getNode().deepCopy();
@@ -79,7 +82,7 @@ public class EditAction {
       switch (type) {
         case "TreeAddition", "Move", "TreeInsert" -> {
           if (tree != null && parent != null && position != null) {
-            Node<StringNodeData> parsedTree = new BracketStringInputParser().fromString(tree);
+            Node<StringNodeData> parsedTree = parser.fromString(tree);
             return new EditAction(type, new AlloyAST(parsedTree), new AlloyAST(parent), Integer.parseInt(position));
           }
         }
@@ -96,7 +99,7 @@ public class EditAction {
         }
         case "TreeDelete" -> {
           if (tree != null) {
-            Node<StringNodeData> parsedTree = new BracketStringInputParser().fromString(tree);
+            Node<StringNodeData> parsedTree = parser.fromString(tree);
             return new EditAction(type, new AlloyAST(parsedTree));
           }
         }

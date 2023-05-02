@@ -14,19 +14,20 @@ import java.util.List;
 public class HintGenerator {
 
   // Constants
-  public static boolean cantCreatePath = false;
   private final Db db; // Database connection
   private final String expression, code; // Student submission
   private final HintGenType type; // Hint generation type
+  public static boolean cantCreatePath = false; // True if cant create
+  // better paths
 
   // Hint generation data
-  private boolean isNewNode; // True if submission is new on the graph
+  private boolean isNewNode = false; // True if submission is new on the graph
   private boolean createdShorterPath = false; // True if a shorter path to a
   // solution was created
   private Node sourceNode; // Node from the graph with the same AST as the submission
   private Node targetNode; // Closest solution in the graph
   private Node nextNode; // Next node in the path to the solution
-  private Relationship first_edge; // First edge in the path to the solution
+  private Relationship firstEdge; // First edge in the path to the solution
   private double totalTED; // Total cost of the path to the solution
   private Hint hint; // Generated hint
   private long time; // Time it took to generate the hint
@@ -62,7 +63,7 @@ public class HintGenerator {
       targetNode = createPath(sourceNode);
       // Generate hint message
       if (targetNode != null)
-        hint = new Hint(sourceNode, targetNode, first_edge);
+        hint = new Hint(sourceNode, targetNode, firstEdge);
       // Stop timer
       time = System.currentTimeMillis() - startTime;
       return;
@@ -80,7 +81,7 @@ public class HintGenerator {
       // and the target nodes, create a better path to a target node
       if (cantCreatePath || totalTED <= srcDstTED) {
         // Path found is good (TED equal to TED(src, dst)). Generate hint
-        hint = new Hint(srcDstTED, first_edge);
+        hint = new Hint(srcDstTED, firstEdge);
         return;
       }
 
@@ -96,12 +97,17 @@ public class HintGenerator {
       targetNode = createPath(sourceNode);
     }
     // Generate hint message
-    if (targetNode != null) hint = new Hint(sourceNode, targetNode, first_edge);
+    if (targetNode != null) hint = new Hint(sourceNode, targetNode, firstEdge);
 
     // Stop timer
     time = System.currentTimeMillis() - startTime;
   }
 
+  /**
+   * Creates a path from the source node to the most similar correct node.
+   * @param source source node
+   * @return The target node of the path
+   */
   private Node createPath(Node source) {
     Node target = db.getMostSimilarNode(source.get("ast").toString(), "Correct");
     if (target == null) {
@@ -109,14 +115,18 @@ public class HintGenerator {
       return null;
     }
     // Create edge between the two nodes
-    first_edge = db.addEdge(sourceNode, target);
+    firstEdge = db.addEdge(sourceNode, target);
     nextNode = target;
-    totalTED = first_edge.get("ted").asDouble();
+    totalTED = firstEdge.get("ted").asDouble();
     return target;
   }
 
   // Getters
 
+  /**
+   * Runs the dijkstra algorithm to find the shortest path to a solution.
+   * @throws NoSuchRecordException if there is no path to a solution
+   */
   private void getShortestPath() throws NoSuchRecordException {
     if (sourceNode == null) {
       System.err.println("Error: Cannot generate hint without source node.");
@@ -127,7 +137,7 @@ public class HintGenerator {
     List<Node> nodes = rec.get("path").asList(Value::asNode);
     targetNode = nodes.get(nodes.size() - 1);
     nextNode = nodes.get(1);
-    first_edge = db.getRelationship(sourceNode, nextNode);
+    firstEdge = db.getRelationship(sourceNode, nextNode);
 
     // Get total TED of the path
     if (type == HintGenType.TED) {
@@ -157,8 +167,6 @@ public class HintGenerator {
       // Add edge from empty node to the new node
       Node emptyNode = db.getNodeByAST("");
       db.addEdge(emptyNode, source);
-    } else {
-      isNewNode = false;
     }
     return source;
   }
@@ -172,14 +180,17 @@ public class HintGenerator {
   private double getTotalTED(List<Node> nodes) {
     double totalTED = 0;
     for (int i = 0; i < nodes.size() - 1; i++) {
-      Node src = nodes.get(i);
-      Node dst = nodes.get(i + 1);
+      Node src = nodes.get(i), dst = nodes.get(i + 1);
       Relationship edge = db.getRelationship(src, dst);
       totalTED += edge.get("ted").asDouble();
     }
     return totalTED;
   }
 
+  /**
+   * Returns a JSON object with the hint information.
+   * @return Hint represented as a JSON object
+   */
   public JSONObject getJSON() {
     JSONObject json = new JSONObject();
     json.put("expression", expression);
@@ -195,7 +206,7 @@ public class HintGenerator {
     json.put("nextAST", nextNode.get("ast").asString());
     json.put("totalTED", totalTED);
     json.put("srcDstTED", hint.getDistance());
-    json.put("operations", first_edge.get("operations").toString());
+    json.put("operations", firstEdge.get("operations").toString());
     json.put("hint", hint);
     json.put("time", time);
     return json;
@@ -220,7 +231,7 @@ public class HintGenerator {
     // Target node
     sb.append("\nTarget node:").append("\n\tExpression: ").append(targetNode.get("expr").asString()).append("\n\tAST: ").append(targetNode.get("ast").asString())
             // First edge
-            .append("\nPath:").append("\n\tCreated shorter path: ").append(createdShorterPath ? "Yes" : "No").append("\n\tTotal TED: ").append(totalTED).append("\n\tTED(source,target): ").append(hint.getDistance()).append("\n\tOperations: ").append(first_edge.get("operations").toString())
+            .append("\nPath:").append("\n\tCreated shorter path: ").append(createdShorterPath ? "Yes" : "No").append("\n\tTotal TED: ").append(totalTED).append("\n\tTED(source,target): ").append(hint.getDistance()).append("\n\tOperations: ").append(firstEdge.get("operations").toString())
             // Time
             .append("\nTime:\n\t").append(time).append(" ms")
             // Hint

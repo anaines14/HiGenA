@@ -11,7 +11,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 /**
- * Wrapper class for the database (Db class).
+ * Wrapper class for the database (Db class). It provides methods to set up the
+ * database and to generate hints.
  */
 public class Graph {
   private final String uri, user, password, databaseName, challenge, predicate;
@@ -50,9 +51,9 @@ public class Graph {
   private String genDatabaseName(String challenge, String predicate) {
     // remove all digits, convert to lowercase and take the first 4 characters
     StringBuilder ret = new StringBuilder(challenge.replaceAll("\\d", "").toLowerCase().substring(0, 4));
+
     // If predicate contains digits, transform them into letters
     if (predicate.matches(".*\\d.*")) {
-
       String[] numbers = predicate.replaceAll("[^0-9]", "").split("");
       for (Iterator<String> it = Arrays.stream(numbers).iterator(); it.hasNext(); ) {
         String number = it.next();
@@ -70,7 +71,7 @@ public class Graph {
    */
   public void setup() {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
-      System.out.println("Starting DB setup...");
+      System.out.println("[SETUP]");
       long startTime = System.currentTimeMillis();
       db.setup();
       long endTime = System.currentTimeMillis() - startTime;
@@ -92,10 +93,10 @@ public class Graph {
   }
 
   /**
-   * Returns a hint for the given expression. The hint is generated using the
-   * given type of generation.
+   * Returns a hint for the given expression and code. The hint is generated
+   * using the given type of generation.
    * @param expr Expression to generate the hint for.
-   * @param code Code used by expression.
+   * @param code Alloy code used by the expression.
    * @param type Type of hint generation.
    * @return Hint for the given expression.
    */
@@ -103,6 +104,13 @@ public class Graph {
     return generateHint(expr, code, type).getHint();
   }
 
+  /**
+   * Generates a hint for the given expression. The hint is generated using the
+   * given type of generation.
+   * @param expr Expression to generate the hint for.
+   * @param type Type of hint generation.
+   * @return Hint Generator object that generated the hint.
+   */
   public HintGenerator generateHint(String expr, String code,
                                     HintGenType type) {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {

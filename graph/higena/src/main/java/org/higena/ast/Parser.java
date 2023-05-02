@@ -6,14 +6,14 @@ import edu.mit.csail.sdg.parser.CompUtil;
 import org.higena.A4FParser;
 
 public class Parser {
-  private final CompModule challenge_module;
+  private final CompModule challengeModule;
 
   public Parser(String challenge) {
     // Path to the file with the challenge
-    String challenges_path = "src/main/resources/challenges/",
-            file = challenges_path + challenge + ".als";
+    String challengesPath = "src/main/resources/challenges/",
+            file = challengesPath + challenge + ".als";
     // Parse the file and store its module
-    this.challenge_module = CompUtil.parseEverything_fromFile(new A4Reporter(), null, file);
+    this.challengeModule = CompUtil.parseEverything_fromFile(new A4Reporter(), null, file);
   }
 
   // Parse functions
@@ -29,7 +29,7 @@ public class Parser {
     if (expression.equals("")) {
       return "";
     }
-    return A4FParser.parse(expression, this.challenge_module).toString();
+    return A4FParser.parse(expression, this.challengeModule).toString();
   }
 
   /**

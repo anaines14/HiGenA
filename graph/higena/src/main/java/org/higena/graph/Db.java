@@ -16,11 +16,11 @@ import java.util.List;
  * Class that handles the database connection and operations.
  */
 public class Db implements AutoCloseable {
-  private final Driver driver;
-  private final String challenge;
-  private final String predicate;
-  private Session session;
-  private String name;
+  private final Driver driver; // Neo4j driver
+  private final String challenge; // Challenge name
+  private final String predicate; // Predicate name
+  private Session session; // Neo4j session
+  private String name; // Database name
 
   public Db(String uri, String user, String password, String challenge, String predicate) {
     this(uri, user, password, "neo4j", challenge, predicate);
@@ -30,8 +30,8 @@ public class Db implements AutoCloseable {
     this.name = databaseName;
     this.challenge = challenge;
     this.predicate = predicate;
-    driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
-    session = driver.session(SessionConfig.forDatabase(name));
+    driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password)); // Create driver
+    session = driver.session(SessionConfig.forDatabase(name)); // Connect to the database
   }
 
   /**

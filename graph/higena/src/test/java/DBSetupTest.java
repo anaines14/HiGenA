@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 public class DBSetupTest {
-  private static final String challenges_path = "src/main/resources" + "/challenges/";
+  private static final String challengesPath = "src/main/resources/challenges/";
   private static File csv = null;
   private static final boolean statistics = true;
 
@@ -41,11 +41,11 @@ public class DBSetupTest {
   }
 
   public static Stream<Arguments> getDatasets() {
-    List<String> challenges = Arrays.stream(Objects.requireNonNull(new File(challenges_path).list())).toList();
+    List<String> challenges = Arrays.stream(Objects.requireNonNull(new File(challengesPath).list())).toList();
     HashMap<String, List<String>> arguments = new HashMap<>();
 
     for (String challenge : challenges) {
-      CompModule module = CompUtil.parseEverything_fromFile(new A4Reporter(), null, challenges_path + challenge);
+      CompModule module = CompUtil.parseEverything_fromFile(new A4Reporter(), null, challengesPath + challenge);
       List<String> predicates = new java.util.ArrayList<>(module.getAllFunc().makeConstList().stream().map(c -> c.label).toList());
       predicates.remove(predicates.size() - 1);
 
