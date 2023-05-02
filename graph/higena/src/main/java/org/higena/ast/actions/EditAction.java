@@ -1,83 +1,88 @@
 package org.higena.ast.actions;
 
+import at.unisalzburg.dbresearch.apted.node.Node;
+import at.unisalzburg.dbresearch.apted.node.StringNodeData;
+import at.unisalzburg.dbresearch.apted.parser.BracketStringInputParser;
 import com.github.gumtreediff.actions.model.Action;
 import com.github.gumtreediff.actions.model.Addition;
 import com.github.gumtreediff.actions.model.TreeAddition;
 import com.github.gumtreediff.actions.model.Update;
+import com.github.gumtreediff.tree.Tree;
+import org.higena.ast.AlloyAST;
 
-import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class EditAction  {
+public class EditAction {
   private final String type;
-  private final ActionNode node;
-  private ActionNode parent;
+  private final Tree node;
+  private Tree parent;
   private int position;
   private String value;
 
   public EditAction(Action action) {
     this.type = action.getClass().getSimpleName();
-    this.node = new ActionNode(action.getNode());
+    this.node = action.getNode().deepCopy();
 
     if (action instanceof TreeAddition treeAddition) {
-      this.parent = new ActionNode(treeAddition.getParent());
+      this.parent = treeAddition.getParent().deepCopy();
       this.position = treeAddition.getPosition();
     } else if (action instanceof Addition addition) {
-      this.parent = new ActionNode(addition.getParent());
+      this.parent = addition.getParent().deepCopy();
       this.position = addition.getPosition();
     } else if (action instanceof Update) {
       this.value = ((Update) action).getValue();
     }
   }
 
-  public EditAction(String type, ActionNode node, ActionNode parent, int position) {
+  public EditAction(String type, Tree node, Tree parent, int position) {
     this.type = type;
     this.node = node;
     this.parent = parent;
     this.position = position;
   }
 
-  public EditAction(String type, ActionNode node, String value) {
+  public EditAction(String type, Tree node, String value) {
     this.type = type;
     this.node = node;
     this.value = value;
   }
 
-  public EditAction(String type, ActionNode node) {
+  public EditAction(String type, Tree node) {
     this.type = type;
     this.node = node;
   }
 
   public static EditAction fromString(String actionStr) {
-    String type = getMatch("type", actionStr), value = getMatch("value", actionStr),
-            tree = getMatch("tree", actionStr), node = getMatch("node", actionStr),
-            parent = getMatch("parent", actionStr), position = getMatch("position", actionStr);
+    String type = getMatch("type", actionStr), value = getMatch("value", actionStr), tree = getMatch("tree", actionStr), node = getMatch("node", actionStr), parent = getMatch("parent", actionStr), position = getMatch("position", actionStr);
     if (type != null) {
       switch (type) {
         case "TreeAddition", "Move", "TreeInsert" -> {
           if (tree != null && parent != null && position != null) {
-            return new EditAction(type, new ActionNode(tree), new ActionNode(parent, new ArrayList<>()), Integer.parseInt(position));
+            Node<StringNodeData> parsedTree = new BracketStringInputParser().fromString(tree);
+            return new EditAction(type, new AlloyAST(parsedTree), new AlloyAST(parent), Integer.parseInt(position));
           }
         }
         case "Addition", "Insert" -> {
           if (node != null && parent != null && position != null) {
-            return new EditAction(type, new ActionNode(node, new ArrayList<>()), new ActionNode(parent, new ArrayList<>()), Integer.parseInt(position));
+            return new EditAction(type, new AlloyAST(node),
+                    new AlloyAST(parent), Integer.parseInt(position));
           }
         }
         case "Update" -> {
           if (node != null && value != null) {
-            return new EditAction(type, new ActionNode(node, new ArrayList<>()), value);
+            return new EditAction(type, new AlloyAST(node), value);
           }
         }
         case "TreeDelete" -> {
           if (tree != null) {
-            return new EditAction(type, new ActionNode(tree));
+            Node<StringNodeData> parsedTree = new BracketStringInputParser().fromString(tree);
+            return new EditAction(type, new AlloyAST(parsedTree));
           }
         }
         default -> {
           if (node != null) {
-            return new EditAction(type, new ActionNode(node, new ArrayList<>()));
+            return new EditAction(type, new AlloyAST(node));
           }
         }
       }
@@ -87,36 +92,14 @@ public class EditAction  {
     return null;
   }
 
-  @Override
-  public String toString() {
-    String ret = "\"(" + "type='" + type + '\'';
-
-    switch (type) {
-      case "TreeAddition", "Move", "TreeInsert" -> {
-        ret += ", tree=" + node.toString() + ", parent=";
-        ret += parent.getLabel();
-        ret += ", position=" + position;
-      }
-      case "Addition", "Insert" -> {
-        ret += ", node=" + node.getLabel() + ", parent=";
-        ret += parent.getLabel();
-        ret += ", position=" + position;
-      }
-      case "Update" -> ret += ", node=" + node.getLabel() + ", value=" + value;
-      case "TreeDelete" -> ret += ", tree=" + node.toString();
-      default -> ret += ", node=" + node.getLabel();
-    }
-    return ret + ")\"";
-  }
-
-  // Auxiliary methods
-
   private static String getMatch(String field, String actionStr) {
     String regex = getFieldRegex(field);
     if (regex == null) return null;
     Matcher match = Pattern.compile(regex).matcher(actionStr);
     return match.find() ? match.group(1) : null;
   }
+
+  // Auxiliary methods
 
   private static String getFieldRegex(String field) {
     String nodesRegex = "(['#:=><*~^.!a-zA-Z0-9/&+-]+)";
@@ -137,10 +120,32 @@ public class EditAction  {
         return "value=" + nodesRegex;
       }
       case "tree" -> {
-        return "tree=(\\{.*?})(\\)|,)";
+        return "tree='(\\{.*?})'";
       }
     }
     return null;
+  }
+
+  @Override
+  public String toString() {
+    String ret = "\"(" + "type='" + type + '\'';
+
+    switch (type) {
+      case "TreeAddition", "Move", "TreeInsert" -> {
+        ret += ", tree='" + node.toTreeString() + "', parent=";
+        ret += parent.getLabel();
+        ret += ", position=" + position;
+      }
+      case "Addition", "Insert" -> {
+        ret += ", node=" + node.getLabel() + ", parent=";
+        ret += parent.getLabel();
+        ret += ", position=" + position;
+      }
+      case "Update" -> ret += ", node=" + node.getLabel() + ", value=" + value;
+      case "TreeDelete" -> ret += ", tree='" + node.toTreeString() + "'";
+      default -> ret += ", node=" + node.getLabel();
+    }
+    return ret + ")\"";
   }
 
   // Getters
@@ -149,11 +154,11 @@ public class EditAction  {
     return type;
   }
 
-  public ActionNode getNode() {
+  public Tree getNode() {
     return node;
   }
 
-  public ActionNode getParent() {
+  public Tree getParent() {
     return parent;
   }
 

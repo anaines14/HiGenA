@@ -39,6 +39,11 @@ public class AlloyAST extends AbstractTree {
     setParent(parent);
   }
 
+  public AlloyAST(String label) {
+    this.children = new ArrayList<>();
+    this.label = label;
+  }
+
   // Matching methods
 
   /**
