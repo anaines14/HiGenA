@@ -1,4 +1,4 @@
-package org.higena.util;
+package org.higena.utils;
 
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.parser.CompModule;

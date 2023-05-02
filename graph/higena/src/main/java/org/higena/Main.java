@@ -1,6 +1,6 @@
 package org.higena;
 
-import org.higena.util.InteractiveMenu;
+import org.higena.utils.InteractiveMenu;
 
 public class Main {
   public static void main(String[] args) {
