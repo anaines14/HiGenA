@@ -13,6 +13,8 @@ import java.util.List;
 
 public class HintGenerator {
 
+  // Constants
+  public static boolean cantCreatePath = false;
   private final Db db; // Database connection
   private final String expression, code; // Student submission
   private final HintGenType type; // Hint generation type
@@ -76,11 +78,12 @@ public class HintGenerator {
 
       // If total TED of the path is higher than the TED between the source
       // and the target nodes, create a better path to a target node
-      if (totalTED <= srcDstTED) {
+      if (cantCreatePath || totalTED <= srcDstTED) {
         // Path found is good (TED equal to TED(src, dst)). Generate hint
         hint = new Hint(srcDstTED, first_edge);
         return;
       }
+
       // Path found is bad (TED higher than TED(src, dst)).
       // Create a better path to a target node: (connect source to the most
       // similar solution directly)
