@@ -26,7 +26,7 @@ public class ActionsTest {
   @ParameterizedTest
   public void printTreeDiffs(String ast1, String ast2) {
     TED ted = new TED();
-    TreeDiff diff = ted.computeGumTreeTreeDiff(ast1, ast2);
+    TreeDiff diff = ted.computeTreeDiff(ast1, ast2);
 
     for (EditAction action : diff.getActions()) {
       System.out.println("Action: " + action);

@@ -147,7 +147,7 @@ public class Db implements AutoCloseable {
   public Relationship addEdge(Node n1, Node n2) {
     String ast1 = n1.get("ast").asString(), ast2 = n2.get("ast").asString();
     TED ted = new TED();
-    TreeDiff diff = ted.computeAptedTreeDiff(ast1, ast2);
+    TreeDiff diff = ted.computeTreeDiff(ast1, ast2);
 
     String query = """
             MATCH (n1:Submission {id: '%s'})
@@ -221,7 +221,7 @@ public class Db implements AutoCloseable {
       String srcAST = rec.get("src").asString(), dstAST = rec.get("dst").asString(), edge = rec.get("edgeID").asString();
 
       // Compute tree differences (edit distance and edits)
-      TreeDiff diff = ted.computeAptedTreeDiff(srcAST, dstAST);
+      TreeDiff diff = ted.computeTreeDiff(srcAST, dstAST);
       // Update edge
       runQuery("""
               MATCH ()-[e:Derives]-()
