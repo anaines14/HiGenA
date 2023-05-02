@@ -13,12 +13,25 @@ import org.higena.ast.AlloyAST;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Represents a transformation action that can be applied to the AST. There
+ * are several types of actions:
+ * <ul>
+ *   <li>TreeAddition/TreeInsert/Addition/Insert: inserts a tree as a child
+ *   of a node at a
+ *   specified position</li>
+ *   <li>Mode: moves a tree into the children of a node at a specified
+ *   position</li>
+ *   <li>Update: updates the value of a node</li>
+ *   <li>TreeDelete/Delete: deletes a tree</li>
+ * </ul>
+ */
 public class EditAction {
-  private final String type;
-  private final Tree node;
-  private Tree parent;
-  private int position;
-  private String value;
+  private final String type; // Type of the action
+  private final Tree node; // Node that is affected by the action
+  private Tree parent; // Parent of the node (only for Addition)
+  private int position; // Position of the node in the parent (only for Addition)
+  private String value; // Value of the node (only for Update)
 
   public EditAction(Action action) {
     this.type = action.getClass().getSimpleName();
@@ -53,6 +66,13 @@ public class EditAction {
     this.node = node;
   }
 
+  // String representation methods
+
+  /**
+   * Parses a string representation of an action into an EditAction object.
+   * @param actionStr String representation of an action to parse.
+   * @return EditAction object.
+   */
   public static EditAction fromString(String actionStr) {
     String type = getMatch("type", actionStr), value = getMatch("value", actionStr), tree = getMatch("tree", actionStr), node = getMatch("node", actionStr), parent = getMatch("parent", actionStr), position = getMatch("position", actionStr);
     if (type != null) {
@@ -92,6 +112,16 @@ public class EditAction {
     return null;
   }
 
+  /**
+   * Given a string representation of an EditAction, returns the value of
+   * a specific field. For example, for the string (type='Update', node=no,
+   * value=File), the string value of the field "type" is "Update".
+   *
+   * @param field Field to get the value of (e.g.: type, node, parent,
+   *              position, value, tree).
+   * @param actionStr String representation of an EditAction.
+   * @return Value of the field in the string representation.
+   */
   private static String getMatch(String field, String actionStr) {
     String regex = getFieldRegex(field);
     if (regex == null) return null;
@@ -99,27 +129,32 @@ public class EditAction {
     return match.find() ? match.group(1) : null;
   }
 
-  // Auxiliary methods
-
+  /**
+   * Returns the regex necessary to match an EditAction field in its string representation.
+   * @param field Field to match (e.g.: type, node, parent, position, value,
+   *              tree).
+   * @return Regex that matches the field.
+   */
   private static String getFieldRegex(String field) {
+    // Regex to match a node label
     String nodesRegex = "(['#:=><*~^.!a-zA-Z0-9/&+-]+)";
     switch (field) {
-      case "type" -> {
+      case "type" -> { // Example: type='TreeAddition'
         return "type='(\\w+)'";
       }
-      case "node" -> {
+      case "node" -> { // Example: node=no
         return "node=" + nodesRegex;
       }
-      case "parent" -> {
+      case "parent" -> { // Example: parent=root
         return "parent=" + nodesRegex;
       }
-      case "position" -> {
+      case "position" -> { // Example: position=0
         return "position=(\\d+)";
       }
-      case "value" -> {
+      case "value" -> { // Example: value=File
         return "value=" + nodesRegex;
       }
-      case "tree" -> {
+      case "tree" -> { // Example: tree='{no{Protected}}'
         return "tree='(\\{.*?})'";
       }
     }
@@ -132,17 +167,22 @@ public class EditAction {
 
     switch (type) {
       case "TreeAddition", "Move", "TreeInsert" -> {
+        // Example: (type='TreeInsert', tree='{AND{no{Protected}}}', parent=root, position=0)
         ret += ", tree='" + node.toTreeString() + "', parent=";
         ret += parent.getLabel();
         ret += ", position=" + position;
       }
       case "Addition", "Insert" -> {
+        // Example: (type='Insert', node=no, parent=root, position=0)
         ret += ", node=" + node.getLabel() + ", parent=";
         ret += parent.getLabel();
         ret += ", position=" + position;
       }
+      // Example: (type='Update', node=no, value=File)
       case "Update" -> ret += ", node=" + node.getLabel() + ", value=" + value;
+      // Example: (type='TreeDelete', tree='{AND{no{Protected}}}')
       case "TreeDelete" -> ret += ", tree='" + node.toTreeString() + "'";
+
       default -> ret += ", node=" + node.getLabel();
     }
     return ret + ")\"";
