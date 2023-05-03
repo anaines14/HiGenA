@@ -133,7 +133,7 @@ public class HintGenerator {
       return;
     }
     // Dijkstra algorithm to find the shortest path to a solution
-    Record rec = db.dijkstra(sourceNode.get("id").asString(), type.toString()).single();
+    Record rec = db.runDijkstra(sourceNode.get("id").asString(), type.toString()).single();
     List<Node> nodes = rec.get("path").asList(Value::asNode);
     targetNode = nodes.get(nodes.size() - 1);
     nextNode = nodes.get(1);

@@ -42,8 +42,9 @@ public class Db implements AutoCloseable {
    * 4. Add edges to the database.
    * 5. Adds the correct and incorrect labels to the nodes.
    * 6. Deletes the derivationOf, sat and cmd_n properties from the nodes.
-   * 7. Aggregates nodes with the same property.
-   * 8. Adds the TED to the edges.
+   * 7. Adds popularity to the edges.
+   * 8. Adds nodes popularity by aggregating equivalent nodes.
+   * 8. Adds the TED and edit operations to the edges.
    * 9. Adds the Poisson distribution to the edges.
    */
   public void setup() {
@@ -70,10 +71,11 @@ public class Db implements AutoCloseable {
    *
    * @param sourceId       ID of the source node.
    * @param weightProperty Property to use as weight.
-   * @return Result of the dijkstra algorithm. Contains the index, source node,
-   * target node, total cost, node IDs, costs and sequence of nodes in the path.
+   * @return Result of the dijkstra algorithm. Contains the index, source
+   * node ID, target node ID, total cost, node IDs in the path, costs and
+   * sequence of nodes in the path.
    */
-  public Result dijkstra(String sourceId, String weightProperty) {
+  public Result runDijkstra(String sourceId, String weightProperty) {
     String projectionName = "dijkstra|" + weightProperty;
     // Update projection if it exists
     if (hasProjection(projectionName)) deleteProjection(projectionName);
@@ -87,14 +89,9 @@ public class Db implements AutoCloseable {
                 targetNode: target,
                 relationshipWeightProperty: '%s'
             })
-            YIELD index, sourceNode, targetNode, totalCost, nodeIds, costs, path
+            YIELD totalCost, path
             RETURN
-                index,
-                gds.util.asNode(sourceNode).id AS sourceNodeId,
-                gds.util.asNode(targetNode).id AS targetNodeId,
                 totalCost,
-                [nodeId IN nodeIds | gds.util.asNode(nodeId).id] AS nodeIds,
-                costs,
                 nodes(path) AS path,
                 relationships(path) AS rels
             ORDER BY totalCost
@@ -138,7 +135,13 @@ public class Db implements AutoCloseable {
   // ADD Methods
 
   /**
-   * Creates a relationship Derives between the given nodes.
+   * Creates a relationship Derives between the given nodes. Each edge has a
+   * TED property with the TED between the nodes and an operations property
+   * with the edit operations needed to transform the source node into the
+   * target node. Each edge has also a popularity property with the number of
+   * times the edge appears in the database, a poisson property with the
+   * Poisson distribution of the edge's popularity and a dstPoisson property
+   * with the Poisson distribution of the target node's popularity.
    *
    * @param n1 Node 1
    * @param n2 Node 2
@@ -171,6 +174,7 @@ public class Db implements AutoCloseable {
 
   /**
    * Creates an incorrect node in the graph with the given properties.
+   * Popularity is set to 1.0.
    *
    * @param expr Expression of the node
    * @param ast  AST of the node
@@ -190,7 +194,7 @@ public class Db implements AutoCloseable {
   }
 
   /**
-   * Adds a property to the Derives edges called dstPoisson with the value
+   * Adds a property to all Derives edges called dstPoisson with the value
    * 1.0 / popularity of the destination node for calculating the poisson path.
    */
   private void addNodePoissonToEdges() {
@@ -206,7 +210,10 @@ public class Db implements AutoCloseable {
   }
 
   /**
-   * Adds TED property to derives edges.
+   * Adds TED property and operations property to all Derives edges.
+   * TED is the edit distance between the source and destination nodes.
+   * Operations is the list of edit operations needed to transform the source
+   * node into the destination node.
    */
   private void addTreeDiffToEdges() {
     // Get all edges and its nodes
@@ -233,13 +240,15 @@ public class Db implements AutoCloseable {
 
   /**
    * Creates a new database with the given name if it does not exist.
+   * Switches to the new database by closing the current session and opening
+   * a new one with the correct configuration.
    *
    * @param databaseName Name of the database to create.
    */
   public void addDb(String databaseName) {
     // Create database
     runQuery("CREATE DATABASE " + databaseName + " IF NOT EXISTS");
-    System.out.println("Created database " + databaseName);
+
     // Switch to new database
     this.name = databaseName;
     session.close();
@@ -260,21 +269,19 @@ public class Db implements AutoCloseable {
 
     Result res = runQuery(String.format(query, "UniqueSubmission", "(s:Submission)", "s"));
     System.out.println("Added " + res.consume().counters().constraintsAdded() + " unique node.id constraint(s).");
-
-    /* TODO: Add when supported by Neo4j
-    res = runQuery(String.format(query, "UniqueDerives", "()-[r:Derives]-()", "r"));
-    System.out.println("Added " + res.consume().counters().constraintsAdded() + " unique edge.id constraint(s).");
-    */
   }
 
   /**
    * Loads nodes from a csv file with Alloy4Fun submissions into the database.
+   * The csv file must have the following columns: _id, code,
+   * derivationOf, sat, expr, ast. The derivationOf, expr and ast columns
+   * can be empty. The id column must be unique. The sat column must be
+   * either 0 or 1.
    */
   private void addSubmissionNodes() {
     Result res = runQuery("LOAD CSV WITH HEADERS FROM 'file:///" + this.challenge + "/" + this.predicate + ".csv' AS row\n" + """
             MERGE (s:Submission {
               id: row._id,
-              cmd_n: row.cmd_n,
               code: row.code,
               derivationOf: CASE WHEN row.derivationOf IS NULL THEN '' ELSE row.derivationOf END,
               sat: toInteger(row.sat),
@@ -287,7 +294,7 @@ public class Db implements AutoCloseable {
   }
 
   /**
-   * Creates undirected Derives edges between nodes where the derivationOf
+   * Creates directed Derives edges between nodes where the derivationOf
    * property of the source node matches the id property of the target node.
    */
   private void addDerivationEdges() {
@@ -300,6 +307,11 @@ public class Db implements AutoCloseable {
     System.out.println("Created " + res.consume().counters().relationshipsCreated() + " Derives edges.");
   }
 
+  /**
+   * Adds a popularity property to all Derives edges. Popularity is the number
+   * of other edges that have the same source and destination nodes. Also
+   * adds a poisson property to all edges. Poisson is 1.0 / popularity.
+   */
   private void addEdgesPopularity() {
     runQuery("""
             MATCH (n:Submission)-[r:Derives]->(s:Submission)
@@ -377,7 +389,7 @@ public class Db implements AutoCloseable {
   // DELETE methods
 
   /**
-   * Delete all graph projections.
+   * Delete all graph projections for the current database.
    */
   private void deleteAllProjections() {
     Result res = runQuery("CALL gds.graph.list()");
@@ -466,6 +478,10 @@ public class Db implements AutoCloseable {
 
   // GET methods
 
+  /**
+   * Returns the statistics of the database.
+   * @return Number of nodes, edges, correct nodes, and incorrect nodes.
+   */
   public Result getStatistics() {
     return runQuery("""
             MATCH (s:Submission)
@@ -484,7 +500,7 @@ public class Db implements AutoCloseable {
    * Returns the node with the given ast.
    *
    * @param ast AST of the node.
-   * @return Node with the given ast.
+   * @return Node with the given ast. Null if no node exists.
    */
   public Node getNodeByAST(String ast) {
     Result res = runQuery("""
@@ -497,7 +513,7 @@ public class Db implements AutoCloseable {
   /**
    * Returns the most similar node to the given AST.  The
    * most similar node is different from the given AST and is
-   * the node with the smaller TED. The TEd is computed using the APTED
+   * the node with the smaller TED. The TED is computed using the APTED
    * algorithm. The search starts with the most popular nodes. Upon finding a
    * TED of 1, the search is stopped.
    *
@@ -524,7 +540,7 @@ public class Db implements AutoCloseable {
       String curAst = curNode.get("ast").asString();
       int curDist = ted.computeEditDistance(ast, curAst);
 
-        // Skip if TED is 0
+      // Skip if TED is 0
       if (curDist == 0) {
         continue;
       }
@@ -540,10 +556,6 @@ public class Db implements AutoCloseable {
       }
     }
     return similarNode;
-  }
-
-  public Node getMostSimilarNode(String ast) {
-    return getMostSimilarNode(ast, "Submission");
   }
 
   /**

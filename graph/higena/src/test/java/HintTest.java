@@ -1,3 +1,4 @@
+import org.higena.ast.TED;
 import org.higena.graph.Graph;
 import org.higena.graph.hint.HintGenType;
 import org.higena.graph.hint.HintGenerator;
@@ -38,7 +39,8 @@ public class HintTest {
     File logFile = createLogFile("apted_hint_stats");
 
     // Set hint generation settings
-    // TODO
+    HintGenerator.cantCreatePath = false;
+    TED.USE_APTED = true;
 
     test_data.forEach(args -> {
       String challenge = (String) args.get()[0], predicate = (String) args.get()[1];
@@ -54,13 +56,24 @@ public class HintTest {
     File logFile = createLogFile("gumtree_hint_stats");
 
     // Set hint generation settings
-    // TODO
+    HintGenerator.cantCreatePath = false;
+    TED.USE_APTED = false;
 
     test_data.forEach(args -> {
       String challenge = (String) args.get()[0], predicate = (String) args.get()[1];
       File test_data = (File) args.get()[2];
       genHints(challenge, predicate, test_data, logFile);
     });
+  }
+
+  @Test
+  public void testNodePopularityHintGen() {
+
+  }
+
+  @Test
+  public void testEdgePopularityHintGen() {
+
   }
 
   private void genHints(String challenge, String predicate, File test_data,
@@ -74,7 +87,7 @@ public class HintTest {
     // Generate hints
     for (Map.Entry<String, String> entry : expressions) {
       // Reset graph for each submission
-      System.out.println("\n[SETUP]");
+      System.out.println("\n");
       g.setup();
 
       // Generate hint
@@ -94,26 +107,26 @@ public class HintTest {
     Stream<Arguments> stream = Stream.of();
 
     // Iterate challenges and predicates
-    for (File challenge_dir : Objects.requireNonNull(new File(test_dir).listFiles())) {
-      for (File predicate_file : Objects.requireNonNull(challenge_dir.listFiles())) {
-        if (predicate_file.length() == 0) continue; // Skip empty files
+    for (File challengeDir : Objects.requireNonNull(new File(test_dir).listFiles())) {
+      for (File predicateFile : Objects.requireNonNull(challengeDir.listFiles())) {
+        if (predicateFile .length() == 0) continue; // Skip empty files
         // Get challenge and predicate names
-        String challenge = challenge_dir.getName();
-        String predicate = predicate_file.getName().replace(".json", "");
+        String challenge = challengeDir.getName();
+        String predicate = predicateFile .getName().replace(".json", "");
         // Append arguments to stream (challenge, predicate, predicate file
         // with test data)
-        stream = Stream.concat(stream, Stream.of(Arguments.of(challenge, predicate, predicate_file)));
+        stream = Stream.concat(stream, Stream.of(Arguments.of(challenge, predicate, predicateFile)));
       }
     }
     return stream;
   }
 
-  private List<Map.Entry<String, String>> getTestSubmissions(File data_file) {
+  private List<Map.Entry<String, String>> getTestSubmissions(File dataFile) {
     List<Map.Entry<String, String>> submissions = new ArrayList<>();
 
     // Parse JSON file
     try {
-      Scanner scanner = new Scanner(data_file);
+      Scanner scanner = new Scanner(dataFile);
       while (scanner.hasNextLine()) {
         String line = scanner.nextLine();
 
