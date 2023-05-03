@@ -26,7 +26,7 @@ public class EditActionsComparator implements Comparator<EditAction> {
     String type1 = o1.getType(), type2 = o2.getType();
     List<String> category1 = List.of("TreeAddition", "TreeInsert", "Addition", "Insert");
     List<String> category2 = List.of("TreeDelete", "Delete");
-    List<String> category3 = List.of("Update");
+    String category3 = "Update";
 
     // type1 = type2
     if (type1.equals(type2)) {
@@ -34,10 +34,18 @@ public class EditActionsComparator implements Comparator<EditAction> {
     }
 
     if (category1.contains(type1)) {
+      if (category1.contains(type2)) {
+        // type1 = Addition, type2 = Addition
+        return 0;
+      }
       // type1 = Addition, type2 = Delete, Update or Move
       return -1;
     }
     if (category2.contains(type1)) {
+      if (category2.contains(type2)) {
+        // type1 = Delete, type2 = Delete
+        return 0;
+      }
       if (category1.contains(type2)) {
         // type1 = Delete, type2 = Addition
         return 1;
@@ -46,7 +54,7 @@ public class EditActionsComparator implements Comparator<EditAction> {
         return -1;
       }
     }
-    if (category3.contains(type1)) {
+    if (category3.equals(type1)) {
       if (category1.contains(type2) || category2.contains(type2)) {
         // type1 = Update, type2 = Addition or Delete
         return 1;
@@ -54,10 +62,8 @@ public class EditActionsComparator implements Comparator<EditAction> {
         // type1 = Update, type2 = Move
         return -1;
       }
-    } else {
-      // type1 = Move, type2 = Addition, Delete or Update
-      return 1;
-
     }
+    // type1 = Move, type2 = Addition, Delete or Update
+    return 1;
   }
 }

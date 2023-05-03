@@ -71,7 +71,7 @@ public class Graph {
    */
   public void setup() {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
-      System.out.println("[SETUP]");
+      System.out.println("[SETUP] Database: " + databaseName);
       long startTime = System.currentTimeMillis();
       db.setup();
       long endTime = System.currentTimeMillis() - startTime;
