@@ -110,10 +110,7 @@ public class InteractiveMenu {
     };
     Hint hint = graph.getHint(expression, type);
 
-    // Show hint
-    if (hint != null)
-      System.out.println("HINT:\n" + hint + "\n");
-    else
+    if (hint == null)
       System.out.println("No hint found.\n");
   }
 

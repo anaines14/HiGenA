@@ -14,10 +14,14 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class HintTest {
-  private static final Stream<Arguments> test_data = testDataProvider();
 
   // Tests
 
+  /**
+   * Tests hint generation using APTED, without creating new paths and using the
+   * TED for the cost function. Generated hints are written to a log file. Uses
+   * the train data to create a graph and test data to ask for hints.
+   */
   @Test
   public void testNoNewPathsHintGen() {
     // Create log file
@@ -25,14 +29,20 @@ public class HintTest {
 
     // Set hint generation settings
     HintGenerator.cantCreatePath = true;
+    TED.USE_APTED = true;
 
-    test_data.forEach(args -> {
+    testDataProvider().forEach(args -> {
       String challenge = (String) args.get()[0], predicate = (String) args.get()[1];
       File test_data = (File) args.get()[2];
-      genHints(challenge, predicate, test_data, logFile);
+      genHints(challenge, predicate, test_data, HintGenType.TED, logFile);
     });
   }
 
+  /**
+   * Tests hint generation using APTED, creating new paths and using the TED
+   * for the cost function. Generated hints are written to a log file. Uses
+   * the train data to create a graph and test data to ask for hints.
+   */
   @Test
   public void testAptedHintGen() {
     // Create log file
@@ -42,14 +52,20 @@ public class HintTest {
     HintGenerator.cantCreatePath = false;
     TED.USE_APTED = true;
 
-    test_data.forEach(args -> {
+    testDataProvider().forEach(args -> {
       String challenge = (String) args.get()[0], predicate = (String) args.get()[1];
       File test_data = (File) args.get()[2];
-      genHints(challenge, predicate, test_data, logFile);
+      genHints(challenge, predicate, test_data, HintGenType.TED, logFile);
 
     });
   }
 
+
+  /**
+   * Tests hint generation using GumTree, creating new paths and using the TED
+   * for the cost function. Generated hints are written to a log file. Uses
+   * the train data to create a graph and test data to ask for hints.
+   */
   @Test
   public void testGumTreeHintGen() {
     // Create log file
@@ -59,25 +75,73 @@ public class HintTest {
     HintGenerator.cantCreatePath = false;
     TED.USE_APTED = false;
 
-    test_data.forEach(args -> {
+    testDataProvider().forEach(args -> {
       String challenge = (String) args.get()[0], predicate = (String) args.get()[1];
       File test_data = (File) args.get()[2];
-      genHints(challenge, predicate, test_data, logFile);
+      genHints(challenge, predicate, test_data, HintGenType.TED, logFile);
     });
   }
 
+  /**
+   * Tests hint generation using APTED, creating new paths and using the node
+   * popularity poisson distribution for the cost function. Generated hints are
+   * written to a log file. Uses the train data to create a graph and test data
+   * to ask for hints.
+   */
   @Test
   public void testNodePopularityHintGen() {
+    // Create log file
+    File logFile = createLogFile("node_poisson_hint_stats");
 
+    // Set hint generation settings
+    HintGenerator.cantCreatePath = false;
+    TED.USE_APTED = true;
+
+    testDataProvider().forEach(args -> {
+      String challenge = (String) args.get()[0], predicate = (String) args.get()[1];
+      File test_data = (File) args.get()[2];
+      genHints(challenge, predicate, test_data, HintGenType.NODE_POISSON, logFile);
+    });
   }
 
+  /**
+   * Tests hint generation using APTED, creating new paths and using the edge
+   * popularity poisson distribution for the cost function. Generated hints are
+   * written to a log file. Uses the train data to create a graph and test data
+   * to ask for hints.
+   */
   @Test
   public void testEdgePopularityHintGen() {
+    // Create log file
+    File logFile = createLogFile("edge_poisson_hint_stats");
+
+    // Set hint generation settings
+    HintGenerator.cantCreatePath = false;
+    TED.USE_APTED = true;
+
+    testDataProvider().forEach(args -> {
+      String challenge = (String) args.get()[0], predicate = (String) args.get()[1];
+      File test_data = (File) args.get()[2];
+      genHints(challenge, predicate, test_data, HintGenType.REL_POISSON, logFile);
+    });
 
   }
 
+  /**
+   * Generates hints for a given challenge, predicate and test data. The test
+   * data is present in a file, where each line is a JSON object containing the
+   * expression and code. The generated hints are written to a log file.
+   * Before generating each hint, the graph is reset by calling the setup
+   * method so that each hint does not interfere with the other.
+   * @param challenge Name of the challenge
+   * @param predicate Name of the predicate
+   * @param test_data File containing the test data in JSON format
+   * @param genType Type of hint generation to use (TED, NODE_POISSON, REL_POISSON)
+   * @param logFile File to write the generated hints to
+   */
   private void genHints(String challenge, String predicate, File test_data,
-                       File logFile) {
+                        HintGenType genType, File logFile) {
+
     // Load train data
     Graph g = new Graph(challenge, predicate);
 
@@ -92,7 +156,7 @@ public class HintTest {
 
       // Generate hint
       String expr = entry.getKey(), code = entry.getValue();
-      System.out.println("\n[HINT]");
+      System.out.println("\n[HINT]: " + expr);
       HintGenerator hintGen = g.generateHint(expr, code, HintGenType.TED);
 
       // Log hint
@@ -102,6 +166,13 @@ public class HintTest {
 
   // data providers
 
+  /**
+   * Provides the test data files for each challenge and predicate for the
+   * hint generation tests. The test data files are present in the data/test
+   * directory. Each challenge is a directory containing the test
+   * data for each predicate in JSON files that contain the test data.
+   * @return Stream of arguments for each test
+   */
   private static Stream<Arguments> testDataProvider() {
     String test_dir = "../data/test";
     Stream<Arguments> stream = Stream.of();
@@ -121,6 +192,17 @@ public class HintTest {
     return stream;
   }
 
+  /**
+   * Returns the test submissions for a given test data file. The test data
+   * file is a JSON file containing the test submissions. Each line is a JSON
+   * object containing the expression and code and the sat value indicating
+   * whether the expression is correct or not. The incorrect test submissions
+   * are returned as a list of entries, where each entry is a pair of expression
+   * and code.
+   * @param dataFile File containing the test data
+   * @return List of incorrect test submissions as a list of entries
+   * (expression, code)
+   */
   private List<Map.Entry<String, String>> getTestSubmissions(File dataFile) {
     List<Map.Entry<String, String>> submissions = new ArrayList<>();
 
@@ -146,6 +228,11 @@ public class HintTest {
 
   // Logging methods
 
+  /**
+   * Writes a line to a file.
+   * @param file File to write to
+   * @param line Line to write
+   */
   public static void writeLineToFile(File file, String line) {
     try {
       FileWriter writer = new FileWriter(file, true);
@@ -156,6 +243,15 @@ public class HintTest {
     }
   }
 
+  /**
+   * Writes statistics of a hint generation to a log file. The statistics
+   * come from the hint generator JSON object representation. The challenge
+   * and predicate names are also written to the log file.
+   * @param logFile File to write to
+   * @param hintGen Hint generator
+   * @param challenge Challenge name
+   * @param predicate Predicate name
+   */
   public static void writeStatistics(File logFile, HintGenerator hintGen,
                                      String challenge, String predicate) {
     JSONObject obj = hintGen.getJSON();
@@ -165,6 +261,12 @@ public class HintTest {
     writeLineToFile(logFile, row);
   }
 
+  /**
+   * Creates a log file with the given name in the src/test/outputs directory.
+   * If a file with the same name already exists, it is deleted.
+   * @param name Name of the log file
+   * @return The created log file
+   */
   public File createLogFile(String name) {
     String PATH = "src/test/outputs/";
     File file = new File(PATH + name + ".json");

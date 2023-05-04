@@ -41,7 +41,7 @@ public class Db implements AutoCloseable {
    * 3. Adds nodes to the database.
    * 4. Add edges to the database.
    * 5. Adds the correct and incorrect labels to the nodes.
-   * 6. Deletes the derivationOf, sat and cmd_n properties from the nodes.
+   * 6. Deletes the derivationOf and sat properties from the nodes.
    * 7. Adds popularity to the edges.
    * 8. Adds nodes popularity by aggregating equivalent nodes.
    * 8. Adds the TED and edit operations to the edges.
@@ -56,7 +56,6 @@ public class Db implements AutoCloseable {
     addSubmissionLabels();
     deleteProperty("derivationOf");
     deleteProperty("sat");
-    deleteProperty("cmd_n");
     addEdgesPopularity();
     aggregateEquivNodes();
     addTreeDiffToEdges();
