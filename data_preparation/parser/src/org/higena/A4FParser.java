@@ -111,7 +111,7 @@ public class A4FParser {
   }
 
   private static A4FNode parse(Sig.SubsetSig expr) {
-    return new A4FNode(expr.toString());
+    return new A4FNode(expr.toString().replace("this/", ""));
   }
 
   private static A4FNode parse(Sig.PrimSig expr) {
