@@ -131,7 +131,7 @@ public class Hint {
   /**
    * Generates a hint in text form using the information of the difference
    * between the two ASTs (TED and edit actions).
-   * Example: Near a solution! Try changing "File" to "this/Trash".
+   * Example: Near a solution! Try changing "File" to "Trash".
    *
    * @return Hint in text form
    */
