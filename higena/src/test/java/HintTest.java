@@ -15,6 +15,8 @@ import java.util.stream.Stream;
 
 public class HintTest {
 
+  private static final String CHALLENGES_DIR = "../data/datasets/challenges/";
+
   // Tests
 
   /**
@@ -142,8 +144,9 @@ public class HintTest {
   private void genHints(String challenge, String predicate, File test_data,
                         HintGenType genType, File logFile) {
 
+    String filename = CHALLENGES_DIR + challenge + ".als";
     // Load train data
-    Graph g = new Graph(challenge, predicate);
+    Graph g = new Graph(challenge, predicate, filename);
 
     // Load test data
     List<Map.Entry<String, String>> expressions = getTestSubmissions(test_data);
@@ -254,6 +257,7 @@ public class HintTest {
    */
   public static void writeStatistics(File logFile, HintGenerator hintGen,
                                      String challenge, String predicate) {
+    if (hintGen == null) return;
     JSONObject obj = hintGen.getJSON();
     obj.put("challenge", challenge);
     obj.put("predicate", predicate);

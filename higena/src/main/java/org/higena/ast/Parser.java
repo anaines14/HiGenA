@@ -8,12 +8,9 @@ import org.parser.A4FParser;
 public class Parser {
   private final CompModule challengeModule;
 
-  public Parser(String challenge) {
-    // Path to the file with the challenge
-    String challengesPath = "../data/datasets/challenges/",
-            file = challengesPath + challenge + ".als";
+  public Parser(String filename) {
     // Parse the file and store its module
-    this.challengeModule = CompUtil.parseEverything_fromFile(new A4Reporter(), null, file);
+    this.challengeModule = CompUtil.parseEverything_fromFile(new A4Reporter(), null, filename);
   }
 
   // Parse functions

@@ -15,7 +15,7 @@ import java.util.Scanner;
 
 
 public class Main {
-    private static final String CHALLENGES_DIR = "../data/datasets/challenges/";
+  private static final String CHALLENGES_DIR = "../data/datasets/challenges/";
   public static void main(String[] args) {
 
     Scanner scanner = new Scanner(System.in);
@@ -24,7 +24,8 @@ public class Main {
     // Initialize graph db
     String challenge = selectChallenge(scanner);
     String predicate = selectPredicate(scanner, challenge);
-    Graph graph = new Graph(challenge.replace(".als", ""), predicate);
+    String filename = CHALLENGES_DIR + challenge;
+    Graph graph = new Graph(challenge.replace(".als", ""), predicate, filename);
 
     // Main loop
     mainLoop(scanner, graph);

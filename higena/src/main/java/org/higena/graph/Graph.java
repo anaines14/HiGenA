@@ -18,7 +18,7 @@ public class Graph {
   private final String uri, user, password, databaseName, challenge, predicate;
   private final Parser parser;
 
-  public Graph(String challenge, String predicate) {
+  public Graph(String challenge, String predicate, String filename) {
     Dotenv dotenv = Dotenv.configure().directory("src/main/resources").load();
 
     this.uri = dotenv.get("NEO4J_URI");
@@ -27,7 +27,7 @@ public class Graph {
     this.challenge = challenge;
     this.predicate = predicate;
     this.databaseName = genDatabaseName(challenge, predicate);
-    this.parser = new Parser(challenge);
+    this.parser = new Parser(filename);
 
     // Connect to the default database
     try (Db db = new Db(uri, user, password, challenge, predicate)) {
@@ -101,7 +101,11 @@ public class Graph {
    * @return Hint for the given expression.
    */
   public Hint getHint(String expr, String code, HintGenType type) {
-    return generateHint(expr, code, type).getHint();
+    HintGenerator generator = generateHint(expr, code, type);
+    if (generator == null) {
+      return null;
+    }
+    return generator.getHint();
   }
 
   /**
@@ -115,6 +119,9 @@ public class Graph {
                                     HintGenType type) {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       String ast = parser.parse(expr, code);
+      if (ast == null) {
+        return null;
+      }
       HintGenerator generator = new HintGenerator(expr, code, type, db);
       generator.generateHint(ast);
       System.out.println(generator);
