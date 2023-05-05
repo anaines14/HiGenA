@@ -18,7 +18,8 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 public class DBSetupTest {
-  private static final String challengesPath = "src/main/resources/challenges/";
+
+  private static final String CHALLENGES_DIR = "../data/datasets/challenges/";
   private static File csv = null;
   private static final boolean statistics = true;
 
@@ -32,7 +33,8 @@ public class DBSetupTest {
   @ParameterizedTest
   @MethodSource("getDatasets")
   public void testDBSetup(String challenge, String predicate) {
-    Graph g = new Graph(challenge, predicate);
+    String filename = CHALLENGES_DIR + challenge + ".als";
+    Graph g = new Graph(challenge, predicate, filename);
     g.setup();
 
     if (statistics) {
@@ -41,11 +43,11 @@ public class DBSetupTest {
   }
 
   public static Stream<Arguments> getDatasets() {
-    List<String> challenges = Arrays.stream(Objects.requireNonNull(new File(challengesPath).list())).toList();
+    List<String> challenges = Arrays.stream(Objects.requireNonNull(new File(CHALLENGES_DIR).list())).toList();
     HashMap<String, List<String>> arguments = new HashMap<>();
 
     for (String challenge : challenges) {
-      CompModule module = CompUtil.parseEverything_fromFile(new A4Reporter(), null, challengesPath + challenge);
+      CompModule module = CompUtil.parseEverything_fromFile(new A4Reporter(), null, CHALLENGES_DIR+ challenge);
       List<String> predicates = new java.util.ArrayList<>(module.getAllFunc().makeConstList().stream().map(c -> c.label).toList());
       predicates.remove(predicates.size() - 1);
 
