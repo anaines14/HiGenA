@@ -160,7 +160,7 @@ public class HintTest {
       // Generate hint
       String expr = entry.getKey(), code = entry.getValue();
       System.out.println("\n[HINT]: " + expr);
-      HintGenerator hintGen = g.generateHint(expr, code, HintGenType.TED);
+      HintGenerator hintGen = g.generateHint(expr, code, genType);
 
       // Log hint
       writeStatistics(logFile, hintGen, challenge, predicate);
