@@ -16,9 +16,14 @@ import java.util.Iterator;
  */
 public class Graph {
   private final String uri, user, password, databaseName, challenge, predicate;
-  private final Parser parser;
+  private Parser parser = null;
 
   public Graph(String challenge, String predicate, String filename) {
+    this(challenge, predicate);
+    this.parser = new Parser(filename);
+  }
+
+  public Graph(String challenge, String predicate) {
     Dotenv dotenv = Dotenv.configure().directory("src/main/resources").load();
 
     this.uri = dotenv.get("NEO4J_URI");
@@ -27,7 +32,6 @@ public class Graph {
     this.challenge = challenge;
     this.predicate = predicate;
     this.databaseName = genDatabaseName(challenge, predicate);
-    this.parser = new Parser(filename);
 
     // Connect to the default database
     try (Db db = new Db(uri, user, password, challenge, predicate)) {
@@ -35,6 +39,16 @@ public class Graph {
       // Create database for this challenge and predicate if it does not exist
       db.addDb(this.databaseName);
     }
+  }
+
+  public static void setup(String[] args) {
+    if (args.length < 2) {
+      System.out.println("Usage: java -jar graph.jar <challenge> <predicate>");
+      System.exit(1);
+    }
+    String challenge = args[0], predicate = args[1];
+    Graph graph = new Graph(challenge, predicate);
+    graph.setup();
   }
 
   /**
@@ -66,6 +80,8 @@ public class Graph {
     return ret.toString();
   }
 
+  // Hint methods
+
   /**
    * Sets up the graph database.
    */
@@ -79,11 +95,10 @@ public class Graph {
     }
   }
 
-  // Hint methods
-
   /**
    * Returns a hint for the given expression. The hint is generated using the
    * given type of generation.
+   *
    * @param expr Expression to generate the hint for.
    * @param type Type of hint generation.
    * @return Hint for the given expression.
@@ -95,6 +110,7 @@ public class Graph {
   /**
    * Returns a hint for the given expression and code. The hint is generated
    * using the given type of generation.
+   *
    * @param expr Expression to generate the hint for.
    * @param code Alloy code used by the expression.
    * @param type Type of hint generation.
@@ -111,6 +127,7 @@ public class Graph {
   /**
    * Generates a hint for the given expression. The hint is generated using the
    * given type of generation.
+   *
    * @param expr Expression to generate the hint for.
    * @param type Type of hint generation.
    * @return Hint Generator object that generated the hint.

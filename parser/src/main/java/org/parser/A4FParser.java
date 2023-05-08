@@ -19,11 +19,11 @@ public class A4FParser {
     return tree == null ? null : Canonicalizer.canonicalize(tree);
   }
 
-  public static A4FNode parse(String expr, String full_code) {
+  public static A4FNode parse(String expr, String fullCode) {
     variables.clear();
     // Parse the full module
     CompModule module = CompUtil.parseEverything_fromString(new A4Reporter(),
-            full_code);
+            fullCode);
     return parse(expr, module);
   }
 

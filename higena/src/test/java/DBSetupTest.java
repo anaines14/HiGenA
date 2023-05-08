@@ -25,7 +25,8 @@ public class DBSetupTest {
 
   @BeforeAll
   public static void setup() {
-    createCSV("graph_statistics", "src/test/outputs/");
+    if (statistics)
+      createCSV("graph_statistics", "src/test/outputs/");
   }
 
   // Test method
@@ -60,7 +61,7 @@ public class DBSetupTest {
   // Logging methods
 
   public static void createCSV(String name, String path) {
-    String columns = "Challenge,Predicate,NumSubmissions,NumCorrect," + "NumIncorrect,NumEdges";
+    String columns = "Challenge,Predicate,NumSubmissions,NumCorrect,NumIncorrect,NumEdges";
     csv = new File(path + name + ".csv");
     csv.delete();
 
