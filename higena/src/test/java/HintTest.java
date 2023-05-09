@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 public class HintTest {
 
   private static final String CHALLENGES_DIR = "../data/datasets/challenges/";
+  private static final boolean statistics = false;
 
   // Tests
 
@@ -163,7 +164,8 @@ public class HintTest {
       HintGenerator hintGen = g.generateHint(expr, code, genType);
 
       // Log hint
-      writeStatistics(logFile, hintGen, challenge, predicate);
+      if (statistics)
+        writeStatistics(logFile, hintGen, challenge, predicate);
     }
   }
 
@@ -272,6 +274,7 @@ public class HintTest {
    * @return The created log file
    */
   public File createLogFile(String name) {
+    if (!statistics) return null;
     String PATH = "src/test/outputs/";
     File file = new File(PATH + name + ".json");
     file.delete(); // Delete file if it already exists

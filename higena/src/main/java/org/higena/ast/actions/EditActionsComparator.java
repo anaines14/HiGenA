@@ -1,5 +1,6 @@
 package org.higena.ast.actions;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -24,8 +25,9 @@ public class EditActionsComparator implements Comparator<EditAction> {
   @Override
   public int compare(EditAction o1, EditAction o2) {
     String type1 = o1.getType(), type2 = o2.getType();
-    List<String> category1 = List.of("TreeAddition", "TreeInsert", "Addition", "Insert");
-    List<String> category2 = List.of("TreeDelete", "Delete");
+    List<String> category1 = Arrays.asList("TreeAddition", "TreeInsert", "Addition",
+            "Insert");
+    List<String> category2 = Arrays.asList("TreeDelete", "Delete");
     String category3 = "Update";
 
     // type1 = type2

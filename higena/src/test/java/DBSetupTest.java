@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DBSetupTest {
@@ -31,25 +32,16 @@ public class DBSetupTest {
 
   // Test method
 
-  @ParameterizedTest
-  @MethodSource("getDatasets")
-  public void testDBSetup(String challenge, String predicate) {
-    String filename = CHALLENGES_DIR + challenge + ".als";
-    Graph g = new Graph(challenge, predicate, filename);
-    g.setup();
-
-    if (statistics) {
-      writeStatistics(g.getStatistics(), challenge, predicate);
-    }
-  }
-
   public static Stream<Arguments> getDatasets() {
-    List<String> challenges = Arrays.stream(Objects.requireNonNull(new File(CHALLENGES_DIR).list())).toList();
+    List<String> challenges = Arrays.stream(Objects.requireNonNull(new File(CHALLENGES_DIR).list()))
+            .collect(Collectors.toList());
     HashMap<String, List<String>> arguments = new HashMap<>();
 
     for (String challenge : challenges) {
-      CompModule module = CompUtil.parseEverything_fromFile(new A4Reporter(), null, CHALLENGES_DIR+ challenge);
-      List<String> predicates = new java.util.ArrayList<>(module.getAllFunc().makeConstList().stream().map(c -> c.label).toList());
+      CompModule module = CompUtil.parseEverything_fromFile(new A4Reporter(), null, CHALLENGES_DIR + challenge);
+      List<String> predicates = module.getAllFunc().makeConstList().stream()
+              .map(c -> c.label)
+              .collect(Collectors.toList());
       predicates.remove(predicates.size() - 1);
 
       arguments.put(challenge, predicates);
@@ -57,8 +49,6 @@ public class DBSetupTest {
 
     return arguments.entrySet().stream().flatMap(e -> e.getValue().stream().map(p -> Arguments.of(e.getKey().replace(".als", ""), p.replace("this/", ""))));
   }
-
-  // Logging methods
 
   public static void createCSV(String name, String path) {
     String columns = "Challenge,Predicate,NumSubmissions,NumCorrect,NumIncorrect,NumEdges";
@@ -75,6 +65,8 @@ public class DBSetupTest {
     }
   }
 
+  // Logging methods
+
   public static void writeLineToCSV(String line) {
     try {
       FileWriter writer = new FileWriter(csv, true);
@@ -88,5 +80,17 @@ public class DBSetupTest {
   public static void writeStatistics(Record record, String challenge, String predicate) {
     String row = challenge + "," + predicate + "," + record.get("submissions").asInt() + "," + record.get("corrects").asInt() + "," + record.get("incorrects").asInt() + "," + record.get("derivations").asInt();
     writeLineToCSV(row);
+  }
+
+  @ParameterizedTest
+  @MethodSource("getDatasets")
+  public void testDBSetup(String challenge, String predicate) {
+    String filename = CHALLENGES_DIR + challenge + ".als";
+    Graph g = new Graph(challenge, predicate, filename);
+    g.setup();
+
+    if (statistics) {
+      writeStatistics(g.getStatistics(), challenge, predicate);
+    }
   }
 }

@@ -43,31 +43,37 @@ public class Hint {
 
 
     switch (type) {
-      case "Update" -> {
+      case "Update":
         return "Try changing \"" + node + "\" to \"" + value + "\". ";
-      }
-      case "Move" -> {
+
+      case "Move":
         if (parent != null) {
           String str = '"' + node + '"' + " is not in the right place.";
           if (!parent.equals("root"))
             return str + "Try moving it to the inside of " + parent + "\".";
           return str;
         }
-      }
-      case "TreeAddition", "TreeInsert", "Addition", "Insert" -> {
+        break;
+
+      case "TreeAddition":
+      case "TreeInsert":
+      case "Addition":
+      case "Insert":
         if (parent != null) {
           String str = "Missing \"" + node + "\".";
           if (!parent.equals("root"))
             return str + "Try adding it inside of \"" + parent + "\".";
           return str;
         }
-      }
-      case "TreeDelete", "Delete" -> {
+        break;
+
+      case "TreeDelete":
+      case "Delete":
         return "Try deleting \"" + node + "\". ";
-      }
-      default -> {
+
+      default:
         return "TODO hint for " + type + ". ";
-      }
+
     }
 
     System.err.println("Failed to generate hint for " + action);

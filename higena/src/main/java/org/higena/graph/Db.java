@@ -80,22 +80,24 @@ public class Db implements AutoCloseable {
     if (hasProjection(projectionName)) deleteProjection(projectionName);
     addProjection(projectionName, "Submission", "Derives", weightProperty);
     // Run Dijkstra's algorithm
-    return runQuery("""
-            MATCH (source:Submission {id: "%s"}), (target:Correct)
-            WHERE source.id <> target.id
-            CALL gds.shortestPath.dijkstra.stream('%s', {
-                sourceNode: source,
-                targetNode: target,
-                relationshipWeightProperty: '%s'
-            })
-            YIELD totalCost, path
-            RETURN
-                totalCost,
-                nodes(path) AS path,
-                relationships(path) AS rels
-            ORDER BY totalCost
-            LIMIT 1
-            """.formatted(sourceId, projectionName, weightProperty));
+    return runQuery(String.format(
+            "MATCH (source:Submission {id: \"%s\"}), (target:Correct)\n" +
+                    "WHERE source.id <> target.id\n" +
+                    "CALL gds.shortestPath.dijkstra.stream('%s', {\n" +
+                    "    sourceNode: source,\n" +
+                    "    targetNode: target,\n" +
+                    "    relationshipWeightProperty: '%s'\n" +
+                    "})\n" +
+                    "YIELD totalCost, path\n" +
+                    "RETURN\n" +
+                    "    totalCost,\n" +
+                    "    nodes(path) AS path,\n" +
+                    "    relationships(path) AS rels\n" +
+                    "ORDER BY totalCost\n" +
+                    "LIMIT 1",
+            sourceId,
+            projectionName,
+            weightProperty));
   }
 
   /**
@@ -107,11 +109,10 @@ public class Db implements AutoCloseable {
   private void aggregateEquivNodes() {
     String projectionName = "equalGraph", relName = "EQUAL", componentProperty = "componentId";
     // Create edges between nodes with the same property
-    runQuery("""
-            MATCH (n:Submission)
-            MATCH (s:Submission)
-            WHERE n.id <> s.id AND n.ast = s.ast
-            MERGE (n)-[:%s]-(s)""".formatted(relName));
+    runQuery(String.format(
+            "MATCH (n:Submission), (s:Submission)\n" +
+                    "WHERE n.id <> s.id AND n.ast = s.ast\n" +
+                    "MERGE (n)-[:%s]-(s)", relName));
     // Check if graph already exists and create it if it doesn't
     if (!hasProjection(projectionName)) {
       addProjection(projectionName, relName);
@@ -151,22 +152,21 @@ public class Db implements AutoCloseable {
     TED ted = new TED();
     TreeDiff diff = ted.computeTreeDiff(ast1, ast2);
 
-    String query = """
-            MATCH (n1:Submission {id: '%s'})
-            MATCH (n2:Submission {id: '%s'})
-            MERGE (n1)-[r:Derives {
-              id: randomUUID(),
-              ted: %d,
-              operations: %s,
-              popularity: 0,
-              poisson: 1.5,
-              dstPoisson:
-              CASE
-                WHEN n2.popularity = 0 THEN 1.5
-                ELSE 1.0 / n2.popularity
-              END
-            }]->(n2)
-            RETURN r AS edge""".formatted(n1.get("id").asString(), n2.get("id").asString(), diff.getTed(), diff.getActions());
+    String query = String.format(
+            "MATCH (n1:Submission {id: '%s'}), (n2:Submission {id: '%s'})\n" +
+                    "MERGE (n1)-[r:Derives {\n" +
+                    "    id: randomUUID(),\n" +
+                    "    ted: %d,\n" +
+                    "    operations: %s,\n" +
+                    "    popularity: 0,\n" +
+                    "    poisson: 1.5,\n" +
+                    "    dstPoisson:\n" +
+                    "    CASE\n" +
+                    "        WHEN n2.popularity = 0 THEN 1.5\n" +
+                    "        ELSE 1.0 / n2.popularity\n" +
+                    "    END\n" +
+                    "}]->(n2)\n" +
+                    "RETURN r AS edge", n1.get("id").asString(), n2.get("id").asString(), diff.getTed(), diff.getActions());
 
     return runQuery(query).single().get(0).asRelationship();
   }
@@ -181,13 +181,13 @@ public class Db implements AutoCloseable {
    */
   public Node addIncorrectNode(String expr, String ast, String code) {
 
-    Result res = runQuery("""
-            CREATE (n:Submission:Incorrect {id: randomUUID(),
-            code: "%s",
-            ast: "%s",
-            expr: "%s",
-            popularity: 1.0})
-            RETURN n AS node""".formatted(code, ast, expr));
+    Result res = runQuery(String.format(
+            "CREATE (n:Submission:Incorrect {id: randomUUID(),\n" +
+                    "    code: '%s',\n" +
+                    "    ast: '%s',\n" +
+                    "    expr: '%s',\n" +
+                    "    popularity: 1.0})\n" +
+                    "RETURN n AS node", code, ast, expr));
 
     return res.single().get(0).asNode();
   }
@@ -197,14 +197,13 @@ public class Db implements AutoCloseable {
    * 1.0 / popularity of the destination node for calculating the poisson path.
    */
   private void addNodePoissonToEdges() {
-    runQuery("""
-            MATCH ()-[r:Derives]->(dst:Submission)
-            SET r.dstPoisson =
-            CASE
-              WHEN dst.popularity = 0 THEN 1.5
-              ELSE 1.0/dst.popularity
-            END
-            """);
+    runQuery(String.format(
+            "MATCH ()-[r:Derives]->(dst:Submission)\n" +
+                    "SET r.dstPoisson = \n" +
+                    "CASE\n" +
+                    "    WHEN dst.popularity = 0 THEN 1.5\n" +
+                    "    ELSE 1.0 / dst.popularity\n" +
+                    "END"));
     System.out.println("Added node popularity to edges");
   }
 
@@ -216,9 +215,9 @@ public class Db implements AutoCloseable {
    */
   private void addTreeDiffToEdges() {
     // Get all edges and its nodes
-    Result res = runQuery("""
-            MATCH (src:Submission)-[e:Derives]->(dst:Submission)
-            RETURN src.ast AS src, dst.ast AS dst, e.id AS edgeID""");
+    Result res = runQuery(
+            "MATCH (src:Submission)-[e:Derives]->(dst:Submission)\n" +
+                    "RETURN src.ast AS src, dst.ast AS dst, e.id AS edgeID");
     TED ted = new TED();
 
     while (res.hasNext()) {
@@ -229,11 +228,11 @@ public class Db implements AutoCloseable {
       // Compute tree differences (edit distance and edits)
       TreeDiff diff = ted.computeTreeDiff(srcAST, dstAST);
       // Update edge
-      runQuery("""
-              MATCH ()-[e:Derives]-()
-              WHERE e.id = '%s'
-              SET e.ted = %d
-              SET e.operations = %s""".formatted(edge, diff.getTed(), diff.getActions()));
+      runQuery(String.format(
+              "MATCH ()-[e:Derives]->()\n" +
+                      "WHERE e.id = '%s'\n" +
+                      "SET e.ted = %d\n" +
+                      "SET e.operations = %s", edge, diff.getTed(), diff.getActions()));
     }
   }
 
@@ -259,14 +258,8 @@ public class Db implements AutoCloseable {
    * property.
    */
   public void addUniqueConstraints() {
-    String query = """
-            CREATE CONSTRAINT %s
-            IF NOT EXISTS
-            FOR %s
-            REQUIRE %s.id IS UNIQUE
-            """;
-
-    Result res = runQuery(String.format(query, "UniqueSubmission", "(s:Submission)", "s"));
+    Result res = runQuery("CREATE CONSTRAINT UniqueSubmission IF NOT EXISTS FOR " +
+            "(s:Submission) REQUIRE s.id IS UNIQUE");
     System.out.println("Added " + res.consume().counters().constraintsAdded() + " unique node.id constraint(s).");
   }
 
@@ -277,18 +270,18 @@ public class Db implements AutoCloseable {
    * can be empty. The id column must be unique. The sat column must be
    * either 0 or 1.
    */
-  private void addSubmissionNodes() throws ClientException{
-    Result res =
-            runQuery("LOAD CSV WITH HEADERS FROM 'file:///datasets/" + this.challenge + "/" + this.predicate + ".csv' AS row\n" + """
-            MERGE (s:Submission {
-              id: row._id,
-              code: row.code,
-              derivationOf: CASE WHEN row.derivationOf IS NULL THEN '' ELSE row.derivationOf END,
-              sat: toInteger(row.sat),
-              expr: CASE WHEN row.expr IS NULL THEN '' ELSE row.expr END,
-              ast: CASE WHEN row.ast IS NULL THEN '' ELSE row.ast END
-            })
-            RETURN count(s)""");
+  private void addSubmissionNodes() throws ClientException {
+    Result res = runQuery(
+            "LOAD CSV WITH HEADERS FROM 'file:///datasets/" + this.challenge + "/" + this.predicate + ".csv' AS row\n" +
+                    "MERGE (s:Submission {\n" +
+                    "  id: row._id,\n" +
+                    "  code: row.code,\n" +
+                    "  derivationOf: CASE WHEN row.derivationOf IS NULL THEN '' ELSE row.derivationOf END,\n" +
+                    "  sat: toInteger(row.sat),\n" +
+                    "  expr: CASE WHEN row.expr IS NULL THEN '' ELSE row.expr END,\n" +
+                    "  ast: CASE WHEN row.ast IS NULL THEN '' ELSE row.ast END\n" +
+                    "})\n" +
+                    "RETURN count(s) AS count");
 
     System.out.println("Created " + res.consume().counters().nodesCreated() + " nodes.");
   }
@@ -298,12 +291,12 @@ public class Db implements AutoCloseable {
    * property of the source node matches the id property of the target node.
    */
   private void addDerivationEdges() {
-    Result res = runQuery("""
-            MATCH (s:Submission)
-            MATCH (d:Submission)
-            WHERE s.id = d.derivationOf AND s.id <> d.id
-            MERGE (s)-[r:Derives {id: randomUUID()}]->(d)
-            RETURN count(r)""");
+    Result res = runQuery(
+            "MATCH (s:Submission), (d:Submission)\n" +
+                    "WHERE s.id = d.derivationOf AND s.id <> d.id\n" +
+                    "MERGE (s)-[r:Derives {id: randomUUID()}]->(d)\n" +
+                    "RETURN count(r) AS count");
+
     System.out.println("Created " + res.consume().counters().relationshipsCreated() + " Derives edges.");
   }
 
@@ -313,20 +306,21 @@ public class Db implements AutoCloseable {
    * adds a poisson property to all edges. Poisson is 1.0 / popularity.
    */
   private void addEdgesPopularity() {
-    runQuery("""
-            MATCH (n:Submission)-[r:Derives]->(s:Submission)
-            CALL {
-                WITH n, r, s
-                MATCH (p:Submission)-[e:Derives]->(t:Submission)
-                WHERE n.ast = p.ast AND s.ast = t.ast AND r.id <> e.id
-                RETURN count(e) AS popularity
-            }
-            SET r.popularity = popularity + 1
-            SET r.poisson =
-            CASE
-                WHEN r.popularity = 0 THEN  1.5
-                ELSE 1.0 / r.popularity
-            END""");
+    runQuery(
+            "MATCH (n:Submission)-[r:Derives]->(s:Submission)\n" +
+                    "CALL {\n" +
+                    "    WITH n, r, s\n" +
+                    "    MATCH (p:Submission)-[e:Derives]->(t:Submission)\n" +
+                    "    WHERE n.ast = p.ast AND s.ast = t.ast AND r.id <> e.id\n" +
+                    "    RETURN count(e) AS popularity\n" +
+                    "}\n" +
+                    "SET r.popularity = popularity + 1\n" +
+                    "SET r.poisson =\n" +
+                    "CASE\n" +
+                    "    WHEN r.popularity = 0 THEN 1.5\n" +
+                    "    ELSE 1.0 / r.popularity\n" +
+                    "END"
+    );
 
     System.out.println("Added popularity property to edges.");
   }
@@ -337,10 +331,10 @@ public class Db implements AutoCloseable {
    * (0 = Correct, 1 = Incorrect).
    */
   private void addSubmissionLabels() {
-    String query = """
-            MATCH (s:Submission {sat: %d})
-            SET s:%s
-            RETURN count(s)""";
+    String query =
+            "MATCH (s:Submission {sat: %d})\n" +
+                    "SET s:%s\n" +
+                    "RETURN count(s)";
 
     Result res = runQuery(String.format(query, 0, "Correct"));
     System.out.println("Set " + res.consume().counters().labelsAdded() + " " + "Correct labels.");
@@ -359,15 +353,14 @@ public class Db implements AutoCloseable {
     for (Record component : components) {
       int componentId = component.get("componentId").asInt();
       // Set popularity for each component
-      runQuery("""
-               MATCH (n:Submission {componentId: %d})
-               WITH count(n) AS popularity
-               CALL {
-                 WITH popularity
-                 MATCH (n:Submission {componentId: %d})
-                 SET n.popularity = popularity
-               }
-              """.formatted(componentId, componentId));
+      runQuery(String.format(
+              "MATCH (n:Submission {componentId: %d})\n" +
+                      "WITH count(n) AS popularity\n" +
+                      "CALL {\n" +
+                      "  WITH popularity\n" +
+                      "  MATCH (n:Submission {componentId: %d})\n" +
+                      "  SET n.popularity = popularity\n" +
+                      "}\n", componentId, componentId));
     }
   }
 
@@ -379,11 +372,11 @@ public class Db implements AutoCloseable {
    * @param relationship Relationship type of the edges
    */
   private void addProjection(String name, String relationship) {
-    runQuery("CALL gds.graph.project('%s', '%s', '%s')".formatted(name, "Submission", relationship));
+    runQuery(String.format("CALL gds.graph.project('%s', '%s', '%s')", name, "Submission", relationship));
   }
 
   private void addProjection(String name, String label, String relationship, String relProperty) {
-    runQuery(("CALL gds.graph.project('%s', '%s', '%s', " + "{relationshipProperties: '%s'})").formatted(name, label, relationship, relProperty));
+    runQuery(String.format("CALL gds.graph.project('%s', '%s', '%s', {relationshipProperties: '%s'})", name, label, relationship, relProperty));
   }
 
   // DELETE methods
@@ -445,10 +438,10 @@ public class Db implements AutoCloseable {
    * where the source and target node are the same.
    */
   private void deleteLoops() {
-    Result res = runQuery("""
-            MATCH (s:Submission)-[r:Derives]->(s:Submission)
-            DELETE r
-            RETURN count(r)""");
+    Result res = runQuery(
+            "MATCH (s:Submission)-[r:Derives]->(s:Submission)\n" +
+                    "DELETE r\n" +
+                    "RETURN count(r)");
     System.out.println("Deleted " + res.consume().counters().relationshipsDeleted() + " loops.");
   }
 
@@ -480,20 +473,20 @@ public class Db implements AutoCloseable {
 
   /**
    * Returns the statistics of the database.
+   *
    * @return Number of nodes, edges, correct nodes, and incorrect nodes.
    */
   public Result getStatistics() {
-    return runQuery("""
-            MATCH (s:Submission)
-            WITH count(s) AS submissions
-            MATCH (c:Correct)
-            WITH submissions, count(c) AS corrects
-            MATCH (i:Incorrect)
-            WITH submissions, corrects, count(i) as incorrects
-            MATCH ()-[r:Derives]->()
-            WITH submissions, corrects, incorrects, count(r) AS derivations
-            RETURN submissions, corrects, incorrects, derivations
-            """);
+    return runQuery(
+            "MATCH (s:Submission)\n" +
+                    "WITH count(s) AS submissions\n" +
+                    "MATCH (c:Correct)\n" +
+                    "WITH submissions, count(c) AS corrects\n" +
+                    "MATCH (i:Incorrect)\n" +
+                    "WITH submissions, corrects, count(i) as incorrects\n" +
+                    "MATCH ()-[r:Derives]->()\n" +
+                    "WITH submissions, corrects, incorrects, count(r) AS derivations\n" +
+                    "RETURN submissions, corrects, incorrects, derivations");
   }
 
   /**
@@ -503,10 +496,9 @@ public class Db implements AutoCloseable {
    * @return Node with the given ast. Null if no node exists.
    */
   public Node getNodeByAST(String ast) {
-    Result res = runQuery("""
-            MATCH (s:Submission {ast: "%s"})
-            RETURN s as node
-            """.formatted(ast));
+    Result res = runQuery(
+            "MATCH (s:Submission {ast: \"" + ast + "\"})\n" +
+                    "RETURN s as node");
     return res.hasNext() ? res.single().get("node").asNode() : null;
   }
 
@@ -522,13 +514,11 @@ public class Db implements AutoCloseable {
    * @return Most similar node to the given AST
    */
   public Node getMostSimilarNode(String ast, String category) {
-
     // Get all nodes ordered by popularity
-    Result res = runQuery("""
-            MATCH (s:%s)
-            RETURN s AS node
-            ORDER BY s.popularity DESC
-            """.formatted(category));
+    Result res = runQuery(
+            "MATCH (s:" + category + ")\n" +
+                    "RETURN s AS node\n" +
+                    "ORDER BY s.popularity DESC");
 
     TED ted = new TED();
     int minDist = Integer.MAX_VALUE; // Minimum TED found
@@ -566,10 +556,10 @@ public class Db implements AutoCloseable {
    * @return Relationship between the given nodes.
    */
   public Relationship getRelationship(Node src, Node dst) {
-    Result res = runQuery("""
-            MATCH (s:Submission {id: '%s'})-[edge]->(d:Submission {id: '%s'})
-            RETURN edge
-            """.formatted(src.get("id").asString(), dst.get("id").asString()));
+    Result res = runQuery(String.format(
+            "MATCH (s:Submission {id: '%s'})-[edge]->(d:Submission {id: '%s'})\n" +
+                    "RETURN edge",
+            src.get("id").asString(), dst.get("id").asString()));
     return res.single().get("edge").asRelationship();
   }
 
@@ -594,49 +584,48 @@ public class Db implements AutoCloseable {
   private List<String> getDelEquivNodesQueries(int componentId) {
     List<String> queries = new ArrayList<>();
     // Get all nodes in component and the first node of the component
-    String mainQuery = """
-            MATCH (n:Submission {componentId: %d})
-            WITH collect(DISTINCT n) AS compNodes
-            WITH compNodes, compNodes[0] AS firstN
-            UNWIND compNodes as cN
-            """.formatted(componentId), subquery = """
-            CALL {
-                WITH cN, firstN
-                MATCH (%s)-[r:Derives]->(%s)
-                WHERE cN <> firstN
-                MERGE (%s)-[p:Derives]->(%s)
-                SET p.id = randomUUID()
-                SET p.popularity = r.popularity
-                SET p.poisson = r.poisson
-                DELETE r
-            }
-            """;
+    String mainQuery =
+            "MATCH (n:Submission {componentId: " + componentId + "})\n" +
+                    "WITH collect(DISTINCT n) AS compNodes\n" +
+                    "WITH compNodes, compNodes[0] AS firstN\n" +
+                    "UNWIND compNodes as cN\n";
+    String subquery =
+            "CALL {\n" +
+                    "WITH cN, firstN\n" +
+                    "MATCH (%s)-[r:Derives]->(%s)\n" +
+                    "WHERE cN <> firstN\n" +
+                    "MERGE (%s)-[p:Derives]->(%s)\n" +
+                    "SET p.id = randomUUID()\n" +
+                    "SET p.popularity = r.popularity\n" +
+                    "SET p.poisson = r.poisson\n" +
+                    "DELETE r\n" +
+                    "}\n";
 
     // Swap derivations of component nodes to first node
     // example: (s)-[:Derives]->(cN) -> (s)-[:Derives]->(firstN)
-    queries.add(mainQuery + subquery.formatted("o:Submission", "cN", "o", "firstN"));
-    queries.add(mainQuery + subquery.formatted("cN", "o:Submission", "firstN", "o"));
+    queries.add(mainQuery + String.format(subquery, "o:Submission", "cN", "o", "firstN"));
+    queries.add(mainQuery + String.format(subquery, "cN", "o:Submission", "firstN", "o"));
 
     // Delete all component nodes except first node
-    queries.add(mainQuery + """
-            CALL {
-                WITH cN, firstN
-                MATCH (cN)
-                WHERE cN <> firstN
-                DETACH DELETE cN
-            }
-            """);
+    queries.add(mainQuery +
+            "CALL {\n" +
+            "WITH cN, firstN\n" +
+            "MATCH (cN)\n" +
+            "WHERE cN <> firstN\n" +
+            "DETACH DELETE cN\n" +
+            "}\n");
     return queries;
   }
 
   /**
    * Returns the code of the original submission.
+   *
    * @return Code of the original submission
    */
   public String getOriginalCode() {
-    return runQuery("""
-    MATCH (n:Submission {expr:""})
-    RETURN n.code AS code""").single().get("code").asString();
+    return runQuery(
+            "MATCH (n:Submission {expr: \"\"})\n" +
+                    "RETURN n.code AS code").single().get("code").asString();
   }
 
   // RUN methods
