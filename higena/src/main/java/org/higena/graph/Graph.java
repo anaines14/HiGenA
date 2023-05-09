@@ -1,6 +1,7 @@
 package org.higena.graph;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import io.github.cdimascio.dotenv.DotenvException;
 import org.higena.ast.Parser;
 import org.higena.graph.hint.Hint;
 import org.higena.graph.hint.HintGenType;
@@ -24,11 +25,31 @@ public class Graph {
   }
 
   public Graph(String challenge, String predicate) {
-    Dotenv dotenv = Dotenv.configure().directory("src/main/resources").load();
+    String uri, user, password;
+    try {
+      // Use .env
+      Dotenv dotenv = Dotenv.load();
 
-    this.uri = dotenv.get("NEO4J_URI");
-    this.user = dotenv.get("NEO4J_USERNAME");
-    this.password = dotenv.get("NEO4J_PASSWORD");
+      uri = dotenv.get("DB_URI");
+      user = dotenv.get("DB_USERNAME");
+      password = dotenv.get("DB_PASSWORD");
+    } catch (DotenvException e) {
+      // no .env file found
+      uri = System.getenv("DB_URI");
+      user = System.getenv("DB_USERNAME");
+      password = System.getenv("DB_PASSWORD");
+    }
+
+    if (uri == null || user == null || password == null) {
+      System.out.println("Please set the environment variables DB_URI, " +
+              "DB_USERNAME and DB_PASSWORD");
+      System.exit(1);
+    }
+
+    this.uri = uri;
+    this.user = user;
+    this.password = password;
+
     this.challenge = challenge;
     this.predicate = predicate;
     this.databaseName = genDatabaseName(challenge, predicate);
@@ -41,8 +62,8 @@ public class Graph {
     }
   }
 
-  public static void setup(String[] args) {
-    if (args.length < 2) {
+  public static void main(String[] args) {
+    if (args.length != 2) {
       System.out.println("Usage: java -jar graph.jar <challenge> <predicate>");
       System.exit(1);
     }
@@ -89,9 +110,14 @@ public class Graph {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       System.out.println("[SETUP] Database: " + databaseName);
       long startTime = System.currentTimeMillis();
-      db.setup();
+      try {
+        db.setup();
+      } catch (Exception e) {
+        System.err.println("FAILED SETUP: " + e.getMessage());
+        return;
+      }
       long endTime = System.currentTimeMillis() - startTime;
-      System.out.println("Success: Finished setup in " + endTime + " ms.");
+      System.out.println("Finished setup in " + endTime + " ms.");
     }
   }
 
@@ -135,6 +161,9 @@ public class Graph {
   public HintGenerator generateHint(String expr, String code,
                                     HintGenType type) {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
+      if (parser == null) { // if no parser is set, use the original code
+        setParser();
+      }
       String ast = parser.parse(expr, code);
       if (ast == null) {
         return null;
@@ -155,6 +184,16 @@ public class Graph {
   public Record getStatistics() {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       return db.getStatistics().single();
+    }
+  }
+
+  /**
+   *
+   */
+  private void setParser() {
+    try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
+      String model = db.getOriginalCode();
+      parser = new Parser(model);
     }
   }
 

@@ -47,7 +47,7 @@ public class Db implements AutoCloseable {
    * 8. Adds the TED and edit operations to the edges.
    * 9. Adds the Poisson distribution to the edges.
    */
-  public void setup() {
+  public void setup() throws ClientException {
     deleteAllNodes();
     deleteAllProjections();
     addUniqueConstraints();
@@ -277,8 +277,9 @@ public class Db implements AutoCloseable {
    * can be empty. The id column must be unique. The sat column must be
    * either 0 or 1.
    */
-  private void addSubmissionNodes() {
-    Result res = runQuery("LOAD CSV WITH HEADERS FROM 'file:///" + this.challenge + "/" + this.predicate + ".csv' AS row\n" + """
+  private void addSubmissionNodes() throws ClientException{
+    Result res =
+            runQuery("LOAD CSV WITH HEADERS FROM 'file:///datasets/" + this.challenge + "/" + this.predicate + ".csv' AS row\n" + """
             MERGE (s:Submission {
               id: row._id,
               code: row.code,
@@ -626,6 +627,16 @@ public class Db implements AutoCloseable {
             }
             """);
     return queries;
+  }
+
+  /**
+   * Returns the code of the original submission.
+   * @return Code of the original submission
+   */
+  public String getOriginalCode() {
+    return runQuery("""
+    MATCH (n:Submission {expr:""})
+    RETURN n.code AS code""").single().get("code").asString();
   }
 
   // RUN methods
