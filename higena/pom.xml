@@ -41,7 +41,7 @@
         <dependency>
             <groupId>org.neo4j.driver</groupId>
             <artifactId>neo4j-java-driver</artifactId>
-            <version>5.5.0</version>
+            <version>4.3.6</version>
         </dependency>
         <dependency>
             <groupId>io.github.cdimascio</groupId>
