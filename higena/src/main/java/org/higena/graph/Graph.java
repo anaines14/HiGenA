@@ -21,7 +21,7 @@ public class Graph {
 
   public Graph(String challenge, String predicate, String filename) {
     this(challenge, predicate);
-    this.parser = new Parser(filename);
+    this.parser = Parser.fromFile(filename);
   }
 
   public Graph(String challenge, String predicate) {
@@ -30,19 +30,19 @@ public class Graph {
       // Use .env
       Dotenv dotenv = Dotenv.load();
 
-      uri = dotenv.get("DB_URI");
-      user = dotenv.get("DB_USERNAME");
-      password = dotenv.get("DB_PASSWORD");
+      uri = dotenv.get("URI_NEO4J");
+      user = dotenv.get("USERNAME_NEO4J");
+      password = dotenv.get("PASSWORD_NEO4J");
     } catch (DotenvException e) {
       // no .env file found
-      uri = System.getenv("DB_URI");
-      user = System.getenv("DB_USERNAME");
-      password = System.getenv("DB_PASSWORD");
+      uri = System.getenv("URI_NEO4J");
+      user = System.getenv("USERNAME_NEO4J");
+      password = System.getenv("PASSWORD_NEO4J");
     }
 
     if (uri == null || user == null || password == null) {
-      System.out.println("Please set the environment variables DB_URI, " +
-              "DB_USERNAME and DB_PASSWORD");
+      System.out.println("Please set the environment variables URI_NEO4J, " +
+              "USERNAME_NEO4J and PASSWORD_NEO4J");
       System.exit(1);
     }
 
@@ -162,7 +162,12 @@ public class Graph {
                                     HintGenType type) {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       if (parser == null) { // if no parser is set, use the original code
-        setParser();
+        try {
+          setParser();
+        } catch (Exception e) {
+          System.err.println("ERROR: Missing empty submission on the graph.");
+          return null;
+        }
       }
       String ast = parser.parse(expr, code);
       if (ast == null) {
@@ -193,7 +198,7 @@ public class Graph {
   private void setParser() {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       String model = db.getOriginalCode();
-      parser = new Parser(model);
+      parser = Parser.fromModel(model);
     }
   }
 

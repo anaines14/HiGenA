@@ -5,6 +5,7 @@ import org.higena.ast.actions.TreeDiff;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.*;
 import org.neo4j.driver.exceptions.ClientException;
+import org.neo4j.driver.exceptions.NoSuchRecordException;
 import org.neo4j.driver.summary.SummaryCounters;
 import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Relationship;
@@ -197,13 +198,13 @@ public class Db implements AutoCloseable {
    * 1.0 / popularity of the destination node for calculating the poisson path.
    */
   private void addNodePoissonToEdges() {
-    runQuery(String.format(
+    runQuery(
             "MATCH ()-[r:Derives]->(dst:Submission)\n" +
                     "SET r.dstPoisson = \n" +
                     "CASE\n" +
                     "    WHEN dst.popularity = 0 THEN 1.5\n" +
                     "    ELSE 1.0 / dst.popularity\n" +
-                    "END"));
+                    "END");
     System.out.println("Added node popularity to edges");
   }
 
@@ -622,10 +623,11 @@ public class Db implements AutoCloseable {
    *
    * @return Code of the original submission
    */
-  public String getOriginalCode() {
-    return runQuery(
+  public String getOriginalCode() throws NoSuchRecordException {
+    Result res = runQuery(
             "MATCH (n:Submission {expr: \"\"})\n" +
-                    "RETURN n.code AS code").single().get("code").asString();
+                    "RETURN n.code AS code");
+    return res.single().get("code").asString();
   }
 
   // RUN methods

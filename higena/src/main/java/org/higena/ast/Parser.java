@@ -8,9 +8,16 @@ import org.parser.A4FParser;
 public class Parser {
   private final CompModule challengeModule;
 
-  public Parser(String filename) {
-    // Parse the file and store its module
-    this.challengeModule = CompUtil.parseEverything_fromFile(new A4Reporter(), null, filename);
+  public Parser(CompModule challengeModule) {
+    this.challengeModule = challengeModule;
+  }
+
+  public static Parser fromFile(String file) {
+    return new Parser(CompUtil.parseEverything_fromFile(new A4Reporter(), null, file));
+  }
+
+  public static Parser fromModel(String model) {
+    return new Parser(CompUtil.parseEverything_fromString(new A4Reporter(), model));
   }
 
   // Parse functions
