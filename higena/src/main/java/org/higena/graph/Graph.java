@@ -62,16 +62,6 @@ public class Graph {
     }
   }
 
-  public static void main(String[] args) {
-    if (args.length != 2) {
-      System.out.println("Usage: java -jar graph.jar <challenge> <predicate>");
-      System.exit(1);
-    }
-    String challenge = args[0], predicate = args[1];
-    Graph graph = new Graph(challenge, predicate);
-    graph.setup();
-  }
-
   /**
    * Generates a databaseName accepted by neo4j. It removes all digits from the
    * challenge name, converts it to lowercase and takes the first 4 characters.
