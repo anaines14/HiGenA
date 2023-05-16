@@ -273,7 +273,7 @@ public class Db implements AutoCloseable {
    */
   private void addSubmissionNodes() throws ClientException {
     Result res = runQuery(
-            "LOAD CSV WITH HEADERS FROM 'file:///datasets/" + this.challenge + "/" + this.predicate + ".csv' AS row\n" +
+            "LOAD CSV WITH HEADERS FROM 'file:///prepared_data/" + this.challenge + "/" + this.predicate + ".csv' AS row\n" +
                     "MERGE (s:Submission {\n" +
                     "  id: row._id,\n" +
                     "  code: row.code,\n" +
