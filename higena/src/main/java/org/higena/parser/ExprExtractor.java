@@ -1,4 +1,4 @@
-package org.higena.parsers;
+package org.higena.parser;
 
 import java.util.Stack;
 import java.util.regex.Matcher;
