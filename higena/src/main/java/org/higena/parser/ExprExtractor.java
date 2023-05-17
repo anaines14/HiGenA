@@ -5,7 +5,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Extracts the text between curly braces of an Alloy predicate.
+ * Extracts the text (expression) between curly braces of an Alloy predicate.
  */
 public class ExprExtractor {
 

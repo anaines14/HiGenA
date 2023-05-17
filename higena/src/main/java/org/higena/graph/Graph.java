@@ -1,11 +1,14 @@
 package org.higena.graph;
 
+import edu.mit.csail.sdg.alloy4.A4Reporter;
+import edu.mit.csail.sdg.parser.CompModule;
+import edu.mit.csail.sdg.parser.CompUtil;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.github.cdimascio.dotenv.DotenvException;
-import org.higena.ast.Parser;
 import org.higena.graph.hint.Hint;
 import org.higena.graph.hint.HintGenType;
 import org.higena.graph.hint.HintGenerator;
+import org.higena.parser.A4FParser;
 import org.neo4j.driver.Record;
 
 import java.util.Arrays;
@@ -17,11 +20,12 @@ import java.util.Iterator;
  */
 public class Graph {
   private final String uri, user, password, databaseName, challenge, predicate;
-  private Parser parser = null;
+  private CompModule challengeModule;
 
   public Graph(String challenge, String predicate, String filename) {
     this(challenge, predicate);
-    this.parser = Parser.fromFile(filename);
+    this.challengeModule = CompUtil.parseEverything_fromFile(new A4Reporter(), null,
+            filename);
   }
 
   public Graph(String challenge, String predicate) {
@@ -151,15 +155,16 @@ public class Graph {
   public HintGenerator generateHint(String expr, String code,
                                     HintGenType type) {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
-      if (parser == null) { // if no parser is set, use the original code
+      if (challengeModule == null) { // if no challengeModule is set, use the
+        // original code
         try {
-          setParser();
+          setChallengeModule();
         } catch (Exception e) {
           System.err.println("ERROR: Missing empty submission on the graph.");
           return null;
         }
       }
-      String ast = parser.parse(expr, code);
+      String ast = parse(expr, code);
       if (ast == null) {
         return null;
       }
@@ -183,13 +188,53 @@ public class Graph {
   }
 
   /**
-   *
+   * Sets the challenge module to the original code of the challenge. Fetches
+   * the original code from the empty submission on the graph.
    */
-  private void setParser() {
+  private void setChallengeModule() {
     try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
       String model = db.getOriginalCode();
-      parser = Parser.fromModel(model);
+      challengeModule = CompUtil.parseEverything_fromString(new A4Reporter(),
+              model);
     }
+  }
+
+  // Parse functions
+
+  /**
+   * Parses an Alloy expression using the challenge module and returns the AST
+   * of the parsed expression.
+   *
+   * @param expression The expression to parse.
+   * @return The AST of the parsed expression.
+   */
+  private String parse(String expression) {
+    if (expression.equals("")) {
+      return "";
+    }
+    return A4FParser.parse(expression, this.challengeModule).toTreeString();
+  }
+
+  /**
+   * Parses an Alloy expression using the full module code and returns the AST of the parsed expression.
+   *
+   * @param expression The expression to parse.
+   * @param code       The full module code.
+   * @return The AST of the parsed expression.
+   */
+  public String parse(String expression, String code) {
+    String ast;
+    try {
+      ast = parse(expression);
+    } catch (Exception parseExprException) {
+      try {
+        ast = A4FParser.parse(expression, code).toTreeString();
+      } catch (Exception parseException) {
+        System.err.println("Error parsing expression: " + expression);
+        return null;
+      }
+    }
+    return ast;
   }
 
 }

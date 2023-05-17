@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * Parses an Alloy expression into an AST.
+ */
 public class A4FParser {
 
   public static HashMap<String, String> variables = new HashMap<>();

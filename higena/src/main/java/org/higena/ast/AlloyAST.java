@@ -5,7 +5,7 @@ import at.unisalzburg.dbresearch.apted.node.StringNodeData;
 import com.github.gumtreediff.tree.AbstractTree;
 import com.github.gumtreediff.tree.Tree;
 import com.github.gumtreediff.tree.Type;
-import org.parser.Canonicalizer;
+import org.higena.parser.Canonicalizer;
 
 import java.util.ArrayList;
 import java.util.Iterator;
