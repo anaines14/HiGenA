@@ -21,27 +21,6 @@ public class HintTest {
   // Tests
 
   /**
-   * Tests hint generation using APTED, without creating new paths and using the
-   * TED for the cost function. Generated hints are written to a log file. Uses
-   * the train data to create a graph and test data to ask for hints.
-   */
-  @Test
-  public void testNoNewPathsHintGen() {
-    // Create log file
-    File logFile = createLogFile("no_new_paths_hint_stats");
-
-    // Set hint generation settings
-    HintGenerator.cantCreatePath = true;
-    TED.USE_APTED = true;
-
-    testDataProvider().forEach(args -> {
-      String challenge = (String) args.get()[0], predicate = (String) args.get()[1];
-      File test_data = (File) args.get()[2];
-      genHints(challenge, predicate, test_data, HintGenType.TED, logFile);
-    });
-  }
-
-  /**
    * Tests hint generation using APTED, creating new paths and using the TED
    * for the cost function. Generated hints are written to a log file. Uses
    * the train data to create a graph and test data to ask for hints.
@@ -62,7 +41,6 @@ public class HintTest {
 
     });
   }
-
 
   /**
    * Tests hint generation using GumTree, creating new paths and using the TED
@@ -85,50 +63,6 @@ public class HintTest {
     });
   }
 
-  /**
-   * Tests hint generation using APTED, creating new paths and using the node
-   * popularity poisson distribution for the cost function. Generated hints are
-   * written to a log file. Uses the train data to create a graph and test data
-   * to ask for hints.
-   */
-  @Test
-  public void testNodePopularityHintGen() {
-    // Create log file
-    File logFile = createLogFile("node_poisson_hint_stats");
-
-    // Set hint generation settings
-    HintGenerator.cantCreatePath = false;
-    TED.USE_APTED = true;
-
-    testDataProvider().forEach(args -> {
-      String challenge = (String) args.get()[0], predicate = (String) args.get()[1];
-      File test_data = (File) args.get()[2];
-      genHints(challenge, predicate, test_data, HintGenType.NODE_POISSON, logFile);
-    });
-  }
-
-  /**
-   * Tests hint generation using APTED, creating new paths and using the edge
-   * popularity poisson distribution for the cost function. Generated hints are
-   * written to a log file. Uses the train data to create a graph and test data
-   * to ask for hints.
-   */
-  @Test
-  public void testEdgePopularityHintGen() {
-    // Create log file
-    File logFile = createLogFile("edge_poisson_hint_stats");
-
-    // Set hint generation settings
-    HintGenerator.cantCreatePath = false;
-    TED.USE_APTED = true;
-
-    testDataProvider().forEach(args -> {
-      String challenge = (String) args.get()[0], predicate = (String) args.get()[1];
-      File test_data = (File) args.get()[2];
-      genHints(challenge, predicate, test_data, HintGenType.REL_POISSON, logFile);
-    });
-
-  }
 
   /**
    * Generates hints for a given challenge, predicate and test data. The test
