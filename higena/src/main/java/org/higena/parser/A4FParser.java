@@ -117,11 +117,11 @@ public class A4FParser {
   }
 
   private static AlloyAST parse(Sig.SubsetSig expr) {
-    return new AlloyAST(expr.toString().replace("this/", ""));
+    return new AlloyAST(expr.toString().replace("this/", "sig/"));
   }
 
   private static AlloyAST parse(Sig.PrimSig expr) {
-    return new AlloyAST(expr.toString().replace("this/", ""));
+    return new AlloyAST(expr.toString().replace("this/", "sig/"));
   }
 
   private static AlloyAST parse(ExprBinary expr) {
