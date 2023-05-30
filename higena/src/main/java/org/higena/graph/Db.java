@@ -181,14 +181,15 @@ public class Db implements AutoCloseable {
    * @return The created node.
    */
   public Node addIncorrectNode(String expr, String ast, String code) {
-
-    Result res = runQuery(String.format(
+    String query =
             "CREATE (n:Submission:Incorrect {id: randomUUID(),\n" +
-                    "    code: '%s',\n" +
-                    "    ast: '%s',\n" +
-                    "    expr: '%s',\n" +
+                    "    code: \"" + code + "\",\n" +
+                    "    ast: \"" + ast + "\",\n" +
+                    "    expr: \"" + expr + "\",\n" +
                     "    popularity: 1.0})\n" +
-                    "RETURN n AS node", code, ast, expr));
+                    "RETURN n AS node";
+
+    Result res = runQuery(query);
 
     return res.single().get(0).asNode();
   }
