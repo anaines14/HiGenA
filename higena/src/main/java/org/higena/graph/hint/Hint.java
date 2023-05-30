@@ -135,7 +135,7 @@ public class Hint {
     Matcher m = p.matcher(label);
     if (m.matches()) {
       ret.add(0, "variable of type " + m.group(1));
-      ret.add(1, m.group(1));
+      ret.add(1, "");
       return ret;
     }
 
@@ -144,7 +144,7 @@ public class Hint {
     m = p.matcher(label);
     if (m.matches()) {
       ret.add(0, "signature of type " + m.group(1));
-      ret.add(1, m.group(1));
+      ret.add(1, "");
       return ret;
     }
 
