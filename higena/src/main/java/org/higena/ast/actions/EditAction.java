@@ -198,6 +198,18 @@ public class EditAction {
     return ret + ")\"";
   }
 
+  /**
+   * Returns whether this action is a bad action for hint generation.
+   *
+   * @return True if this action is a bad action, false otherwise.
+   */
+  public boolean isBadAction() {
+    if (type.equals(("Insert"))) {
+      return node.getLabel().equals("all") || node.getLabel().equals("some");
+    }
+    return false;
+  }
+
   // Getters
 
   public String getType() {

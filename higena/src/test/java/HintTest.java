@@ -6,10 +6,7 @@ import org.higena.graph.hint.HintGenerator;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.CsvFileSource;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,13 +18,28 @@ import java.util.stream.Stream;
 public class HintTest {
 
   private static final String CHALLENGES_DIR = "../data/datasets/challenges/";
+  private static final String PATH = "src/test/outputs/";
   private static final boolean statistics = false;
 
   // Tests
+
+  private static Stream<Arguments> hintInputsProvider() {
+    return Stream.of(
+            // TreeInsert
+            Arguments.of("zoEADeCW2b2suJB2k", "inv4", "all s : State | s in Event.(Init.trans)"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("hintInputsProvider")
+  public void singleHintTest(String challenge, String predicate, String expr) {
+    Graph graph = new Graph(challenge, predicate);
+    //graph.setup();
+    graph.generateHint(expr, "", HintGenType.TED);
+  }
+
   @ParameterizedTest
   @CsvFileSource(resources = "/most_popular.csv", numLinesToSkip = 1, delimiter = ';')
-  public void singleHintTest(String challenge, String predicate, String expr) {
-    String PATH = "src/test/outputs/";
+  public void fileHintTest(String challenge, String predicate, String expr) {
     File file = new File(PATH + "teacher_study.csv");
 
     Graph graph = new Graph(challenge, predicate);
@@ -233,7 +245,6 @@ public class HintTest {
    */
   public File createLogFile(String name) {
     if (!statistics) return null;
-    String PATH = "src/test/outputs/";
     File file = new File(PATH + name + ".json");
     file.delete(); // Delete file if it already exists
     return file;

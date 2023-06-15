@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * This class contains the difference between two ASTs and uses this
@@ -39,7 +40,7 @@ public class Hint {
    * @param action Edit action containing information to generate the hint
    * @return Part of a hint string.
    */
-  public static String actionToHint(EditAction action) {
+  private static String actionToHint(EditAction action) {
     String type = action.getType();
     String node = action.getNode().getLabel(), parent =
             action.getParent() != null ? action.getParent().getLabel() : null
@@ -57,6 +58,19 @@ public class Hint {
 
       case "TreeAddition":
       case "TreeInsert":
+        // If the parent is "all" or "some" it is the addition of a variable
+        // so we need to get the signature type
+        if (parent != null) {
+          if (parent.equals("all") || parent.equals("some")) {
+            String regex = "sig/(\\w+)";
+            Pattern pattern = Pattern.compile(regex);
+            Matcher matcher = pattern.matcher(action.getNode().toTreeString());
+            if (matcher.find()) {
+              String sig = matcher.group(1);
+              return insertToHint(sig, parent);
+            }
+          }
+        }
       case "Addition":
       case "Insert":
         if (parent != null) {
@@ -99,13 +113,17 @@ public class Hint {
   }
 
   private static String insertToHint(String value, String parent) {
+    // Missing variables
+    if (parent.equals("all") || parent.equals("some"))
+      return "You can use variables to help specify the condition. Consider introducing a new variable \"" + value + "\" to your expression using the " + getAlloyDescription(parent).get(0) + ".";
+
     List<String> alloyDescription = getAlloyDescription(value);
     String ret, name = alloyDescription.get(0), role = alloyDescription.get(1);
 
-    if (name.equals("all")) {
-      return "You can use variables to help specify the condition. Consider introducing a new variable using the " + name + ".";
+    if (value.equals("all")) {
+      return "You can use variables to help specify the condition. Consider introducing a new variable to your expression using the " + name + ".";
     } else if (value.contains("variable")) {
-      ret = "You can use variables to help specify the condition. Consider " + "using a " + name + " to correctly capture the property you want to specify.";
+      ret = "You can use variables to help specify the condition. Consider using a " + name + " to correctly capture the property you want to specify.";
     } else {
       role = role.equals("") ? " to help satisfy the required property" : role;
       ret = "Consider adding a " + name + role + ".";
@@ -127,7 +145,7 @@ public class Hint {
             + "to fix your " + "expression another way and reach a different solution!";
   }
 
-  public static List<String> getAlloyDescription(String label) {
+  private static List<String> getAlloyDescription(String label) {
     List<String> ret = new ArrayList<>();
 
     // Match variable name (e.g.:var0/Int, var1/Bool, etc)
@@ -199,6 +217,7 @@ public class Hint {
       case "*":
         ret.add(0, "reflexive-transitive closure operator ('*')");
         ret.add(1, " to get the reflexive-transitive closure of a relation");
+        return ret;
       case "implies":
       case "=>":
         ret.add(0, "implication operator ('=>')");
@@ -211,6 +230,7 @@ public class Hint {
         ret.add(1,
                 " to specify the equivalence of the right and left side of the " +
                         "expression");
+        return ret;
       case "<=>":
         ret.add(0, "equivalence operator ('<=>')");
         ret.add(1,
@@ -265,6 +285,10 @@ public class Hint {
       case "some":
         ret.add(0, "existential quantifier ('some')");
         ret.add(1, " to specify that some elements in a set satisfy a condition");
+        return ret;
+      case "let":
+        ret.add(0, "\"let\" ('let var = expression1 | expression2')");
+        ret.add(1, " to introduce a new variable");
         return ret;
       case "lone":
         ret.add(0, "lone quantifier ('lone')");
@@ -366,6 +390,14 @@ public class Hint {
 
     // Sort actions by priority
     actions.sort(new EditActionsComparator());
+    // Filter out actions that are not relevant for hint generation
+    List<EditAction> filtered = actions.stream()
+            .filter(action -> !action.isBadAction())
+            .collect(Collectors.toList());
+
+    if (filtered.size() > 0) {
+      actions = filtered;
+    }
 
     // Return the first action in the form of a hint
     return actionToHint(actions.get(0));
