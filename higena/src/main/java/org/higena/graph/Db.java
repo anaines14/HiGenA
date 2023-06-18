@@ -18,8 +18,8 @@ import java.util.List;
  */
 public class Db implements AutoCloseable {
   private final Driver driver; // Neo4j driver
-  private final String challenge; // Challenge name
-  private final String predicate; // Predicate name
+  public final String challenge; // Challenge name
+  public final String predicate; // Predicate name
   private Session session; // Neo4j session
   private String name; // Database name
 

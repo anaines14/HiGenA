@@ -1,8 +1,7 @@
 import org.higena.ast.TED;
 import org.higena.graph.Graph;
-import org.higena.graph.hint.Hint;
-import org.higena.graph.hint.HintGenType;
-import org.higena.graph.hint.HintGenerator;
+import org.higena.hint.HintGenType;
+import org.higena.hint.HintGenerator;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,14 +18,14 @@ public class HintTest {
 
   private static final String CHALLENGES_DIR = "../data/datasets/challenges/";
   private static final String PATH = "src/test/outputs/";
-  private static final boolean statistics = false;
+  private static final boolean statistics = true;
 
   // Tests
 
   private static Stream<Arguments> hintInputsProvider() {
     return Stream.of(
             // TreeInsert
-            Arguments.of("zoEADeCW2b2suJB2k", "inv4", "all s : State | s in Event.(Init.trans)"));
+            Arguments.of("JC8Tij8o8GZb99gEJ", "Inv3", "all w: Work | #(w.ids) <= 1"));
   }
 
   @ParameterizedTest

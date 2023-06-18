@@ -1,4 +1,4 @@
-package org.higena.graph.hint;
+package org.higena.hint;
 
 import org.higena.ast.TED;
 import org.higena.ast.actions.EditAction;

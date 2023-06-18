@@ -5,9 +5,9 @@ import edu.mit.csail.sdg.parser.CompModule;
 import edu.mit.csail.sdg.parser.CompUtil;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.github.cdimascio.dotenv.DotenvException;
-import org.higena.graph.hint.Hint;
-import org.higena.graph.hint.HintGenType;
-import org.higena.graph.hint.HintGenerator;
+import org.higena.hint.Hint;
+import org.higena.hint.HintGenType;
+import org.higena.hint.HintGenerator;
 import org.higena.parser.A4FParser;
 import org.neo4j.driver.Record;
 

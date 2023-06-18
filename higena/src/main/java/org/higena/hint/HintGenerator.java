@@ -1,4 +1,4 @@
-package org.higena.graph.hint;
+package org.higena.hint;
 
 import org.higena.ast.TED;
 import org.higena.graph.Db;
@@ -193,7 +193,8 @@ public class HintGenerator {
    */
   public JSONObject getJSON() {
     JSONObject json = new JSONObject();
-    json.put("expression", expression);
+    json.put("challenge", db.challenge);
+    json.put("expression", db.predicate);
     json.put("code", code);
     json.put("mapping", TED.USE_APTED ? "APTED" : "GumTree");
     json.put("type", type.toString());

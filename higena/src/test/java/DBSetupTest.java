@@ -22,7 +22,7 @@ public class DBSetupTest {
 
   private static final String CHALLENGES_DIR = "../data/datasets/challenges/";
   private static File csv = null;
-  private static final boolean statistics = true;
+  private static final boolean statistics = false;
 
   @BeforeAll
   public static void setup() {
@@ -44,7 +44,8 @@ public class DBSetupTest {
               .collect(Collectors.toList());
       predicates.remove(predicates.size() - 1);
 
-      arguments.put(challenge, predicates);
+      if (challenge.equals("gAeD3MTGCCv8YNTaK.als") || challenge.equals("zoEADeCW2b2suJB2k.als"))
+        arguments.put(challenge, predicates);
     }
 
     return arguments.entrySet().stream().flatMap(e -> e.getValue().stream().map(p -> Arguments.of(e.getKey().replace(".als", ""), p.replace("this/", ""))));

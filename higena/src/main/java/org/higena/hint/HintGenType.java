@@ -1,4 +1,4 @@
-package org.higena.graph.hint;
+package org.higena.hint;
 
 /**
  * Hint generation types.
