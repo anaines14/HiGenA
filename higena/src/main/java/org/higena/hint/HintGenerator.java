@@ -194,7 +194,7 @@ public class HintGenerator {
   public JSONObject getJSON() {
     JSONObject json = new JSONObject();
     json.put("challenge", db.challenge);
-    json.put("expression", db.predicate);
+    json.put("predicate", db.predicate);
     json.put("code", code);
     json.put("mapping", TED.USE_APTED ? "APTED" : "GumTree");
     json.put("type", type.toString());

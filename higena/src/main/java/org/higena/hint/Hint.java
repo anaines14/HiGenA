@@ -67,7 +67,7 @@ public class Hint {
             Matcher matcher = pattern.matcher(action.getNode().toTreeString());
             if (matcher.find()) {
               String sig = matcher.group(1);
-              return insertToHint(sig, parent);
+              return treeInsertToHint(sig, parent);
             }
           }
         }
@@ -88,14 +88,16 @@ public class Hint {
   }
 
   private static String updateToHint(String oldValue, String newValue) {
-    List<String> oldDescription = getAlloyDescription(oldValue), newDescription =
-            getAlloyDescription(newValue);
+    List<String> oldDescription = getAlloyDescription(oldValue),
+            newDescription =
+                    getAlloyDescription(newValue);
     String oldName = oldDescription.get(0), newName =
             getAlloyDescription(newValue).get(0);
     String oldRole = oldDescription.get(1), newRole = newDescription.get(1);
 
     oldRole = oldRole.equals("") ? "" : oldRole;
-    newRole = newRole.equals("") ? " to help satisfy the required property" : newRole;
+    newRole = newRole.equals("") ? " to help satisfy the required property" :
+            newRole;
     return "Instead of using " + oldName + oldRole
             + ", try using " + newName + newRole + ".";
   }
@@ -108,22 +110,33 @@ public class Hint {
     String str =
             "It seems like the " + nodeName + "is not in the right place. ";
     if (!parent.equals("root"))
-      str += "Try moving it to the inside of the " + parentName + "expression. ";
+      str += "Try moving it to the inside of the " + parentName + "expression" +
+              ". ";
     return str + " Try moving it so that you correctly ensure the required " + "property.";
   }
 
-  private static String insertToHint(String value, String parent) {
+  private static String treeInsertToHint(String value, String parent) {
     // Missing variables
     if (parent.equals("all") || parent.equals("some"))
-      return "You can use variables to help specify the condition. Consider introducing a new variable \"" + value + "\" to your expression using the " + getAlloyDescription(parent).get(0) + ".";
+      return "You can use variables to help specify the condition. Consider " +
+              "introducing a new variable \"" + value + "\" to your " +
+              "expression using the " + getAlloyDescription(parent).get(0) +
+              ".";
 
+    return insertToHint(value, parent);
+  }
+
+  private static String insertToHint(String value, String parent) {
     List<String> alloyDescription = getAlloyDescription(value);
     String ret, name = alloyDescription.get(0), role = alloyDescription.get(1);
 
-    if (value.equals("all")) {
-      return "You can use variables to help specify the condition. Consider introducing a new variable to your expression using the " + name + ".";
-    } else if (value.contains("variable")) {
-      ret = "You can use variables to help specify the condition. Consider using a " + name + " to correctly capture the property you want to specify.";
+    if (value.equals("all") || value.equals("some")) {
+      return "You can use variables to help specify the condition. Consider " +
+              "introducing a new variable to your expression using the " + name + ".";
+    } else if (name.contains("variable")) {
+      ret = "You can use variables to help specify the condition. Consider " +
+              "using a " + name + " to correctly capture the property you " +
+              "want to specify.";
     } else {
       role = role.equals("") ? " to help satisfy the required property" : role;
       ret = "Consider adding a " + name + role + ".";
@@ -131,7 +144,8 @@ public class Hint {
 
     // Parent to hint
     if (parent.equals("root"))
-      return ret + " Think about how you can incorporate this within your expression to ensure the required property.";
+      return ret + " Think about how you can incorporate this within your " +
+              "expression to ensure the required property.";
     else
       return ret + " Think about how you can incorporate this within the " + getAlloyDescription(parent).get(0) + " expression.";
   }
@@ -141,8 +155,9 @@ public class Hint {
 
     return "It seems like you have unnecessary elements in " +
             "your expression. You can try simplifying your expression by " +
-            "deleting the " +  name + ". If you want to keep it, try "
-            + "to fix your " + "expression another way and reach a different solution!";
+            "deleting the " + name + ". If you want to keep it, try "
+            + "to fix your " + "expression another way and reach a different " +
+            "solution!";
   }
 
   private static List<String> getAlloyDescription(String label) {
@@ -170,11 +185,16 @@ public class Hint {
       // Set operators
       case ".":
         ret.add(0, "dot join operator ('.')");
-        ret.add(1, " to perform a relational join " + "between sets or relations");
+        ret.add(1, " to perform a relational join " + "between sets or " +
+                "relations");
         return ret;
       case "+":
         ret.add(0, "union operator ('+')");
         ret.add(1, " to combine two sets");
+        return ret;
+      case "&":
+        ret.add(0, "intersection operator ('&')");
+        ret.add(1, " to find the common elements between two sets");
         return ret;
       case "++":
         ret.add(0, "relational override operator ('++')");
@@ -187,6 +207,11 @@ public class Hint {
       case "in":
         ret.add(0, "inclusion operator ('in')");
         ret.add(1, " to specify that some element(s) belong to a set");
+        return ret;
+      case "not in":
+      case "!in":
+        ret.add(0, "exclusion operator ('!in')");
+        ret.add(1, " to specify that some element(s) do not belong to a set");
         return ret;
       case "<:":
         ret.add(0, "restriction operator ('<:')");
@@ -228,13 +253,15 @@ public class Hint {
       case "iff":
         ret.add(0, "equivalence operator ('iff')");
         ret.add(1,
-                " to specify the equivalence of the right and left side of the " +
+                " to specify the equivalence of the right and left side of " +
+                        "the " +
                         "expression");
         return ret;
       case "<=>":
         ret.add(0, "equivalence operator ('<=>')");
         ret.add(1,
-                " to specify the equivalence of the right and left side of the " +
+                " to specify the equivalence of the right and left side of " +
+                        "the " +
                         "expression");
         return ret;
       case ">=":
@@ -245,11 +272,13 @@ public class Hint {
         return ret;
       case "<":
         ret.add(0, "less than operator ('<')");
-        ret.add(1, " to specify that the left side is less than the right side");
+        ret.add(1, " to specify that the left side is less than the right " +
+                "side");
         return ret;
       case ">":
         ret.add(0, "greater than operator ('>')");
-        ret.add(1, " to specify that the left side is greater than the right side");
+        ret.add(1, " to specify that the left side is greater than the right " +
+                "side");
         return ret;
       case "=<":
         ret.add(0, "less than or equal to operator ('=<')");
@@ -258,7 +287,13 @@ public class Hint {
         return ret;
       case "!=":
         ret.add(0, "not equal operator ('!=')");
-        ret.add(1, " to specify that the left side is not equal to the right side");
+        ret.add(1, " to specify that the left side is not equal to the right " +
+                "side");
+        return ret;
+      case "=":
+        ret.add(0, "equal operator ('=')");
+        ret.add(1, " to specify that the left side is equal to the right " +
+                "side");
         return ret;
       case "->":
         ret.add(0, "arrow operator ('->')");
@@ -276,15 +311,18 @@ public class Hint {
         return ret;
       case "univ":
         ret.add(0, "universal quantifier ('univ')");
-        ret.add(1, " to specify that all elements in a set satisfy a condition");
+        ret.add(1, " to specify that all elements in a set satisfy a " +
+                "condition");
         return ret;
       case "all":
         ret.add(0, "universal quantifier ('all')");
-        ret.add(1, " to specify that all elements in a set satisfy a condition");
+        ret.add(1, " to specify that all elements in a set satisfy a " +
+                "condition");
         return ret;
       case "some":
         ret.add(0, "existential quantifier ('some')");
-        ret.add(1, " to specify that some elements in a set satisfy a condition");
+        ret.add(1, " to specify that some elements in a set satisfy a " +
+                "condition");
         return ret;
       case "let":
         ret.add(0, "\"let\" ('let var = expression1 | expression2')");
@@ -351,14 +389,16 @@ public class Hint {
         return ret;
       case "until":
         ret.add(0, "temporal operator ('until')");
-        ret.add(1, " to specify that a property will hold until another property "
+        ret.add(1, " to specify that a property will hold until another " +
+                "property "
                 + "holds");
         return ret;
 
       // Past Temporal operators
       case "before":
         ret.add(0, "temporal operator ('before')");
-        ret.add(1, " to specify that a property will hold in the previous state");
+        ret.add(1, " to specify that a property will hold in the previous " +
+                "state");
         return ret;
       case "once":
         ret.add(0, "temporal operator ('once')");

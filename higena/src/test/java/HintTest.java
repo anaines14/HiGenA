@@ -25,7 +25,7 @@ public class HintTest {
   private static Stream<Arguments> hintInputsProvider() {
     return Stream.of(
             // TreeInsert
-            Arguments.of("JC8Tij8o8GZb99gEJ", "Inv3", "all w: Work | #(w.ids) <= 1"));
+            Arguments.of("zRAn69AocpkmxXZnW", "inv7", "all c : Class | some Teaches.c"));
   }
 
   @ParameterizedTest
