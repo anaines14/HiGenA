@@ -13,6 +13,7 @@ import org.neo4j.driver.Record;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Wrapper class for the database (Db class). It provides methods to set up the
@@ -172,6 +173,17 @@ public class Graph {
       generator.generateHint(ast);
       System.out.println(generator);
       return generator;
+    }
+  }
+
+  /**
+   * Runs a query on the graph database.
+   * @param query Query to run.
+   * @return List of records returned by the query.
+   */
+  public List<Record> runQuery(String query) {
+    try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
+      return db.runQuery(query).list();
     }
   }
 

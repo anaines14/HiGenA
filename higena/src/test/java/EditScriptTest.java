@@ -1,6 +1,7 @@
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.parser.CompModule;
 import edu.mit.csail.sdg.parser.CompUtil;
+import org.higena.ast.TED;
 import org.higena.graph.Graph;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -18,19 +19,16 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class DBSetupTest {
-
+public class EditScriptTest {
   private static final String CHALLENGES_DIR = "../data/datasets/challenges/";
   private static File csv = null;
-  private static final boolean statistics = false;
+  private static final boolean statistics = true;
 
   @BeforeAll
   public static void setup() {
     if (statistics)
-      createCSV("graph_statistics", "src/test/outputs/");
+      createCSV("edit_scripts", "src/test/outputs/");
   }
-
-  // Test method
 
   public static Stream<Arguments> getDatasets() {
     List<String> challenges = Arrays.stream(Objects.requireNonNull(new File(CHALLENGES_DIR).list()))
@@ -51,7 +49,7 @@ public class DBSetupTest {
   }
 
   public static void createCSV(String name, String path) {
-    String columns = "Challenge,Predicate,NumSubmissions,NumCorrect,NumIncorrect,NumEdges";
+    String columns = "Challenge;Predicate;Src;Target;EditScript";
     csv = new File(path + name + ".csv");
     csv.delete();
 
@@ -65,8 +63,6 @@ public class DBSetupTest {
     }
   }
 
-  // Logging methods
-
   public static void writeLineToCSV(String line) {
     try {
       FileWriter writer = new FileWriter(csv, true);
@@ -78,19 +74,25 @@ public class DBSetupTest {
   }
 
   public static void writeStatistics(Record record, String challenge, String predicate) {
-    String row = challenge + "," + predicate + "," + record.get("submissions").asInt() + "," + record.get("corrects").asInt() + "," + record.get("incorrects").asInt() + "," + record.get("derivations").asInt();
+    String row = challenge + ";" + predicate + ";" + record.get("source").asString() + ";" + record.get("target").asString() + ";" + record.get("editScript").asList().toString();
     writeLineToCSV(row);
   }
 
   @ParameterizedTest
   @MethodSource("getDatasets")
-  public void testDBSetup(String challenge, String predicate) {
+  public void testEditScripts(String challenge, String predicate) {
     String filename = CHALLENGES_DIR + challenge + ".als";
     Graph g = new Graph(challenge, predicate, filename);
+    TED.USE_APTED = false;
     g.setup();
 
-    if (statistics) {
-      writeStatistics(g.getStatistics(), challenge, predicate);
+    // Store edit script info in file
+    String query = "MATCH (a:Submission)-[r:Derives]->(b:Submission)" +
+      "RETURN a.expr as source, r.operations as editScript, b.expr as target";
+    List<Record> results = g.runQuery(query);
+
+    for (Record record : results) {
+      writeStatistics(record, challenge, predicate);
     }
   }
 }

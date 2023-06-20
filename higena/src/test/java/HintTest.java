@@ -28,22 +28,29 @@ public class HintTest {
             Arguments.of("zRAn69AocpkmxXZnW", "inv7", "all c : Class | some Teaches.c"));
   }
 
+  /**
+   * Generates a hint for the given challenge, predicate and expression.
+   * @param challenge Challenge name
+   * @param predicate Predicate name
+   * @param expr Expression to generate hint for
+   */
   @ParameterizedTest
   @MethodSource("hintInputsProvider")
   public void singleHintTest(String challenge, String predicate, String expr) {
-    Graph graph = new Graph(challenge, predicate);
-    //graph.setup();
-    graph.generateHint(expr, "", HintGenType.TED);
+    genSingleHint(challenge, predicate, expr);
   }
 
+    /**
+     * Generates hint for the given challenge, predicate and expression and appends hint into a csv file.
+     * @param challenge Challenge name
+     * @param predicate Predicate name
+     */
   @ParameterizedTest
   @CsvFileSource(resources = "/most_popular.csv", numLinesToSkip = 1, delimiter = ';')
   public void fileHintTest(String challenge, String predicate, String expr) {
     File file = new File(PATH + "teacher_study.csv");
 
-    Graph graph = new Graph(challenge, predicate);
-    graph.setup();
-    HintGenerator hintGen = graph.generateHint(expr, "", HintGenType.TED);
+    HintGenerator hintGen = genSingleHint(challenge, predicate, expr);
     String hint = hintGen.getHint().toString(), solution = hintGen.getJSON().getString("targetExpr");
 
     try {
@@ -77,27 +84,11 @@ public class HintTest {
     });
   }
 
-  /**
-   * Tests hint generation using GumTree, creating new paths and using the TED
-   * for the cost function. Generated hints are written to a log file. Uses
-   * the train data to create a graph and test data to ask for hints.
-   */
-  @Test
-  public void testGumTreeHintGen() {
-    // Create log file
-    File logFile = createLogFile("gumtree_hint_stats");
-
-    // Set hint generation settings
-    HintGenerator.cantCreatePath = false;
-    TED.USE_APTED = false;
-
-    testDataProvider().forEach(args -> {
-      String challenge = (String) args.get()[0], predicate = (String) args.get()[1];
-      File test_data = (File) args.get()[2];
-      genHints(challenge, predicate, test_data, HintGenType.TED, logFile);
-    });
+  public HintGenerator genSingleHint(String challenge, String predicate, String expr) {
+    Graph graph = new Graph(challenge, predicate);
+    graph.setup();
+    return graph.generateHint(expr, "", HintGenType.TED);
   }
-
 
   /**
    * Generates hints for a given challenge, predicate and test data. The test

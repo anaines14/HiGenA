@@ -23,11 +23,16 @@ public class ActionsTest {
             // Move
             Arguments.of("{<{Protected}{no}}", "{<{no{Protected}}}"),
             // Update
-            Arguments.of("{AND{no{Protected}}{no{Trash}}}", "{AND{no{File" +
+            Arguments.of("{AND{no{Trash}}{no{Protected}}}", "{AND{no{File" +
                     "}}{no{Trash}}}"),
             // TreeDelete
-            Arguments.of("{AND{no{Protected}}}", "{AND}"));
+            Arguments.of("{AND{no{Protected}}}", "{AND}"),
 
+            // Bad action
+            Arguments.of("{all{one of{var0}{sig/Node}}{!={" +
+                    ".{var0/Node}{field/adj{set of{sig/Node}}}}{var0/Node}}}"
+                    , "{all{one of{var0}{sig/Node}}{!in{var0/Node}{" +
+                            ".{var0/Node}{field/adj{set of{sig/Node}}}}}}"));
   }
 
   /**
