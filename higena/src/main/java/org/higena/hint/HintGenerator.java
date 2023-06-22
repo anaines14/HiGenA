@@ -50,7 +50,7 @@ public class HintGenerator {
    */
   public void generateHint(String ast) {
     // Start timer
-    long startTime = System.currentTimeMillis();
+    long startTime = System.nanoTime();
 
     // Get source node
     sourceNode = getSourceNode(ast);
@@ -82,6 +82,8 @@ public class HintGenerator {
       if (cantCreatePath || totalTED <= srcDstTED) {
         // Path found is good (TED equal to TED(src, dst)). Generate hint
         hint = new Hint(srcDstTED, firstEdge);
+        // Stop timer
+        time = System.nanoTime() - startTime;
         return;
       }
 
@@ -100,7 +102,7 @@ public class HintGenerator {
     if (targetNode != null) hint = new Hint(sourceNode, targetNode, firstEdge);
 
     // Stop timer
-    time = System.currentTimeMillis() - startTime;
+    time = System.nanoTime() - startTime;
   }
 
   /**
@@ -197,7 +199,6 @@ public class HintGenerator {
     json.put("predicate", db.predicate);
     json.put("code", code);
     json.put("mapping", TED.USE_APTED ? "APTED" : "GumTree");
-    json.put("type", type.toString());
     json.put("isNewNode", isNewNode);
     json.put("createdShorterPath", createdShorterPath);
     json.put("sourceExpr", sourceNode.get("expr").asString());
@@ -235,7 +236,7 @@ public class HintGenerator {
             // First edge
             .append("\nPath:").append("\n\tCreated shorter path: ").append(createdShorterPath ? "Yes" : "No").append("\n\tTotal TED: ").append(totalTED).append("\n\tTED(source,target): ").append(hint.getDistance()).append("\n\tOperations: ").append(firstEdge.get("operations").toString())
             // Time
-            .append("\nTime:\n\t").append(time).append(" ms")
+            .append("\nTime:\n\t").append(time).append(" ns")
             // Hint
             .append("\nHint:\n\t").append(hint);
 

@@ -68,13 +68,9 @@ public class HintTest {
    * the train data to create a graph and test data to ask for hints.
    */
   @Test
-  public void testAptedHintGen() {
+  public void testAllHintGen() {
     // Create log file
-    File logFile = createLogFile("apted_hint_stats");
-
-    // Set hint generation settings
-    HintGenerator.cantCreatePath = false;
-    TED.USE_APTED = true;
+    File logFile = createLogFile("hint_stats");
 
     testDataProvider().forEach(args -> {
       String challenge = (String) args.get()[0], predicate = (String) args.get()[1];

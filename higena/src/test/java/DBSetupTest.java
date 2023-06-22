@@ -22,7 +22,7 @@ public class DBSetupTest {
 
   private static final String CHALLENGES_DIR = "../data/datasets/challenges/";
   private static File csv = null;
-  private static final boolean statistics = false;
+  private static final boolean statistics = true;
 
   @BeforeAll
   public static void setup() {
