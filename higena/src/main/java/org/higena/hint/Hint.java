@@ -429,7 +429,8 @@ public class Hint {
     List<EditAction> actions = new ArrayList<>(this.diff.getActions());
 
     // Sort actions by priority
-    actions.sort(new EditActionsComparator());
+    // actions.sort(new EditActionsComparator());
+
     // Filter out actions that are not relevant for hint generation
     List<EditAction> filtered = actions.stream()
             .filter(action -> !action.isBadAction())
