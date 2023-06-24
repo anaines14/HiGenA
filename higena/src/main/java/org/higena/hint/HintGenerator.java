@@ -65,7 +65,7 @@ public class HintGenerator {
       if (targetNode != null)
         hint = new Hint(sourceNode, targetNode, firstEdge);
       // Stop timer
-      time = System.currentTimeMillis() - startTime;
+      time = System.nanoTime() - startTime;
       return;
     }
     // Node is not new

@@ -55,7 +55,7 @@ public class HintTest {
 
     try {
       FileWriter writer = new FileWriter(file, true);
-      writer.write(challenge + ";" + predicate + ";" + expr + ";" + solution + ";" + hint + "\n");
+      writer.write("\n" + challenge + ";" + predicate + ";" + expr + ";" + solution + ";" + hint);
       writer.close();
     } catch (IOException e) {
       e.printStackTrace();

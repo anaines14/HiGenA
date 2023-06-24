@@ -108,11 +108,11 @@ public class Hint {
             getAlloyDescription(parent).get(0);
 
     String str =
-            "It seems like the " + nodeName + "is not in the right place. ";
+            "It seems like the " + nodeName + " is not in the right place. ";
     if (!parent.equals("root"))
-      str += "Try moving it to the inside of the " + parentName + "expression" +
-              ". ";
-    return str + " Try moving it so that you correctly ensure the required " + "property.";
+      str += "Try moving it to the inside of the " + parentName +  " expression.";
+
+    return str + " Try moving it so that you correctly ensure the required property.";
   }
 
   private static String treeInsertToHint(String value, String parent) {
