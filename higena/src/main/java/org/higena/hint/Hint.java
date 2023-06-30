@@ -119,7 +119,7 @@ public class Hint {
     // Missing variables
     if (parent.equals("all") || parent.equals("some"))
       return "You can use variables to help specify the condition. Consider " +
-              "introducing a new variable \"" + value + "\" to your " +
+              "introducing a new variable of type \"" + value + "\" to your " +
               "expression using the " + getAlloyDescription(parent).get(0) +
               ".";
 
@@ -177,6 +177,15 @@ public class Hint {
     m = p.matcher(label);
     if (m.matches()) {
       ret.add(0, "signature of type " + m.group(1));
+      ret.add(1, "");
+      return ret;
+    }
+
+    // Match field name (e.g.: field/adj, etc)
+    p = Pattern.compile("field/(\\w+)");
+    m = p.matcher(label);
+    if (m.matches()) {
+      ret.add(0, "field \"" + m.group(1) + "\"");
       ret.add(1, "");
       return ret;
     }
