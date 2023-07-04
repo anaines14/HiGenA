@@ -3,3 +3,4 @@
 *.csv
 *.txt
 lib/org/higena
+data/evaluation

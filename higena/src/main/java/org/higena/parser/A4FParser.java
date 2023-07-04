@@ -15,6 +15,8 @@ import java.util.List;
  * Parses an Alloy expression into an AST.
  */
 public class A4FParser {
+  public static boolean ANONYMIZE = true;
+  public static boolean SORT_COMMUTATIVE = true;
 
   public static HashMap<String, String> variables = new HashMap<>();
 
@@ -22,7 +24,10 @@ public class A4FParser {
     variables.clear();
     Expr expr = CompUtil.parseOneExpression_fromString(module, exprStr);
     Tree tree = parse(expr);
-    return tree == null ? null : Canonicalizer.canonicalize(tree);
+    if (SORT_COMMUTATIVE && tree != null) {
+      return Canonicalizer.canonicalize(tree);
+    }
+    return tree;
   }
 
   public static Tree parse(String expression, String fullCode) {
@@ -139,7 +144,11 @@ public class A4FParser {
     // Sig : a -> Sig
     String type = expr.explain().split(":")[0].trim();
     // name = var/Sig
-    String name = variables.get(expr.label) + '/' + type;
+    String name;
+    if (ANONYMIZE)
+      name = variables.get(expr.label) + '/' + type;
+    else
+      name = expr.label + '/' + type;
 
     return new AlloyAST(name);
   }
@@ -165,8 +174,12 @@ public class A4FParser {
     String name = expr.op.toString();
     if (var != null) {
       var = var.replace("this/", "");
-      addVariable(var);
-      children.add(new AlloyAST(variables.get(var)));
+      if (ANONYMIZE) {
+        addVariable(var);
+        children.add(new AlloyAST(variables.get(var)));
+      } else {
+        children.add(new AlloyAST(var));
+      }
     }
     children.add(parse(expr.sub));
     return new AlloyAST(name, children);
