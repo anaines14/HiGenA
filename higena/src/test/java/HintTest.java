@@ -135,13 +135,13 @@ public class HintTest {
    * @return Stream of arguments for each test
    */
   private static Stream<Arguments> testDataProvider() {
-    String test_dir = "../data/test";
+    String test_dir = "../data/datasets/prepared/test";
     Stream<Arguments> stream = Stream.of();
 
     // Iterate challenges and predicates
     for (File challengeDir : Objects.requireNonNull(new File(test_dir).listFiles())) {
       for (File predicateFile : Objects.requireNonNull(challengeDir.listFiles())) {
-        if (predicateFile .length() == 0) continue; // Skip empty files
+        if (predicateFile.length() == 0) continue; // Skip empty files
         // Get challenge and predicate names
         String challenge = challengeDir.getName();
         String predicate = predicateFile .getName().replace(".json", "");

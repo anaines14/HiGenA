@@ -4,3 +4,4 @@
 *.txt
 lib/org/higena
 data/evaluation
+data/datasets/*
