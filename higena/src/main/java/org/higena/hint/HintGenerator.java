@@ -13,18 +13,18 @@ import java.util.List;
 
 public class HintGenerator {
 
+  public static boolean cantCreatePath = false; // True if cant create
   // Constants
   private final Db db; // Database connection
   private final String expression, code; // Student submission
   private final HintGenType type; // Hint generation type
-  public static boolean cantCreatePath = false; // True if cant create
   // better paths
-
   // Hint generation data
   private boolean isNewNode = false; // True if submission is new on the graph
   private boolean createdShorterPath = false; // True if a shorter path to a
   // solution was created
-  private Node sourceNode; // Node from the graph with the same AST as the submission
+  private Node sourceNode; // Node from the graph with the same AST as the
+  // submission
   private Node targetNode; // Closest solution in the graph
   private Node nextNode; // Next node in the path to the solution
   private Relationship firstEdge; // First edge in the path to the solution
@@ -32,11 +32,38 @@ public class HintGenerator {
   private Hint hint; // Generated hint
   private long time; // Time it took to generate the hint
 
-  public HintGenerator(String expression, String code, HintGenType type, Db db) {
+  private int srcDstTED; // TED between the source and the target nodes
+
+  public HintGenerator(String expression, String code, HintGenType type,
+                       Db db) {
     this.db = db;
     this.expression = expression;
     this.code = code;
     this.type = type;
+  }
+
+   /**
+   * Finds a path from a node with the given AST to a solution and
+    * generates a hint based on the first edge of the path.
+    * Counts the time it took to generate the hint.
+   *
+   * @param ast AST of the expression to find the hint for.
+   */
+  public void generateHint(String ast) {
+    // Start timer
+    long startTime = System.nanoTime();
+    // Calculate path from source node to solution
+    calculateHintPath(ast);
+    // Generate hint message
+    if (targetNode != null) {
+      if (createdShorterPath) {
+        hint = new Hint(srcDstTED, firstEdge);
+      } else {
+        hint = new Hint(sourceNode, targetNode, firstEdge);
+      }
+    }
+    // Stop timer
+    time = System.nanoTime() - startTime;
   }
 
   /**
@@ -44,14 +71,13 @@ public class HintGenerator {
    * calculates the shortest path using the dijkstra algorithm to a Correct
    * node using the given property as edge weight. If no path to a correct node
    * exists, it creates a path to the most similar correct node. Then, it
-   * returns the first edge of the path.
+   * returns the first edge of the path. If the found path is longer than
+   * directly connecting the source node to the solution, it creates an edge
+   * between the two nodes.
    *
    * @param ast AST of the expression to find the hint for.
    */
-  public void generateHint(String ast) {
-    // Start timer
-    long startTime = System.nanoTime();
-
+  public void calculateHintPath(String ast) {
     // Get source node
     sourceNode = getSourceNode(ast);
     if (sourceNode == null) {
@@ -61,11 +87,6 @@ public class HintGenerator {
     if (isNewNode) {
       // If the source node is new, there is no path any node in the graph
       targetNode = createPath(sourceNode);
-      // Generate hint message
-      if (targetNode != null)
-        hint = new Hint(sourceNode, targetNode, firstEdge);
-      // Stop timer
-      time = System.nanoTime() - startTime;
       return;
     }
     // Node is not new
@@ -73,18 +94,19 @@ public class HintGenerator {
       // Get the shortest path to a solution
       getShortestPath();
 
-      // Compute TED between the source and the target nodes
-      String srcAST = sourceNode.get("ast").toString(), dstAST = targetNode.get("ast").toString();
-      int srcDstTED = TED.computeEditDistance(srcAST, dstAST);
+      // Evaluate path
+      if (!cantCreatePath) {
+        // Compute TED between the source and the target nodes
+        String srcAST = sourceNode.get("ast").toString(), dstAST =
+                targetNode.get("ast").toString();
+        srcDstTED = TED.computeEditDistance(srcAST, dstAST);
 
-      // If total TED of the path is higher than the TED between the source
-      // and the target nodes, create a better path to a target node
-      if (cantCreatePath || totalTED <= srcDstTED) {
-        // Path found is good (TED equal to TED(src, dst)). Generate hint
-        hint = new Hint(srcDstTED, firstEdge);
-        // Stop timer
-        time = System.nanoTime() - startTime;
-        return;
+        // If total TED of the path is higher than the TED between the source
+        // and the target nodes, create a better path to a target node
+        if (totalTED <= srcDstTED) {
+          // Path found is good (TED equal to TED(src, dst)). Generate hint
+          return;
+        }
       }
 
       // Path found is bad (TED higher than TED(src, dst)).
@@ -94,24 +116,22 @@ public class HintGenerator {
       createdShorterPath = true;
 
     } catch (NoSuchRecordException e) {
-      // getShortestPath() throws NoSuchRecordException if there is no path to a solution
+      // getShortestPath() throws NoSuchRecordException if there is no path
+      // to a solution
       // Create a path to the most similar correct node
       targetNode = createPath(sourceNode);
     }
-    // Generate hint message
-    if (targetNode != null) hint = new Hint(sourceNode, targetNode, firstEdge);
-
-    // Stop timer
-    time = System.nanoTime() - startTime;
   }
 
   /**
    * Creates a path from the source node to the most similar correct node.
+   *
    * @param source source node
    * @return The target node of the path
    */
   private Node createPath(Node source) {
-    Node target = db.getMostSimilarNode(source.get("ast").toString(), "Correct");
+    Node target = db.getMostSimilarNode(source.get("ast").toString(),
+            "Correct");
     if (target == null) {
       System.err.println("Error: Cannot generate hint.");
       return null;
@@ -127,6 +147,7 @@ public class HintGenerator {
 
   /**
    * Runs the dijkstra algorithm to find the shortest path to a solution.
+   *
    * @throws NoSuchRecordException if there is no path to a solution
    */
   private void getShortestPath() throws NoSuchRecordException {
@@ -135,7 +156,8 @@ public class HintGenerator {
       return;
     }
     // Dijkstra algorithm to find the shortest path to a solution
-    Record rec = db.runDijkstra(sourceNode.get("id").asString(), type.toString()).single();
+    Record rec = db.runDijkstra(sourceNode.get("id").asString(),
+            type.toString()).single();
     List<Node> nodes = rec.get("path").asList(Value::asNode);
     targetNode = nodes.get(nodes.size() - 1);
     nextNode = nodes.get(1);
@@ -191,6 +213,7 @@ public class HintGenerator {
 
   /**
    * Returns a JSON object with the hint information.
+   *
    * @return Hint represented as a JSON object
    */
   public JSONObject getJSON() {
@@ -205,7 +228,7 @@ public class HintGenerator {
     json.put("sourceAST", sourceNode.get("ast").asString());
     json.put("targetExpr", targetNode.get("expr").asString());
     json.put("targetAST", targetNode.get("ast").asString());
-    json.put("nextExpr", nextNode.get("expr").asString());
+    json.put("nextExpr", getNextExpr());
     json.put("nextAST", nextNode.get("ast").asString());
     json.put("totalTED", totalTED);
     json.put("srcDstTED", hint.getDistance());
@@ -213,6 +236,10 @@ public class HintGenerator {
     json.put("hint", hint);
     json.put("time", time);
     return json;
+  }
+
+  public String getNextExpr() {
+    return nextNode.get("expr").asString();
   }
 
   public Hint getHint() {
@@ -227,7 +254,8 @@ public class HintGenerator {
             // Source node
             .append("\nSource node:").append("\n\tIs new node: ").append(isNewNode ? "Yes" : "No").append("\n\tExpression: ").append(sourceNode.get("expr").asString()).append("\n\tAST: ").append(sourceNode.get("ast").asString());
     // Next node
-    String nextId = nextNode.get("id").asString(), targetId = targetNode.get("id").asString();
+    String nextId = nextNode.get("id").asString(), targetId = targetNode.get(
+            "id").asString();
     if (!nextId.equals(targetId)) {
       sb.append("\nNext node:").append("\n\tExpression: ").append(nextNode.get("expr").asString()).append("\n\tAST: ").append(nextNode.get("ast").asString());
     }
