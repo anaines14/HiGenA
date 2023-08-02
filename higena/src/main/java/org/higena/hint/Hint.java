@@ -2,7 +2,6 @@ package org.higena.hint;
 
 import org.higena.ast.TED;
 import org.higena.ast.actions.EditAction;
-import org.higena.ast.actions.EditActionsComparator;
 import org.higena.ast.actions.TreeDiff;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.types.Node;
@@ -30,6 +29,11 @@ public class Hint {
   public Hint(int distance, Relationship rel) {
     this.diff = new TreeDiff(distance);
     this.diff.addAllActions(rel.get("operations").asList(Value::asString));
+  }
+
+  public Hint(String srcAST, String dstAST){
+    TED ted = new TED();
+    this.diff = ted.computeTreeDiff(srcAST, dstAST);
   }
 
   /**
