@@ -177,6 +177,37 @@ public class Graph {
   }
 
   /**
+   * Calculates path used for hint generator.
+   * Used for evaluation purposes.
+   *
+   * @param expr Expression to generate the hint for.
+   * @param code Alloy code used by the expression.
+   * @param type Type of hint generation.
+   * @return Hint Generator object that generated the hint.
+   */
+  public HintGenerator getHintPath(String expr, String code,
+                                    HintGenType type) {
+    try (Db db = new Db(uri, user, password, databaseName, challenge, predicate)) {
+      if (challengeModule == null) { // if no challengeModule is set, use the
+        // original code
+        try {
+          setChallengeModule();
+        } catch (Exception e) {
+          System.err.println("ERROR: Missing empty submission on the graph.");
+          return null;
+        }
+      }
+      String ast = parse(expr, code);
+      if (ast == null) {
+        return null;
+      }
+      HintGenerator generator = new HintGenerator(expr, code, type, db);
+      generator.calculateHintPath(ast);
+      return generator;
+    }
+  }
+
+  /**
    * Runs a query on the graph database.
    * @param query Query to run.
    * @return List of records returned by the query.
