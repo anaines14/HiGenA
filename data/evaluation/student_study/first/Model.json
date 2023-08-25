@@ -1,0 +1,732 @@
+[{
+  "_id": "gAeD3MTGCCv8YNTaK",
+  "time": "16/05/2023, 18:48:47",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\n}\n\n//SECRET\npred undirectedO {\n\tadj = ~adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\n}\n\n//SECRET\npred orientedO {\n\tno adj & ~adj\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\n}\n\n//SECRET\npred acyclicO {\n\tall n : Node | n not in n.^adj\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\n}\n\n//SECRET\npred completeO {\n\tadj = Node -> Node\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\n}\n\n//SECRET\npred noLoopsO {\n\tno adj & iden\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\n}\n\n//SECRET\npred weaklyConnectedO {\n\tall n:Node | Node = n.*(adj+~adj)\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n//SECRET\npred stonglyConnectedO {\n\tall n:Node | Node = n.*adj\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}\n\n//SECRET\npred transitiveO {\n\tadj = ^adj\n}\n\n//SECRET\ncheck undirected {undirected iff undirectedO}\n//SECRET\ncheck oriented {oriented iff orientedO}\n//SECRET\ncheck acyclic {acyclic iff acyclicO}\n//SECRET\ncheck complete {complete iff completeO}\n//SECRET\ncheck noLoops {noLoops iff noLoopsO}\n//SECRET\ncheck weaklyConnected {weaklyConnected iff weaklyConnectedO}\n//SECRET\ncheck stonglyConnected {stonglyConnected iff stonglyConnectedO}\n//SECRET\ncheck transitive {transitive iff transitiveO}",
+  "derivationOf": null,
+  "theme": {
+    "sigSettings": {
+      "nodeColors": [
+        {
+          "type": "univ",
+          "color": "#2ECC40"
+        }
+      ],
+      "nodeShapes": [
+        {
+          "type": "univ",
+          "shape": "ellipse"
+        }
+      ],
+      "nodeBorders": [
+        {
+          "type": "univ",
+          "border": "solid"
+        }
+      ],
+      "nodeVisibility": [
+        {
+          "type": "univ",
+          "visibility": false
+        },
+        {
+          "type": "Int",
+          "visibility": true
+        },
+        {
+          "type": "seq/Int",
+          "visibility": true
+        },
+        {
+          "type": "general",
+          "visibility": false
+        }
+      ]
+    },
+    "relationSettings": {
+      "edgeColors": [],
+      "edgeStyles": [],
+      "showAsAttributes": [],
+      "showAsArcs": [
+        {
+          "relation": "general",
+          "showAsArcs": true
+        }
+      ]
+    },
+    "generalSettings": {
+      "currentLayout": "breadthfirst",
+      "metaPrimSigs": [
+        {
+          "type": "univ",
+          "parent": null
+        }
+      ],
+      "metaSubsetSigs": []
+    },
+    "currentFramePosition": {},
+    "currentlyProjectedSigs": [],
+    "nodePositions": {}
+  },
+  "original": "gAeD3MTGCCv8YNTaK"
+},{
+  "_id": "zoEADeCW2b2suJB2k",
+  "time": "16/05/2023, 18:48:47",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\n}\n\n//SECRET\npred inv1o {\n\tall s:State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\n}\n\n//SECRET\npred inv2o {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n\n}\n\n//SECRET\npred inv3o {\n\tall s : State, e : Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n\n}\n\n//SECRET\npred inv4o {\n\tlet ts = {s1,s2:State | some e:Event | s1->e->s2 in trans} |\n\tall s:State | some i:Init | s in i.^ts\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\n}\n\n//SECRET\npred inv5o {\n\tall s1,s2:State | s1.trans.State = s2.trans.State\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\n}\n\n//SECRET\npred inv6o {\n\tState.trans.State = Event\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}\n\n//SECRET\npred inv7o {\n\tlet ts = {s1,s2:State | some e:Event | s1->e->s2 in trans} |\n\tall s:Init.^ts | some i:Init | i in s.^ts\n}\n\n//SECRET\ncheck inv1Ok { inv1o iff inv1 }\n//SECRET\ncheck inv2Ok { inv2o iff inv2 }\n//SECRET\ncheck inv3Ok { inv3o iff inv3 }\n//SECRET\ncheck inv4Ok { inv4o iff inv4 }\n//SECRET\ncheck inv5Ok { inv5o iff inv5 }\n//SECRET\ncheck inv6Ok { inv6o iff inv6 }\n//SECRET\ncheck inv7Ok { inv7o iff inv7 }",
+  "derivationOf": null,
+  "theme": {
+    "sigSettings": {
+      "nodeColors": [
+        {
+          "type": "univ",
+          "color": "#2ECC40"
+        }
+      ],
+      "nodeShapes": [
+        {
+          "type": "univ",
+          "shape": "ellipse"
+        }
+      ],
+      "nodeBorders": [
+        {
+          "type": "univ",
+          "border": "solid"
+        }
+      ],
+      "nodeVisibility": [
+        {
+          "type": "univ",
+          "visibility": false
+        },
+        {
+          "type": "Int",
+          "visibility": true
+        },
+        {
+          "type": "seq/Int",
+          "visibility": true
+        },
+        {
+          "type": "general",
+          "visibility": false
+        }
+      ]
+    },
+    "relationSettings": {
+      "edgeColors": [],
+      "edgeStyles": [],
+      "showAsAttributes": [],
+      "showAsArcs": [
+        {
+          "relation": "general",
+          "showAsArcs": true
+        }
+      ]
+    },
+    "generalSettings": {
+      "currentLayout": "breadthfirst",
+      "metaPrimSigs": [
+        {
+          "type": "univ",
+          "parent": null
+        }
+      ],
+      "metaSubsetSigs": []
+    },
+    "currentFramePosition": {},
+    "currentlyProjectedSigs": [],
+    "nodePositions": {}
+  },
+  "original": "zoEADeCW2b2suJB2k"
+},{
+  "_id": "mMLvPt63wrQgnmTpC",
+  "time": "19/06/2023, 11:36:21",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x: Node | x in x.adj.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 0,
+  "derivationOf": "gAeD3MTGCCv8YNTaK",
+  "cmd_c": true,
+  "cmd_n": "undirected",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 1
+},{
+  "_id": "CTGeKits8jqFfE9JE",
+  "time": "19/06/2023, 11:37:29",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x: Node |  x.adj in x.adj.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 0,
+  "derivationOf": "mMLvPt63wrQgnmTpC",
+  "cmd_c": true,
+  "cmd_n": "undirected",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 1
+},{
+  "_id": "RJzYMQnHzHitNdZ6h",
+  "time": "19/06/2023, 11:38:22",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 0,
+  "derivationOf": "CTGeKits8jqFfE9JE",
+  "cmd_c": true,
+  "cmd_n": "undirected",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 0
+},{
+  "_id": "JdaqTwoyRS28ZsSC6",
+  "time": "19/06/2023, 11:39:59",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 1,
+  "derivationOf": "RJzYMQnHzHitNdZ6h",
+  "cmd_c": true,
+  "cmd_n": "oriented",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 0
+},{
+  "_id": "MqspNdsQWxiJjpLbG",
+  "time": "19/06/2023, 11:40:26",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 1,
+  "derivationOf": "JdaqTwoyRS28ZsSC6",
+  "cmd_c": true,
+  "cmd_n": "oriented",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 0
+},{
+  "_id": "zQEf84zAkRLJeRJmA",
+  "time": "19/06/2023, 11:40:29",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 2,
+  "derivationOf": "MqspNdsQWxiJjpLbG",
+  "cmd_c": true,
+  "cmd_n": "acyclic",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 0
+},{
+  "_id": "gMFbNKwdHNvgN59rL",
+  "time": "19/06/2023, 11:41:18",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 3,
+  "derivationOf": "zQEf84zAkRLJeRJmA",
+  "cmd_c": true,
+  "cmd_n": "complete",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 0
+},{
+  "_id": "fe9tagC4DG2e4vfW3",
+  "time": "19/06/2023, 11:41:49",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x, y: Node | x in y.(^adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 4,
+  "derivationOf": "gMFbNKwdHNvgN59rL",
+  "cmd_c": true,
+  "cmd_n": "noLoops",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 1
+},{
+  "_id": "9RJ94kAbcsK9LNB8Z",
+  "time": "19/06/2023, 11:42:58",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x, y: Node | x not in y.(^adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 4,
+  "derivationOf": "fe9tagC4DG2e4vfW3",
+  "cmd_c": true,
+  "cmd_n": "noLoops",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 1
+},{
+  "_id": "na2PkGF9TqfgackYL",
+  "time": "19/06/2023, 11:43:17",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x, y: Node | x not in y.(adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 4,
+  "derivationOf": "9RJ94kAbcsK9LNB8Z",
+  "cmd_c": true,
+  "cmd_n": "noLoops",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 1
+},{
+  "_id": "khTxWkATZg3psAgNx",
+  "time": "19/06/2023, 11:44:16",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 4,
+  "derivationOf": "na2PkGF9TqfgackYL",
+  "cmd_c": true,
+  "cmd_n": "noLoops",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 1
+},{
+  "_id": "XkGtAisvXmKhjPyds",
+  "time": "19/06/2023, 11:44:31",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x: Node | x not in x.(adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 4,
+  "derivationOf": "khTxWkATZg3psAgNx",
+  "cmd_c": true,
+  "cmd_n": "noLoops",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 0
+},{
+  "_id": "6jorhSam5ukoiR2t2",
+  "time": "19/06/2023, 11:45:30",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x: Node | x not in x.(adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\tall x: Node | x in x.(^adj)\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 5,
+  "derivationOf": "XkGtAisvXmKhjPyds",
+  "cmd_c": true,
+  "cmd_n": "weaklyConnected",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 1
+},{
+  "_id": "ghWP3fu5qkS8cvCdv",
+  "time": "19/06/2023, 11:45:55",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x: Node | x not in x.(adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\tall x: Node | x in x.(*adj)\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 5,
+  "derivationOf": "6jorhSam5ukoiR2t2",
+  "cmd_c": true,
+  "cmd_n": "weaklyConnected",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 1
+},{
+  "_id": "yAmEEMeieg7JG3voj",
+  "time": "19/06/2023, 11:46:06",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x: Node | x not in x.(adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\tall x: Node | x in x.(^adj)\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 5,
+  "derivationOf": "ghWP3fu5qkS8cvCdv",
+  "cmd_c": true,
+  "cmd_n": "weaklyConnected",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 1
+},{
+  "_id": "2P5Q4gneugPff5vTa",
+  "time": "19/06/2023, 11:47:44",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x: Node | x not in x.(adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\tall x: Node | x in x.(^adj) + no x.adj\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 5,
+  "derivationOf": "yAmEEMeieg7JG3voj",
+  "msg": "There are 29 possible tokens that can appear here:\n# ( * @ Int NAME NUMBER STRING String ^ all disj fun iden int let lone no none one pred seq some steps sum this univ { ~",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": -1
+},{
+  "_id": "RhitZ88TKGE6BfuGM",
+  "time": "19/06/2023, 11:47:57",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x: Node | x not in x.(adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\tall x: Node | x in x.(^adj) | (no x.adj)\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 5,
+  "derivationOf": "2P5Q4gneugPff5vTa",
+  "msg": "There are 38 possible tokens that can appear here:\n! # ( * @ Int NAME NUMBER STRING String ^ after all always before disj eventually fun historically iden int let lone no none once one pred seq set some steps sum this univ { } ~",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": -1
+},{
+  "_id": "zgiFoFzXxXi3NGjXq",
+  "time": "19/06/2023, 11:48:01",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x: Node | x not in x.(adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\tall x: Node | x in x.(^adj) || (no x.adj)\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 5,
+  "derivationOf": "RhitZ88TKGE6BfuGM",
+  "cmd_c": true,
+  "cmd_n": "weaklyConnected",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 1
+},{
+  "_id": "EowtHQuChS4sBuyCp",
+  "time": "19/06/2023, 11:48:38",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x: Node | x not in x.(adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\tall x, y: Node | y in x.(^adj)\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 5,
+  "derivationOf": "zgiFoFzXxXi3NGjXq",
+  "cmd_c": true,
+  "cmd_n": "weaklyConnected",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 1
+},{
+  "_id": "DEoqYroXsatQjAEhE",
+  "time": "19/06/2023, 11:48:53",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x: Node | x not in x.(adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\tall x, y: Node | y in x.(*adj)\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 5,
+  "derivationOf": "EowtHQuChS4sBuyCp",
+  "cmd_c": true,
+  "cmd_n": "weaklyConnected",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 1
+},{
+  "_id": "RdbGgnGvRm39aHpXh",
+  "time": "19/06/2023, 11:49:51",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x: Node | x not in x.(adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\tall x, y: Node | (y in x.(*adj)) + (x in y.(*adj))\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 5,
+  "derivationOf": "DEoqYroXsatQjAEhE",
+  "msg": "+ can be used only between 2 expressions of the same arity, or between 2 integer expressions.\nLeft type = {PrimitiveBoolean}\nRight type = {PrimitiveBoolean}",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": -1
+},{
+  "_id": "upPj7ZCZy76anNmjN",
+  "time": "19/06/2023, 11:49:59",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x: Node | x not in x.(adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\tall x, y: Node | (y in x.(*adj)) || (x in y.(*adj))\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 5,
+  "derivationOf": "RdbGgnGvRm39aHpXh",
+  "cmd_c": true,
+  "cmd_n": "weaklyConnected",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 1
+},{
+  "_id": "Z9k76imPBYnEyZT3o",
+  "time": "19/06/2023, 11:50:20",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x: Node | x not in x.(adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\tall x, y: Node | (y in x.(*(adj + adj')))\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 5,
+  "derivationOf": "upPj7ZCZy76anNmjN",
+  "cmd_c": true,
+  "cmd_n": "weaklyConnected",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 1
+},{
+  "_id": "WFe8CNA5cDCJaKPDp",
+  "time": "19/06/2023, 11:50:43",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x: Node | x not in x.(adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\tall x, y: Node | (y in x.(*(adj + ~adj)))\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 5,
+  "derivationOf": "Z9k76imPBYnEyZT3o",
+  "cmd_c": true,
+  "cmd_n": "weaklyConnected",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 0
+},{
+  "_id": "2ZRqAcshH8n7Ky4H7",
+  "time": "19/06/2023, 11:51:06",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x: Node | x not in x.(adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\tall x, y: Node | (y in x.(*(adj + ~adj)))\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\nall x, y: Node | (y in x.(*adj))\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\n}",
+  "cmd_i": 6,
+  "derivationOf": "WFe8CNA5cDCJaKPDp",
+  "cmd_c": true,
+  "cmd_n": "stonglyConnected",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 0
+},{
+  "_id": "AqoRcYNZsTv9WiyYa",
+  "time": "19/06/2023, 11:52:13",
+  "code": "/* \nEach node as a set of outgoing edges, representing a directed graph without multiple edged.\n*/\nsig Node {\n\tadj : set Node\n}\n\n/*\nThe graph is undirected, ie, edges are symmetric.\nhttp://mathworld.wolfram.com/UndirectedGraph.html\n*/\npred undirected {\n\tall x, y: Node |  y in x.adj => x in y.adj\n}\n\n/*\nThe graph is oriented, ie, contains no symmetric edges.\nhttp://mathworld.wolfram.com/OrientedGraph.html\n*/\npred oriented {\n\tall x, y: Node |  y in x.adj => not (x in y.adj)\n}\n\n/*\nThe graph is acyclic, ie, contains no directed cycles.\nhttp://mathworld.wolfram.com/AcyclicDigraph.html\n*/\npred acyclic {\n\tall x: Node | x not in x.(^adj)\n}\n\n/*\nThe graph is complete, ie, every node is connected to every other node.\nhttp://mathworld.wolfram.com/CompleteDigraph.html\n*/\npred complete {\n\tall x, y: Node | x in y.adj\n}\n\n/*\nThe graph contains no loops, ie, nodes have no transitions to themselves.\nhttp://mathworld.wolfram.com/GraphLoop.html\n*/\npred noLoops {\n\t\tall x: Node | x not in x.(adj)\n}\n\n/*\nThe graph is weakly connected, ie, it is possible to reach every node from every node ignoring edge direction.\nhttp://mathworld.wolfram.com/WeaklyConnectedDigraph.html\n*/\npred weaklyConnected {\n\tall x, y: Node | (y in x.(*(adj + ~adj)))\n}\n\n/*\nThe graph is strongly connected, ie, it is possible to reach every node from every node considering edge direction.\nhttp://mathworld.wolfram.com/StronglyConnectedDigraph.html\n*/\npred stonglyConnected {\n\tall x, y: Node | (y in x.(*adj))\n}\n\n/*\nThe graph is transitive, ie, if two nodes are connected through a third node, they also are connected directly.\nhttp://mathworld.wolfram.com/TransitiveDigraph.html\n*/\npred transitive {\n\tall x, y : Node | x in y.adj.adj => x in y.adj\n}",
+  "cmd_i": 7,
+  "derivationOf": "2ZRqAcshH8n7Ky4H7",
+  "cmd_c": true,
+  "cmd_n": "transitive",
+  "original": "gAeD3MTGCCv8YNTaK",
+  "sat": 0
+},{
+  "_id": "3d42AenKSfFdoRpkb",
+  "time": "19/06/2023, 11:56:08",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 0,
+  "derivationOf": "zoEADeCW2b2suJB2k",
+  "cmd_c": true,
+  "cmd_n": "inv1Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 0
+},{
+  "_id": "oGNeAJSEb7jdk94Fs",
+  "time": "19/06/2023, 11:56:30",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 1,
+  "derivationOf": "3d42AenKSfFdoRpkb",
+  "cmd_c": true,
+  "cmd_n": "inv2Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 0
+},{
+  "_id": "dRnDwxonuX4n7PBJE",
+  "time": "19/06/2023, 11:57:05",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n\tall s : State | lone s.trans\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 2,
+  "derivationOf": "oGNeAJSEb7jdk94Fs",
+  "cmd_c": true,
+  "cmd_n": "inv3Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 1
+},{
+  "_id": "3xt2r8RjSGyd6CmNJ",
+  "time": "19/06/2023, 12:05:09",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n\tall s : State | \n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: State | s in s.^({s : State, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 3,
+  "derivationOf": "dRnDwxonuX4n7PBJE",
+  "msg": "There are 37 possible tokens that can appear here:\n! # ( * @ Int NAME NUMBER STRING String ^ after all always before disj eventually fun historically iden int let lone no none once one pred seq set some steps sum this univ { ~",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": -1
+},{
+  "_id": "bxJEgCoug3bfanPdj",
+  "time": "19/06/2023, 12:05:20",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  \n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: State | s in s.^({s : State, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 3,
+  "derivationOf": "3xt2r8RjSGyd6CmNJ",
+  "cmd_c": true,
+  "cmd_n": "inv4Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 1
+},{
+  "_id": "xHQJGLAc2jNkQXipM",
+  "time": "19/06/2023, 12:08:50",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s, s2 : State | lone s.trans.s2\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: State | s in s.^({s : State, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 2,
+  "derivationOf": "bxJEgCoug3bfanPdj",
+  "cmd_c": true,
+  "cmd_n": "inv3Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 1
+},{
+  "_id": "NZMvsoKbjCsgJF3mL",
+  "time": "19/06/2023, 12:09:46",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone s.trans.e\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: State | s in s.^({s : State, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 2,
+  "derivationOf": "xHQJGLAc2jNkQXipM",
+  "cmd_c": true,
+  "cmd_n": "inv3Ok",
+  "msg": "The join operation here always yields an empty set.\nLeft type = {this/Event->this/State}\nRight type = {this/Event}",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 1
+},{
+  "_id": "un6iYZDQhD2zLAH5c",
+  "time": "19/06/2023, 12:10:21",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: State | s in s.^({s : State, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 2,
+  "derivationOf": "NZMvsoKbjCsgJF3mL",
+  "cmd_c": true,
+  "cmd_n": "inv3Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 0
+},{
+  "_id": "HNqbNkNiZd5gm452o",
+  "time": "19/06/2023, 12:11:08",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: State | s in s.^({s : State, e : Event | some e.(s.trans)})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 3,
+  "derivationOf": "un6iYZDQhD2zLAH5c",
+  "cmd_c": true,
+  "cmd_n": "inv4Ok",
+  "msg": "^ {s,e | some e . s . (this/State <: trans)} is redundant since its domain and range are disjoint: {this/State->this/Event}",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 1
+},{
+  "_id": "gtKC4NFXurQi3xr3t",
+  "time": "19/06/2023, 12:11:34",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: State | s in s.^({s : State, some e : Event | some e.(s.trans)})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 3,
+  "derivationOf": "HNqbNkNiZd5gm452o",
+  "msg": "There are 8 possible tokens that can appear here:\nNAME disj exh part private seq this var",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": -1
+},{
+  "_id": "hyYmHnrWGNszhL59Z",
+  "time": "19/06/2023, 12:13:19",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, e : Event | some e.(s.trans)})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 3,
+  "derivationOf": "gtKC4NFXurQi3xr3t",
+  "cmd_c": true,
+  "cmd_n": "inv4Ok",
+  "msg": "^ {s,e | some e . s . (this/State <: trans)} is redundant since its domain and range are disjoint: {this/State->this/Event}",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 1
+},{
+  "_id": "37KaKwihHQvziamQN",
+  "time": "19/06/2023, 12:16:05",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 3,
+  "derivationOf": "hyYmHnrWGNszhL59Z",
+  "cmd_c": true,
+  "cmd_n": "inv4Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 1
+},{
+  "_id": "F6z2ge2cHdCWT7qwY",
+  "time": "19/06/2023, 12:16:52",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\tall s1, s2, s3 : State | e in s1.trans.s3 => e in s2.trans.s3\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 4,
+  "derivationOf": "37KaKwihHQvziamQN",
+  "msg": "The name \"e\" cannot be found.",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": -1
+},{
+  "_id": "noju6KWXJfF2MwY7b",
+  "time": "19/06/2023, 12:17:03",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\tall s1, s2, s3 : State, all e : Event | e in s1.trans.s3 => e in s2.trans.s3\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 4,
+  "derivationOf": "F6z2ge2cHdCWT7qwY",
+  "msg": "There are 8 possible tokens that can appear here:\nNAME disj exh part private seq this var",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": -1
+},{
+  "_id": "aCQwXthu2iRYDuxKE",
+  "time": "19/06/2023, 12:17:14",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\tall s1, s2, s3 : State, e : Event | e in s1.trans.s3 => e in s2.trans.s3\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 4,
+  "derivationOf": "noju6KWXJfF2MwY7b",
+  "cmd_c": true,
+  "cmd_n": "inv5Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 1
+},{
+  "_id": "5DLJAb65iGsHKgmjd",
+  "time": "19/06/2023, 12:20:36",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\t// all s1, s2, s3 : State, e : Event | e in s1.trans.s3 => e in s2.trans.s3\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event, some s, s2 : State | e in s.trans.s2 //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 5,
+  "derivationOf": "aCQwXthu2iRYDuxKE",
+  "msg": "There are 8 possible tokens that can appear here:\nNAME disj exh part private seq this var",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": -1
+},{
+  "_id": "qZGtkyaBCwBwMuJ4T",
+  "time": "19/06/2023, 12:20:46",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\t// all s1, s2, s3 : State, e : Event | e in s1.trans.s3 => e in s2.trans.s3\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event, some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 5,
+  "derivationOf": "5DLJAb65iGsHKgmjd",
+  "msg": "There are 8 possible tokens that can appear here:\nNAME disj exh part private seq this var",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": -1
+},{
+  "_id": "mDannG7oGCxD3kPJd",
+  "time": "19/06/2023, 12:20:58",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n\t// all s1, s2, s3 : State, e : Event | e in s1.trans.s3 => e in s2.trans.s3\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 5,
+  "derivationOf": "qZGtkyaBCwBwMuJ4T",
+  "cmd_c": true,
+  "cmd_n": "inv6Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 0
+},{
+  "_id": "6sJhqghaNcGcRtPXE",
+  "time": "19/06/2023, 12:22:21",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n  all s1, s2 : State | all e : Event | e in s1.trans.State => e in s2.trans.State\n\t// all s1, s2, s3 : State, e : Event | e in s1.trans.s3 => e in s2.trans.s3\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n\n}",
+  "cmd_i": 4,
+  "derivationOf": "mDannG7oGCxD3kPJd",
+  "cmd_c": true,
+  "cmd_n": "inv5Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 0
+},{
+  "_id": "5oahDSQFbtqPgjEQx",
+  "time": "19/06/2023, 12:25:13",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n  all s1, s2 : State | all e : Event | e in s1.trans.State => e in s2.trans.State\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n  // all d : Dir | d not in d.^({d : Dir, o : Object | some d.contents.o})\n  all s : State | s in Init.^({s2 : State | Event.(s2.contents)})\n}",
+  "cmd_i": 6,
+  "derivationOf": "6sJhqghaNcGcRtPXE",
+  "msg": "The name \"contents\" cannot be found.",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": -1
+},{
+  "_id": "X4ciQBcNr6kf9nbnZ",
+  "time": "19/06/2023, 12:26:50",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n  all s1, s2 : State | all e : Event | e in s1.trans.State => e in s2.trans.State\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n  // all d : Dir | d not in d.^({d : Dir, o : Object | some d.contents.o})\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2}) => s.^({s : Init, s2 : State | some s.trans.s2}) in s\n}",
+  "cmd_i": 6,
+  "derivationOf": "5oahDSQFbtqPgjEQx",
+  "cmd_c": true,
+  "cmd_n": "inv7Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 1
+},{
+  "_id": "YWL8J2xcYG2Kwouxf",
+  "time": "19/06/2023, 12:27:21",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n  all s1, s2 : State | all e : Event | e in s1.trans.State => e in s2.trans.State\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n  // all d : Dir | d not in d.^({d : Dir, o : Object | some d.contents.o})\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2}) => s ins.^(~({s : Init, s2 : State | some s.trans.s2}))\n}",
+  "cmd_i": 6,
+  "derivationOf": "X4ciQBcNr6kf9nbnZ",
+  "msg": "This must be a formula expression.\nInstead, it has the following possible type(s):\n{this/State}",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": -1
+},{
+  "_id": "9ci9ZuHGHPACDyMKt",
+  "time": "19/06/2023, 12:27:26",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n  all s1, s2 : State | all e : Event | e in s1.trans.State => e in s2.trans.State\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n  // all d : Dir | d not in d.^({d : Dir, o : Object | some d.contents.o})\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2}) => s in s.^(~({s : Init, s2 : State | some s.trans.s2}))\n}",
+  "cmd_i": 6,
+  "derivationOf": "YWL8J2xcYG2Kwouxf",
+  "cmd_c": true,
+  "cmd_n": "inv7Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 1
+},{
+  "_id": "QCftgigMyEkjHpwLu",
+  "time": "19/06/2023, 12:27:51",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n  all s1, s2 : State | all e : Event | e in s1.trans.State => e in s2.trans.State\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n  // all d : Dir | d not in d.^({d : Dir, o : Object | some d.contents.o})\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2}) => s in s.~(^({s : Init, s2 : State | some s.trans.s2}))\n}",
+  "cmd_i": 6,
+  "derivationOf": "9ci9ZuHGHPACDyMKt",
+  "cmd_c": true,
+  "cmd_n": "inv7Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 1
+},{
+  "_id": "8Y76xAbpteLpWiGtv",
+  "time": "19/06/2023, 12:28:08",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n  all s1, s2 : State | all e : Event | e in s1.trans.State => e in s2.trans.State\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n  // all d : Dir | d not in d.^({d : Dir, o : Object | some d.contents.o})\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2}) => s in (^({s : Init, s2 : State | some s.trans.s2})).s\n}",
+  "cmd_i": 6,
+  "derivationOf": "QCftgigMyEkjHpwLu",
+  "cmd_c": true,
+  "cmd_n": "inv7Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 1
+},{
+  "_id": "sMGNcXYGrzsorD5Sa",
+  "time": "19/06/2023, 12:29:38",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n  all s1, s2 : State | all e : Event | e in s1.trans.State => e in s2.trans.State\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n  // all d : Dir | d not in d.^({d : Dir, o : Object | some d.contents.o})\n  \tall s: Init | s in s.^({s2 : Init, s3 : State | some s2.trans.s3}) => s in (^({s : Init, s2 : State | some s.trans.s2}))\n}",
+  "cmd_i": 3,
+  "derivationOf": "8Y76xAbpteLpWiGtv",
+  "msg": "in can be used only between 2 expressions of the same arity.\nLeft type = {this/State}\nRight type = {this/State->this/State}",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": -1
+},{
+  "_id": "SmTgYwiDiXqHMzmiF",
+  "time": "19/06/2023, 12:29:44",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n  all s1, s2 : State | all e : Event | e in s1.trans.State => e in s2.trans.State\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n  // all d : Dir | d not in d.^({d : Dir, o : Object | some d.contents.o})\n  \t// all s: Init | s in s.^({s2 : Init, s3 : State | some s2.trans.s3}) => s in (^({s : Init, s2 : State | some s.trans.s2}))\n}",
+  "cmd_i": 3,
+  "derivationOf": "sMGNcXYGrzsorD5Sa",
+  "cmd_c": true,
+  "cmd_n": "inv4Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 1
+},{
+  "_id": "YfJo5E3FiHmSYeprQ",
+  "time": "19/06/2023, 12:29:58",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: State | s in Init.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n  all s1, s2 : State | all e : Event | e in s1.trans.State => e in s2.trans.State\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n  // all d : Dir | d not in d.^({d : Dir, o : Object | some d.contents.o})\n  \t// all s: Init | s in s.^({s2 : Init, s3 : State | some s2.trans.s3}) => s in (^({s : Init, s2 : State | some s.trans.s2}))\n}",
+  "cmd_i": 3,
+  "derivationOf": "SmTgYwiDiXqHMzmiF",
+  "cmd_c": true,
+  "cmd_n": "inv4Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 1
+},{
+  "_id": "SoLnNv5YvyrTRpcH2",
+  "time": "19/06/2023, 12:30:04",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: Init | s in s.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n  all s1, s2 : State | all e : Event | e in s1.trans.State => e in s2.trans.State\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n  // all d : Dir | d not in d.^({d : Dir, o : Object | some d.contents.o})\n  \t// all s: Init | s in s.^({s2 : Init, s3 : State | some s2.trans.s3}) => s in (^({s : Init, s2 : State | some s.trans.s2}))\n}",
+  "cmd_i": 3,
+  "derivationOf": "YfJo5E3FiHmSYeprQ",
+  "cmd_c": true,
+  "cmd_n": "inv4Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 1
+},{
+  "_id": "xpnFm5zBhWWNAZKyF",
+  "time": "19/06/2023, 12:30:15",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: State | s in Init.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n  all s1, s2 : State | all e : Event | e in s1.trans.State => e in s2.trans.State\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n  // all d : Dir | d not in d.^({d : Dir, o : Object | some d.contents.o})\n  \t// all s: Init | s in s.^({s2 : Init, s3 : State | some s2.trans.s3}) => s in (^({s : Init, s2 : State | some s.trans.s2}))\n}",
+  "cmd_i": 0,
+  "derivationOf": "SoLnNv5YvyrTRpcH2",
+  "cmd_c": true,
+  "cmd_n": "inv1Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 0
+},{
+  "_id": "9GRpkJFFtqgzvPci7",
+  "time": "19/06/2023, 12:30:17",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: State | s in Init.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n  all s1, s2 : State | all e : Event | e in s1.trans.State => e in s2.trans.State\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n  // all d : Dir | d not in d.^({d : Dir, o : Object | some d.contents.o})\n  \t// all s: Init | s in s.^({s2 : Init, s3 : State | some s2.trans.s3}) => s in (^({s : Init, s2 : State | some s.trans.s2}))\n}",
+  "cmd_i": 1,
+  "derivationOf": "xpnFm5zBhWWNAZKyF",
+  "cmd_c": true,
+  "cmd_n": "inv2Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 0
+},{
+  "_id": "5Xh7QS3myryKjPpny",
+  "time": "19/06/2023, 12:30:20",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: State | s in Init.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n  all s1, s2 : State | all e : Event | e in s1.trans.State => e in s2.trans.State\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n  // all d : Dir | d not in d.^({d : Dir, o : Object | some d.contents.o})\n  \t// all s: Init | s in s.^({s2 : Init, s3 : State | some s2.trans.s3}) => s in (^({s : Init, s2 : State | some s.trans.s2}))\n}",
+  "cmd_i": 2,
+  "derivationOf": "9GRpkJFFtqgzvPci7",
+  "cmd_c": true,
+  "cmd_n": "inv3Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 0
+},{
+  "_id": "cGQ3h76T3j6js9SX7",
+  "time": "19/06/2023, 12:30:23",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: State | s in Init.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n  all s1, s2 : State | all e : Event | e in s1.trans.State => e in s2.trans.State\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n  // all d : Dir | d not in d.^({d : Dir, o : Object | some d.contents.o})\n  \t// all s: Init | s in s.^({s2 : Init, s3 : State | some s2.trans.s3}) => s in (^({s : Init, s2 : State | some s.trans.s2}))\n}",
+  "cmd_i": 4,
+  "derivationOf": "5Xh7QS3myryKjPpny",
+  "cmd_c": true,
+  "cmd_n": "inv5Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 0
+},{
+  "_id": "qJWZKyTC7bwKR5WCr",
+  "time": "19/06/2023, 12:30:25",
+  "code": "/*\nA labeled transition system (LTS) is comprised by States, a sub-set\nof which are Initial, connected by transitions, here represented by \nEvents.\n*/\nsig State {\n        trans : Event -> State\n}\nsig Init in State {}\nsig Event {}\n\n/*\nThe LTS does not contain deadlocks, ie, each state has at least a \ntransition.\n*/\npred inv1 {\n\tall s : State | some s.trans\n}\n\n/*\nThere is a single initial state.\n*/\npred inv2 {\n\tone Init\n}\n\n/*\nThe LTS is deterministic, ie, each state has at most a transition for each event.\n*/\npred inv3 {\n  all s : State, e: Event | lone e.(s.trans)\n}\n\n/*\nAll states are reachable from an initial state.\n*/\npred inv4 {\n  \tall s: State | s in Init.^({s : Init, s2 : State | some s.trans.s2})\n}\n\n/*\nAll the states have the same events available.\n*/\npred inv5 {\n  all s1, s2 : State | all e : Event | e in s1.trans.State => e in s2.trans.State\n}\n\n/*\nEach event is available in at least a state.\n*/\npred inv6 {\n\tall e : Event | some s : State | e in s.trans.State //{ s : State, s2 : State | s.trans.s2}\n}\n\n/*\nThe LTS is reversible, ie, from a reacheable state it is always possible \nto return to an initial state.\n*/\npred inv7 {\n  // all d : Dir | d not in d.^({d : Dir, o : Object | some d.contents.o})\n  \t// all s: Init | s in s.^({s2 : Init, s3 : State | some s2.trans.s3}) => s in (^({s : Init, s2 : State | some s.trans.s2}))\n}",
+  "cmd_i": 5,
+  "derivationOf": "cGQ3h76T3j6js9SX7",
+  "cmd_c": true,
+  "cmd_n": "inv6Ok",
+  "original": "zoEADeCW2b2suJB2k",
+  "sat": 0
+}]

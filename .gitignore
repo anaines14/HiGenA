@@ -1,7 +1,6 @@
 *.env
-*.json
-*.csv
 *.txt
 lib/org/higena
-data/evaluation
 data/datasets/*
+higena/src/test/outputs
+higena/src/test/resources

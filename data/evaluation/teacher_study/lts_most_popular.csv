@@ -1,0 +1,11 @@
+Challenge;Predicate;Expr
+zoEADeCW2b2suJB2k;inv7;all s: Event.(State.trans) | s in ^{x, y: State | some (x.trans).y}.s
+zoEADeCW2b2suJB2k;inv5;all s:State | Event in State.~(s.trans)
+zoEADeCW2b2suJB2k;inv4;all s : State | s in Event.(Init.trans)
+zoEADeCW2b2suJB2k;inv4;State in Event.(Init.trans)
+zoEADeCW2b2suJB2k;inv3;all y : State | lone y.trans
+zoEADeCW2b2suJB2k;inv3;all x : State, y : Event | lone x.trans.y
+zoEADeCW2b2suJB2k;inv3;all s: State| lone s.trans.State
+zoEADeCW2b2suJB2k;inv3;all s:State | lone trans.s
+zoEADeCW2b2suJB2k;inv3;all s : State | lone Event.(s.trans)
+zoEADeCW2b2suJB2k;inv1;some State.trans

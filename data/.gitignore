@@ -1,5 +1,4 @@
-*.json
+datasets
 *.db
-*.csv
 *.txt 
 .ipynb_checkpoints

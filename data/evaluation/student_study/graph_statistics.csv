@@ -1,0 +1,16 @@
+Challenge,Predicate,NumSubmissions,NumCorrect,NumIncorrect,NumEdges
+gAeD3MTGCCv8YNTaK,undirected,148,28,120,238
+gAeD3MTGCCv8YNTaK,oriented,90,24,66,142
+gAeD3MTGCCv8YNTaK,acyclic,77,14,63,123
+gAeD3MTGCCv8YNTaK,complete,102,18,84,186
+gAeD3MTGCCv8YNTaK,noLoops,56,14,42,100
+gAeD3MTGCCv8YNTaK,weaklyConnected,248,15,233,407
+gAeD3MTGCCv8YNTaK,stonglyConnected,68,15,53,116
+gAeD3MTGCCv8YNTaK,transitive,58,16,42,82
+zoEADeCW2b2suJB2k,inv1,48,11,37,85
+zoEADeCW2b2suJB2k,inv2,35,7,28,51
+zoEADeCW2b2suJB2k,inv3,130,9,121,224
+zoEADeCW2b2suJB2k,inv4,293,24,269,405
+zoEADeCW2b2suJB2k,inv5,147,15,132,198
+zoEADeCW2b2suJB2k,inv6,41,18,23,62
+zoEADeCW2b2suJB2k,inv7,160,7,153,208

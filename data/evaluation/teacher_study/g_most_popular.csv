@@ -1,0 +1,11 @@
+Challenge;Predicate;Expr
+gAeD3MTGCCv8YNTaK;weaklyConnected;all n: Node | Node in n.^adj
+gAeD3MTGCCv8YNTaK;weaklyConnected;all n: Node | Node in n.^(adj + ~adj)
+gAeD3MTGCCv8YNTaK;undirected;all n : Node | n in n.adj.~adj
+gAeD3MTGCCv8YNTaK;undirected;adj.~adj in iden
+gAeD3MTGCCv8YNTaK;stonglyConnected;all n : Node | Node in n.^adj
+gAeD3MTGCCv8YNTaK;stonglyConnected;Node in Node.^adj
+gAeD3MTGCCv8YNTaK;noLoops;all n : Node | n not in n.^adj
+zoEADeCW2b2suJB2k;inv3;all y : State | lone y.trans
+zoEADeCW2b2suJB2k;inv3;all x : State, y : Event | lone x.trans.y
+zoEADeCW2b2suJB2k;inv1;some State.trans
